@@ -1,7 +1,12 @@
 """
 Created on Mon Nov  3 15:23:00 2014
+Modified version of https://github.com/idefix-code/idefix/blob/master/pytools/vtk_io.py (particles version)
+
+- Add attribute: dimensions
 
 @author: glesur
+@author: cr52@protonmail.com
+@author: david.fang@ikmail.com
 """
 
 import warnings
@@ -94,9 +99,15 @@ class VTKDataset(object):
                     self.t = np.fromfile(fh, dt, 1)
                 elif d.startswith("PERIODICITY"):
                     self.periodicity = np.fromfile(fh, dtype=dint, count=3).astype(bool)
+                elif d.startswith("HAVE_TEST_PARTICLES"):
+                    self.have_test_particles = np.fromfile(
+                        fh, dtype=dint, count=1
+                    ).astype(bool)
                 elif NATIVE_COORDINATE_REGEXP.match(d):
                     native_name, _ncomp, native_dim, _dtype = d.split()
-                    self.native_coordinates[native_name] = np.fromfile(fh, dtype=dt, count=int(native_dim))
+                    self.native_coordinates[native_name] = np.fromfile(
+                        fh, dtype=dt, count=int(native_dim)
+                    )
                 else:
                     warnings.warn("Found unknown field %s" % d)
                 fh.readline()  # skip extra linefeed (empty line)
@@ -210,7 +221,6 @@ class VTKDataset(object):
 
             # Reconstruct the polar coordinate system
             if self.geometry == "polar":
-
                 r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
                 theta = np.unwrap(np.arctan2(ycart[0, :, 0], xcart[0, :, 0]))
                 z = zcart[0, 0, :]
@@ -348,7 +358,52 @@ class VTKDataset(object):
             fh.readline()  # extra line feed
 
     def _load_particles(self, fh):
-        raise NotImplementedError("Particles vtk are not supported yet !")
+        line = fh.readline()
+        npoints = int(line.split()[1])
+        self.x, self.y, self.z = (
+            np.fromfile(fh, ">f", 3 * npoints).reshape(npoints, 3).T
+        )
+
+        fh.readline()
+        fh.readline()  # extra line feed
+        line = fh.readline().decode("utf-8")
+        assert line.startswith("POINT_DATA ")
+        assert int(line.split()[-1]) == npoints
+
+        fh.readline()  # extra line feed
+
+        while True:
+            line = fh.readline()
+            if len(line) < 2:
+                break
+
+            keyword, varname, datatype = line.decode("utf-8").split()
+            assert keyword == "SCALARS"
+            if datatype == "float":
+                dtype = ">f"
+            elif datatype == "int":
+                dtype = ">i4"
+            else:
+                raise RuntimeError("Got unsupported datatype '%s'" % datatype)
+            line = fh.readline().decode("utf-8")
+            keyword, value = line.split()
+            assert keyword == "LOOKUP_TABLE"
+            assert value == "default"
+            self.data[varname] = np.fromfile(fh, dtype, npoints)
+            fh.readline()
+
+        # reconstruct native coordinates for curvilinear geometries
+        if self.geometry == "polar":
+            self.r = np.sqrt(self.x**2 + self.y**2)  # cylindrical radius
+            self.theta = np.arctan2(self.y, self.x)
+        elif self.geometry == "spherical":
+            self.r = np.sqrt(self.x**2 + self.y**2 + self.z**2)
+            if np.all(self.z == 0):  # 2D data
+                self.phi = np.arctan2(self.z, self.x)
+                self.theta = np.arccos(self.y / self.r)
+            else:
+                self.phi = np.arctan2(self.y, self.x)
+                self.theta = np.arccos(self.z / self.r)
 
     def _setup_coordinates_from_native(self):
         if self.geometry == "spherical":
@@ -375,6 +430,7 @@ class VTKDataset(object):
 
     def __repr__(self):
         return "VTKDataset('%s')" % self.filename
+
 
 # ////// public API //////
 def readVTK(filename, geometry=None):

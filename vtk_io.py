@@ -368,6 +368,7 @@ class VTKDataset(object):
         self.x, self.y, self.z = (
             np.fromfile(fh, ">f", 3 * npoints).reshape(npoints, 3).T
         )
+        print(self.x, self.y, self.z)
 
         fh.readline()
         fh.readline()  # extra line feed

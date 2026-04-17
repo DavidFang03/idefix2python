@@ -98,9 +98,9 @@ def applyOperation_discardingNone(op, array):
 def movie(pattern_png, movie_path, fps=10):
     import ffmpeg
 
-    # pattern_png = f"{folder_path}/*.png"
+    print(movie_path)
     ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).output(
-        movie_path,
+        str(movie_path),
         vcodec="libx264",
         crf=18,
         preset="medium",
@@ -148,3 +148,13 @@ def convertVector_toXZ(uX1, uX2, X1, X2, geometry):
         return np.sin(Theta) * uX1 + np.cos(Theta) * uX2, np.cos(Theta) * uX1 - np.sin(
             Theta
         ) * uX2
+
+
+def integrate(df, f0, times):
+    values = [f0]
+    dt = np.diff(times)
+    for i, t in enumerate(times[:-1]):
+        previousValue = values[-1]
+        value = previousValue + df(previousValue) * dt[i]
+        values += [value]
+    return values

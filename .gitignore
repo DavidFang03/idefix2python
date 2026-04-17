@@ -1,1 +1,5 @@
 __pycache__
+*.png
+trash.py
+vtk_io1.py
+Idefix2Python1.py

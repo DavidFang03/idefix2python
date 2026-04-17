@@ -1,65 +1,96 @@
 {
-    "default": {
-        "BX1": {
-            "range": [-1e-4, 1e-4]
-        },
-        "BX2": {
-            "range": [-1e-4, 1e-4]
-        },
-        "BX3": {
-            "range": [-1e-3, 1e-3]
-        },
-        "VX1": {
-            "norm": "TwoSlopeNorm",
-            "cmap": "RdBu_r"
-        },
-        "Dust0_VX1": {
-            "norm": "TwoSlopeNorm",
-            "cmap": "RdBu_r"
-        },
-        "VX2": {
-            "range": [-0.5, 0.5]
-        },
-        "VX3": {
-            "range": [0, 0.5],
-            "cmap": "inferno"
-        },
-        "cs": {
-            "norm": "log"
-        },
-        "RHO": {
-            "norm": "log",
-            "range": [1e-7, 1],
-            "cmap": "inferno"
-        },
-        "Mach_p": {
-            "range": [0.1, 20],
-            "cmap": "cool",
-            "norm": "log"
-        },
-        "Am": {
-            "cmap": "inferno"
-        },
-        "InvDt": {
-            "range": [0.1, 20],
-            "cmap": "cool",
-            "norm": "log"
-        },
-        "eta": {
-            "cmap": "cool",
-            "norm": "log"
-        },
-        "Dust0_VX2": {
-            "range": [-0.5, 0.5]
-        },
-        "Dust0_VX3": {
-            "range": [0, 0.5],
-            "cmap": "inferno"
-        },
-        "Dust0_RHO": {
-            "norm": "log",
-            "range": [1e-7, 1],
-            "cmap": "inferno"
-        }
+    "BX1": {
+        "range": [
+            -1e-4,
+            1e-4
+        ]
+    },
+    "BX2": {
+        "range": [
+            -1e-4,
+            1e-4
+        ]
+    },
+    "BX3": {
+        "range": [
+            -1e-3,
+            1e-3
+        ]
+    },
+    "VX1": {
+        "norm": "TwoSlopeNorm",
+        "cmap": "RdBu_r"
+    },
+    "Dust0_VX1": {
+        "norm": "TwoSlopeNorm",
+        "cmap": "RdBu_r"
+    },
+    "VX2": {
+        "range": [
+            -0.5,
+            0.5
+        ]
+    },
+    "VX3": {
+        "range": [
+            0,
+            0.5
+        ],
+        "cmap": "inferno"
+    },
+    "cs": {
+        "norm": "log"
+    },
+    "RHO": {
+        "norm": "log",
+        "range": [
+            1e-7,
+            1
+        ],
+        "cmap": "inferno"
+    },
+    "Mach_p": {
+        "range": [
+            0.1,
+            20
+        ],
+        "cmap": "cool",
+        "norm": "log"
+    },
+    "Am": {
+        "cmap": "inferno"
+    },
+    "InvDt": {
+        "range": [
+            0.1,
+            20
+        ],
+        "cmap": "cool",
+        "norm": "log"
+    },
+    "eta": {
+        "cmap": "cool",
+        "norm": "log"
+    },
+    "Dust0_VX2": {
+        "range": [
+            -0.5,
+            0.5
+        ]
+    },
+    "Dust0_VX3": {
+        "range": [
+            0,
+            0.5
+        ],
+        "cmap": "inferno"
+    },
+    "Dust0_RHO": {
+        "norm": "log",
+        "range": [
+            1e-7,
+            1
+        ],
+        "cmap": "inferno"
     }
 }

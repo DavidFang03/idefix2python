@@ -1,5 +1,6 @@
 numpy
 matplotlib
+ffmpeg-python
 sphinx
 sphinx-design
 sphinxcontrib-video

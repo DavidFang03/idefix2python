@@ -125,11 +125,6 @@ class VTKDataset(object):
         self.ny = int(slist[2])
         self.nz = int(slist[3])
 
-        self.dimensions = 3
-        for nbcells in [self.nx, self.ny, self.nz]:
-            if nbcells == 1:
-                self.dimensions -= 1
-
         if self.geometry in ("cartesian", "cylindrical"):
             # CARTESIAN geometry
             # NOTE: cylindrical geometry is meant to be only used in 2D
@@ -325,6 +320,11 @@ class VTKDataset(object):
                 else:
                     self.phi = phi
                     self.phil = phi
+
+        self.dimensions = 3
+        for nbcells in [self.nx, self.ny, self.nz]:
+            if nbcells == 1:
+                self.dimensions -= 1
 
         ## From that point, the coordinates system is known.
         while 1:

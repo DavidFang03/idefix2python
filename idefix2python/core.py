@@ -52,6 +52,7 @@ class OutputTypeInfo:
             self.vtk = vtk
             if "part" not in str(self.test_file):
                 self.dimensions = vtk.dimensions
+                LOG("Dimensions detected: ", self.dimensions)
 
         elif "dat" in self.ext:
             self.testData = tools.dat_to_dict(self.test_file)

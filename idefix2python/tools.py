@@ -231,11 +231,24 @@ def get_Position_name(geometry, direction):
         case "cartesian":
             positions = [r"$x$", r"$y$", r"$z$"]
         case "polar":
-            positions = [r"$r$", r"$\theta$", r"$z$"]
+            positions = [r"$r$", r"$\phi$", r"$z$"]
         case "cylindrical":
             positions = [r"$r$", r"$z$", None]
         case "spherical":
             positions = [r"$r$", r"$\theta$", r"$\phi$"]
+    return positions[direction]
+
+
+def get_Position_name_cartesian_equivalent(geometry, direction):
+    match geometry:
+        case "cartesian":
+            positions = [r"$x$", r"$y$", r"$z$"]
+        case "polar":
+            positions = [r"$x$", r"$y$", r"$z$"]
+        case "cylindrical":
+            positions = [r"$x$", r"$z$", None]
+        case "spherical":
+            positions = [r"$x$", r"$z$", r"$y$"]
     return positions[direction]
 
 

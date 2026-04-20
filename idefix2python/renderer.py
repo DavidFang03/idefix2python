@@ -204,12 +204,12 @@ class SliceRenderer:
             cbar = self._plot_pcolormesh(fig, ax, data, qty, qtyInfo)
 
             ax.set_aspect("equal", adjustable="box")
-            ax.set_xlabel(getattr(self.processor, "axis_name_1", r"$x$"))
             ax.set_xlim(self.processor.xmin, self.processor.xmax)
             ax.set_ylim(self.processor.ymin, self.processor.ymax)
 
+            ax.set_xlabel(self.processor.grid_name_1)
             if qtyInfo.plot_coords[1] == 0:
-                ax.set_ylabel(getattr(self.processor, "axis_name_2", r"$z$"))
+                ax.set_ylabel(self.processor.grid_name_2)
 
             title = qtyInfo.title
             color = None
@@ -258,7 +258,7 @@ class SliceRenderer:
                 )
                 ax.legend()
             # ax.set_xlim(self.processor.xmin, self.processor.xmax)
-            ax.set_xlabel(self.processor.axis_name)
+            ax.set_xlabel(self.processor.axis_name_1)
             ax.set_ylim(*field1D.bounds)
             ax.set_ylabel(field1D.symbol)
             ax.set_title(field1D.title)
@@ -302,7 +302,7 @@ class SliceRenderer:
             ax.set_ylim(np.min(field1D.points), np.max(field1D.points))
             cbar.ax.set_title(field1D.symbol)
             ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-            ax.set_ylabel(r"$R$")
+            ax.set_ylabel(self.processor.axis_name_1)
             ax.set_title(field1D.title)
             ax.grid()
 
@@ -324,7 +324,7 @@ class SliceRenderer:
                 ax.legend()
 
             ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-            ax.set_ylabel(r"$R$")
+            ax.set_ylabel(qty.symbol)
             ax.set_title(qty.title)
             ax.grid()
 

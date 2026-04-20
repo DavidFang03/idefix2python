@@ -12,52 +12,27 @@ class PhysicsProcessor:
         self._setup()
 
     def _setup(self):
-        vtkInfo = self.context.outputTypes_info["vtk"]
-        if vtkInfo.status:
-            vtk = vtkInfo.vtk
-            if vtkInfo.dimensions == 1:
-                for direction in range(3):
-                    try:
-                        pos_array = tools.get_Position(
-                            vtk, self.context.geometry, direction
-                        )
-                        # Check if pos_array is not None (to avoid crashing on cylindrical z)
-                        if pos_array is not None and len(pos_array) > 1:
-                            self.active_axis = direction
-                            self.X1Line = pos_array
-                            break
-                    except (IndexError, TypeError):
-                        continue
-                self.axis_name = tools.get_Position_name(
-                    self.context.geometry, self.active_axis
-                )
+        if self.context.outputTypes_info["vtk"].status:
+            vtk = self.context.outputTypes_info["vtk"].vtk
+            self.X1Line = tools.get_Position(
+                vtk, self.context.geometry, self.context.active_directions[0]
+            )
+            self.axis_name_1 = self.context.active_directions_labels[0]
+            if self.context.dimensions == 1:
                 self.xmin = np.min(self.X1Line)
                 self.xmax = np.max(self.X1Line)
-            elif vtkInfo.dimensions == 2:
-                # Find the two viable axes
-                active_axes = []
-                positions = []
-                for direction in range(3):
-                    try:
-                        pos_array = tools.get_Position(
-                            vtk, self.context.geometry, direction
-                        )
-                        if pos_array is not None and len(pos_array) > 1:
-                            active_axes.append(direction)
-                            positions.append(pos_array)
-                    except (IndexError, TypeError):
-                        continue
+            elif self.context.dimensions == 2:
+                self.X2Line = tools.get_Position(
+                    vtk, self.context.geometry, self.context.active_directions[1]
+                )
 
-                if len(active_axes) != 2:
-                    raise ValueError(
-                        f"Expected exactly 2 active axes, found {len(active_axes)}: {active_axes}"
-                    )
-                self.axis1, self.axis2 = active_axes[0], active_axes[1]
-                self.X1Line, self.X2Line = positions[0], positions[1]
-
-                # Only (x,z) supported right now.
-                self.axis_name_1 = r"$x$"
-                self.axis_name_2 = r"$z$"
+                # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.
+                self.grid_name_1 = tools.get_Position_name_cartesian_equivalent(
+                    self.context.geometry, self.context.active_directions[0]
+                )
+                self.grid_name_2 = tools.get_Position_name_cartesian_equivalent(
+                    self.context.geometry, self.context.active_directions[1]
+                )
 
                 # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
                 self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
@@ -79,8 +54,9 @@ class PhysicsProcessor:
                 self.xmax = np.max(np.where(self.mask, self.grid1, 0))
                 self.ymax = np.max(np.where(self.mask, self.grid2, 0))
                 self.ymin = np.min(np.where(self.mask, self.grid2, 0))
-
-        # TODOs: support for slice1 and analysis and SPACETIMEHEATMAPS
+        else:
+            pass
+            # TODO: support for particles
 
     def set_fields(self, movies1D, movies2D):
         self.movies1D = movies1D
@@ -112,8 +88,8 @@ class PhysicsProcessor:
             for key, qtyInfo in movie_dict.items():
                 if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
                     # Execute the user function.
-                    # We pass the whole V.data so they can use multiple variables
-                    # (e.g., Mach Number = velocity / sound_speed)
+                    # Pass the whole V.data so they can use multiple variables
+                    # (e.g. Mach Number = velocity / sound_speed)
                     V.data[key] = qtyInfo.compute(V.data)
 
     def get_quantities(self, vtkPath, quantities):

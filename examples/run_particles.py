@@ -26,7 +26,7 @@ custom_partQuantities = [
 runContext = RunContext(
     task,
     projectPath,
-    dimensions=1,  # currently necessary for lagrangian particles.)
+    active_directions=[0],  # currently necessary for lagrangian particles.)
 )
 pipeline = Pipeline(runContext, partQuantities=custom_partQuantities)
 

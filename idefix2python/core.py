@@ -52,7 +52,6 @@ class OutputTypeInfo:
             self.vtk = vtk
             if "part" not in str(self.test_file):
                 self.dimensions = vtk.dimensions
-                LOG("Dimensions detected: ", self.dimensions)
 
         elif "dat" in self.ext:
             self.testData = tools.dat_to_dict(self.test_file)
@@ -77,6 +76,7 @@ class OutputTypeInfo:
             dataEnd = self.files[-1]  # TODO end option
             self.tStart = readVTK(dataStart).t[0]
             self.tEnd = readVTK(dataEnd).t[0]
+
         elif "dat" in self.ext:
             raise NotImplementedError()
 
@@ -96,7 +96,7 @@ class Data:
         self.symbol = symbol
         self.plot_coords = plot_coords
         self.bounds = [vmin, vmax]
-        print(self.bounds)
+        LOG(self.bounds)
 
         self.title = kwargs.get("title", symbol)
         self.id = kwargs.get(
@@ -207,7 +207,7 @@ class RunContext:
         self.partFolder = kwargs.get("partFolder", None)
 
         self.frameFolderName = kwargs.get("frameFolder", runName)
-        self.dimensions = kwargs.get("dimensions", None)
+        self.active_directions = kwargs.get("active_directions", [])
         # for part*.vtk, the readVTK routine can't deduce the number of dimensions.
         # The context will try to find the dimensions in data*.vtk
         # If there is no data*.vtk, the user has to pass the dimensions.
@@ -258,14 +258,29 @@ class RunContext:
         ].dimensions
         # There's no way to deduce the number of dimensions from the part*.vtk files but it has to be the same as in the global vtk
 
-        for outputType in self.outputTypes:
-            outputTypeInfo = self.outputTypes_info[outputType]
-            geometry = outputTypeInfo.geometry
-            dimensions = outputTypeInfo.dimensions
-            if geometry is not None:
-                self.geometry = geometry
-            if dimensions is not None:
-                self.dimensions = outputTypeInfo.dimensions
+        ## Everything is deduced from the global vtk
+        vtkInfo = self.outputTypes_info["vtk"]
+        if not vtkInfo.status and len(self.active_directions) < 1:
+            raise Exception("at least one data.vtk is required to detect the geometry")
+
+        if vtkInfo.status and not len(self.active_directions) >= 1:
+            self.geometry = vtkInfo.geometry
+            self.dimensions = vtkInfo.dimensions
+            vtk = vtkInfo.vtk
+            for direction, ncell in enumerate([vtk.nx, vtk.ny, vtk.nz]):
+                if ncell > 1:
+                    self.active_directions.append(direction)
+
+        elif len(self.active_directions) >= 1:
+            self.geometry = self.outputTypes_info["particles"].geometry
+            self.dimensions = len(self.active_directions)
+
+        self.active_directions_labels = [
+            tools.get_Position_name(self.geometry, dir)
+            for dir in self.active_directions
+        ]
+        LOG("Dimensions detected: ", self.dimensions)
+        LOG("Active axes", self.active_directions_labels)
 
     def get_global_vtkFiles(self, end=1):
         pattern = "vtks/data*.vtk"

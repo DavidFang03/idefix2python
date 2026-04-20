@@ -1,0 +1,6 @@
+numpy
+matplotlib
+sphinx
+sphinx-design
+sphinxcontrib-video
+shibuya

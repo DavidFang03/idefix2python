@@ -1,6 +1,25 @@
 import numpy as np
 
 
+def fit(X, Y, deg, start=0, end=1):
+    index_start = int(start * (len(X) - 1))
+    index_end = int(end * (len(X) - 1))
+    params, cov = np.polyfit(
+        X[index_start:index_end], Y[index_start:index_end], deg=deg, cov=True
+    )
+    return params, np.diag(cov)
+
+
+def integrate(df, f0, times):
+    values = [f0]
+    dt = np.diff(times)
+    for i, t in enumerate(times[:-1]):
+        previousValue = values[-1]
+        value = previousValue + df(previousValue) * dt[i]
+        values += [value]
+    return values
+
+
 def vK(r):
     return r ** (-0.5)
 

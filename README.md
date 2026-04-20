@@ -1,41 +1,85 @@
-# idefix2python
+# Idefix2Python
 
-The module is divided in 4 distinctive parts
+`Idefix2Python` is a high-level post-processing and visualization pipeline designed for **Idefix** (https://github.com/idefix-code/idefix) simulation outputs. It is currently designed for MHD and Dust (Pressureless fluid or Lagrangian particles) simulations. 
 
-- `Context` to manage the location of the Idefix outputs. Also prepare the ground for the future rendering. Behaviour depends only on the location of the Idefix outputs.
+## Architecture
 
-- `Processor` to process the data depending of the geometry, dimensions, and possible zoom or bounds.
+The module is built around 4 components:
 
-- `Renderer` for all the matplotlib stuff
++  **`RunContext`**: Handles IO, directory creation, and data discovery. Detects simulation geometry, dimensions, and available fields.
++  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
++  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
++  **`Pipeline`**: The coordinator:
+    *   Pre-calculates global bounds across all frames.
+    *   Distributes rendering tasks across multiple CPU cores.
+    *   Manages the temporal evolution of SpaceTime heatmaps and particle data.
 
-- `Pipeline` to make everything work together.
-Will also determine the name of the renders depending on whether `--zoom` or `--no-bounds` has been requested.
+## Supported quantity types
 
-Some minors classes include
-- `Quantity1D`, `Quantity2D` to store the information of each requested quantity.
-The differences are:
-    - `Quantity1D` is a field that is function of one space dimension. Will be plotted as a timeline with pcolormesh. One can also as some reference points, like an analytical function.
-    -  `Quantity2D` is a field that is function of two space dimension. Will be plotted as pcolormesh for each frame. Streamline can also be included.
+Users define what to plot by passing lists of "Quantity" objects to the Pipeline:
+
+*   **`MapMovie2D`**: For $f(x, z, t)$ fields, 2D pcolormesh plots generated for every frame. Supports:
+    *   `streamlines`: Vector overlays (e.g., velocity fields).
+    *   `contours`: Scalar overlays (e.g., density levels).
+    *   `compute`: Custom functions to calculate new fields on the fly.
+*   **`LineMovie1D`**: For $f(x,t)$ fields, 1D plot generated for every frame (e.g., radial profile over time).
+*   **`SpaceTimeHeatmap`**: For $f(x,t)$ fields, generates a space-time heapmap. Supports `ref_function` to overlay analytical trajectories.
+*   **`PartQuantity`**: Tracks Lagrangian particle properties (like `PART_X1`) over time. Supports `ref_function` to overlay analytical functions.
+
+## Usage
+
+```python
+from Idefix2Python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
+
+# 1. Setup Context
+ctx = RunContext(projectPath="./my_sim", runName="test_run", configPath="./config.json")
+
+# 2. Define Plots
+heatmaps = [SpaceTimeHeatmap("Dust0_RHO", r"$\rho_d$", plot_coords=[0,0], ref_function=my_theory)]
+maps = [MapMovie2D("RHO", r"$\rho$", plot_coords=[0,0], streamlines=["VX1", "VX2"])]
+
+# 3. Run Pipeline
+pipe = Pipeline(ctx, spaceTimeHeatmaps=heatmaps, movies2D=maps)
+pipe.run()
+```
+
+## Command line options
+
+| Option | Argument | Description |
+| :--- | :--- | :--- |
+| `-j`, `--jobs` | `int` | Number of CPUs for parallel rendering (Default: 1). |
+| `-z`, `--zoom` | `float` | Crops the plots to a specific radius ($r < \mathrm{zoom}$). |
+| `-f`, `--frame` | `int...` | Renders only specific frame indices (e.g., `-f 0 10 -1`). |
+| `--no-bounds` | Flag | Ignores `config.json`. User expects colobar to be different at each frame and to match local data. |
+| `-om` | Flag | Only movie: Skips everything and only renders the movie on existing frames. |
 
 
-Some runtime options can be requested
-- `--zoom` if one wants to only plot the quantities on a subdomain.
-- `--no-bounds` if one wants to ignore any `config.json` file for the bounds.
-- `--frame` if one wants to only render some frames
-- `-om`: if the pipeline has already rendered once and one wants to renders the movie only.
-- `-oa`: if the pipeline has already rendered once and one wants to renders the analysis only. (deprecated?)
+## Config file (`config.json`)
 
+To ensure constant colorbars across the movies, the user can define fixed bounds in a JSON file. The pipeline will automatically apply these unless `--no-bounds` is used.
 
-TODOs:
-- Lagrangian dust support.
-- Reintroduce the .dat (`analysis`)
-- Currently the code doesn't support different types of outputs at the same time, for example 2D global and 1D slice.
-- Add an option `discard` that replace some values (e.g <0) by np.nan
+```json
+{
+    "RHO": {
+        "bounds": [1e-3, 10],
+        "cmap": "viridis",
+        "norm": "log"
+    }
+}
+```
 
-Not important
-- For now the program loops a first time to compute the bounds, then a second time to collect all the TimeSeries and will loop again to render the 2D plots.
+## TODOs
 
-Not planned:
-- Planet support
-- Different plane than (x,z)
-- Number of components < 3
+* **Lagrangian Dust**: Plot particles positions on the 2D heatmaps.
+* More flexibility on plot parameters (linestyle, color, etc...)
+* Reintroduce `timevol.dat` (timevol) for global quantities.
+
+### Not prority
+* Support mixed outputs (e.g `data*.vtk` + `slice1*.vtk`)
+* Add a `discard` option to replace non-physical values (e.g., $<0$) with `NaN`
+
+### Not planned
+*   Planet rendering/trajectories
+*   Non-XZ planes
+*   Simulations with less than 3 components
+*   Support simultaneous rendering of global 1D and 2D slice outputs

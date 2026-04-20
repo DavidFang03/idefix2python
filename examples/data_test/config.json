@@ -1,0 +1,18 @@
+{
+    "RHO": {
+        "norm": "log",
+        "bounds": [
+            1e-7,
+            1
+        ],
+        "cmap": "inferno"
+    },
+    "Mach_p": {
+        "bounds": [
+            0.1,
+            20
+        ],
+        "cmap": "cool",
+        "norm": "log"
+    }
+}

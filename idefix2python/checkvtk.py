@@ -4,22 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # path = "/home/dp316/dp316/dc-fang1/IdefixRuns/ThomasDrift/outputs/Drift_Tau/vtks/data.0000.vtk"
-path = "/home/dp316/dp316/dc-fang1/IdefixRuns/ThomasDrift/setup_l/part.0000.vtk"
-vtk = readVTK(path)
-data = vtk.data
+path = "/home/dp316/dp316/dc-fang1/idefix/test/MHD/AmbipolarWind/data.0000.vtk"
 
-# print(vtk.r)
-for key in data:
-    print(key)
-    print(np.shape(data[key]))
-
+data = readVTK(path).data
 # print(vtk.geometry)
 
 # print(np.average(vtk.data["Dust0_RHO"]))
 # print(vtk.x)
 
-# for key in data:
-#     print(key)
+for key in data:
+    print(key)
 
 # import glob
 

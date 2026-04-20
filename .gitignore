@@ -1,5 +1,8 @@
 __pycache__
 *.png
-trash.py
-vtk_io1.py
-Idefix2Python1.py
+myscripts/
+**/idefix2python.egg-info/
+docs/build
+docs/Makefile
+docs/make*
+config/

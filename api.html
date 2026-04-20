@@ -76,9 +76,30 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
-<li><a class="reference internal" href="#runcontext">RunContext</a></li>
-<li><a class="reference internal" href="#pipeline">Pipeline</a></li>
-<li><a class="reference internal" href="#quantity-types">Quantity Types</a></li>
+<li><a class="reference internal" href="#runcontext">RunContext</a><ul>
+<li><a class="reference internal" href="#idefix2python.RunContext"><code class="docutils literal notranslate"><span class="pre">RunContext</span></code></a><ul>
+<li><a class="reference internal" href="#idefix2python.RunContext.get_global_vtkFiles"><code class="docutils literal notranslate">get_global_vtkFiles()</span></code></a></li>
+<li><a class="reference internal" href="#idefix2python.RunContext.get_particles_vtkFiles"><code class="docutils literal notranslate">get_particles_vtkFiles()</span></code></a></li>
+<li><a class="reference internal" href="#idefix2python.RunContext.get_slice1_vtkFiles"><code class="docutils literal notranslate">get_slice1_vtkFiles()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pipeline">Pipeline</a><ul>
+<li><a class="reference internal" href="#idefix2python.Pipeline"><code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a><ul>
+<li><a class="reference internal" href="#idefix2python.Pipeline.get_bounds"><code class="docutils literal notranslate">get_bounds()</span></code></a></li>
+<li><a class="reference internal" href="#idefix2python.Pipeline.get_bounds_indiv"><code class="docutils literal notranslate">get_bounds_indiv()</span></code></a></li>
+<li><a class="reference internal" href="#idefix2python.Pipeline.process_and_render_frame"><code class="docutils literal notranslate">process_and_render_frame()</span></code></a></li>
+<li><a class="reference internal" href="#idefix2python.Pipeline.run"><code class="docutils literal notranslate">run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantity-types">Quantity Types</a><ul>
+<li><a class="reference internal" href="#idefix2python.MapMovie2D"><code class="docutils literal notranslate"><span class="pre">MapMovie2D</span></code></a></li>
+<li><a class="reference internal" href="#idefix2python.SpaceTimeHeatmap"><code class="docutils literal notranslate"><span class="pre">SpaceTimeHeatmap</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
@@ -113,12 +134,83 @@ data-aria-dark="Switch to auto color mode">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h1>
 <section id="runcontext">
 <h2>RunContext<a class="headerlink" href="#runcontext" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="idefix2python.RunContext">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">idefix2python.</span></span><span class="sig-name descname"><span class="pre">RunContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#RunContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.RunContext" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The input. Also creates some frames directories.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.RunContext.get_global_vtkFiles">
+<span class="sig-name descname"><span class="pre">get_global_vtkFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#RunContext.get_global_vtkFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.RunContext.get_global_vtkFiles" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.RunContext.get_particles_vtkFiles">
+<span class="sig-name descname"><span class="pre">get_particles_vtkFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#RunContext.get_particles_vtkFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.RunContext.get_particles_vtkFiles" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.RunContext.get_slice1_vtkFiles">
+<span class="sig-name descname"><span class="pre">get_slice1_vtkFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#RunContext.get_slice1_vtkFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.RunContext.get_slice1_vtkFiles" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="pipeline">
 <h2>Pipeline<a class="headerlink" href="#pipeline" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="idefix2python.Pipeline">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">idefix2python.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spaceTimeHeatmaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">movies1D</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">movies2D</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partQuantities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">streamLines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#Pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.Pipeline" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.Pipeline.get_bounds">
+<span class="sig-name descname"><span class="pre">get_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vtkList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#Pipeline.get_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.Pipeline.get_bounds" title="Link to this definition">¶</a></dt>
+<dd><p>Get the bounds (min, max) of all given fields. I recommend not passing the entire vtkList but rather vtkList[1:] to discard the first output(s ?).</p>
+<p>vtkList    List of dump file paths
+field       Field</p>
+<p>returns
+dict where dict[field] = (min, max)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.Pipeline.get_bounds_indiv">
+<span class="sig-name descname"><span class="pre">get_bounds_indiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#Pipeline.get_bounds_indiv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.Pipeline.get_bounds_indiv" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>args (list[2]) must have two components:</dt><dd><p>first:   vtk_path (str)
+second:   fields_indexes (dict) where fields_indexes[field] = index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.Pipeline.process_and_render_frame">
+<span class="sig-name descname"><span class="pre">process_and_render_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vtkPath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#Pipeline.process_and_render_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.Pipeline.process_and_render_frame" title="Link to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li><p>Read VTK Data, 2. Process Physics Math, 3. Render Requested Frame</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="idefix2python.Pipeline.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#Pipeline.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.Pipeline.run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="quantity-types">
 <h2>Quantity Types<a class="headerlink" href="#quantity-types" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="idefix2python.MapMovie2D">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">idefix2python.</span></span><span class="sig-name descname"><span class="pre">MapMovie2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'berlin'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">streamlines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#MapMovie2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.MapMovie2D" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="idefix2python.SpaceTimeHeatmap">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">idefix2python.</span></span><span class="sig-name descname"><span class="pre">SpaceTimeHeatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#SpaceTimeHeatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.SpaceTimeHeatmap" title="Link to this definition">¶</a></dt>
+<dd><p>1D field meant to be rendered as a 2D heatmap (x-t).</p>
+</dd></dl>
+
 </section>
 </section>
 
@@ -163,8 +255,8 @@ data-aria-dark="Switch to auto color mode">
   </div>
 </footer>
       <script src="_static/documentation_options.js?v=01f34227"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script src="_static/shibuya.js?v=cac61aee"></script></body>
 </html>

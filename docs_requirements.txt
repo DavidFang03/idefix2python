@@ -1,5 +1,6 @@
 numpy
 matplotlib
+scipy
 ffmpeg-python
 sphinx
 sphinx-design

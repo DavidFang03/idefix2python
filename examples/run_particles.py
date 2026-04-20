@@ -1,5 +1,5 @@
 from idefix2python import RunContext, Pipeline, PartQuantity
-import utilitaries
+import utilities
 from pathlib import Path
 
 projectPath = Path(__file__).parent / "data_test"
@@ -9,9 +9,9 @@ task = "particles_test"
 
 def analytical_drift(t_array):
     Stokes0 = 1
-    fluid = utilitaries.Fluid(0.05, -0.5, 0.125, -0.5, Stokes0=Stokes0)
+    fluid = utilities.Fluid(0.05, -0.5, 0.125, -0.5, Stokes0=Stokes0)
     r0 = 2
-    return utilitaries.integrate(fluid.vrDrift, r0, t_array)
+    return utilities.integrate(fluid.vrDrift, r0, t_array)
 
 
 custom_partQuantities = [

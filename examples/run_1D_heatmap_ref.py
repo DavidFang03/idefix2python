@@ -1,5 +1,5 @@
 from idefix2python import RunContext, Pipeline, SpaceTimeHeatmap
-import utilitaries
+import utilities
 from pathlib import Path
 
 projectPath = Path(__file__).parent / "data_test"
@@ -9,9 +9,9 @@ task = "1D_test"
 
 def analytical_trajectory(t):
     Stokes0 = 1
-    fluid = utilitaries.Fluid(0.05, -0.5, 0.125, -0.5, Stokes0=Stokes0)
+    fluid = utilities.Fluid(0.05, -0.5, 0.125, -0.5, Stokes0=Stokes0)
     r0 = 2
-    return utilitaries.integrate(fluid.vrDrift, r0, t)
+    return utilities.integrate(fluid.vrDrift, r0, t)
 
 
 custom_spaceTimeHeatmaps = [

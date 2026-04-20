@@ -27,7 +27,13 @@ else:
     LOG("Warning: LaTeX not found. Using standard Matplotlib fonts.")
     plt.rcParams.update({"text.usetex": False})
 
-plt.rcParams.update({"mathtext.fontset": "cm"})
+plt.rcParams.update(
+    {
+        "font.family": "serif",
+        "mathtext.fontset": "cm",
+        "axes.formatter.use_mathtext": True,
+    }
+)
 plt.rcParams["hatch.color"] = "gray"
 plt.rcParams["hatch.linewidth"] = 0.5
 plt.rcParams["font.size"] = 12

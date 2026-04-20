@@ -1,5 +1,6 @@
 __pycache__
 *.png
+*.mp4
 myscripts/
 **/idefix2python.egg-info/
 docs/build

@@ -24,6 +24,13 @@ jobs:
           pip install -r docs_requirements.txt
           pip install .
 
+      - name: Generate examples figures
+        run: |
+          for f in examples/*.py; do 
+            echo "Processing $f..."
+            python "$f" -j 2
+          done
+
       - name: Build Sphinx
         run: |
           sphinx-build -b html docs/source docs/_build

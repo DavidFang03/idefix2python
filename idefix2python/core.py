@@ -85,10 +85,26 @@ class OutputTypeInfo:
 
 
 class Data:
-    # Types of data that I can imagine:
-    # 2D Field
-    # 1D Field time graph
-    # Scalar time graph
+    """
+    Base class for all data quantities in the pipeline.
+
+    :param key: Unique identifier for the field.
+    :type key: str
+    :param symbol: Symbol for labels (e.g., r"$\rho$").
+    :type symbol: str
+    :param plot_coords: [row, col] position in the subplot grid, defaults to [0, 0].
+    :type plot_coords: list[int], optional
+    :param vmin: Minimum value for manual scaling, defaults to None.
+    :type vmin: float, optional
+    :param vmax: Maximum value for manual scaling, defaults to None.
+    :type vmax: float, optional
+    :param \**kwargs:
+        * **title** (str): Custom title for the plot. Defaults to `symbol`.
+        * **id** (str): Unique ID to distinguish instances of the same field nature.
+        * **scale** (str): Scaling type, e.g., 'linear' or 'log'.
+        * **ref_function** (callable): Analytical function for comparison.
+    """
+
     timeline_instances = count(1)
 
     def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
@@ -121,16 +137,39 @@ class Data:
 
 
 class MapMovie2D(Data):
+    r"""
+    2D spatial field :math:`f(x, z, t)` rendered as a heatmap (pcolormesh) animation.
+    """
+
     def __init__(
         self,
         key,
         symbol,
-        plot_coords,
+        plot_coords=[0, 0],
         cmap=DEFAULT_CMAP,
         norm="linear",
         streamlines=None,
         **kwargs,
     ):
+        r"""
+        Initializes a 2D movie field.
+
+         (Refer to :class:`Data` for base parameters)
+        :param cmap: Matplotlib colormap name, defaults to DEFAULT_CMAP.
+        :type cmap: str, optional
+        :param norm: Colorbar scaling. Options usually include 'linear', 'log', or 'TwoSlopeNorm'.
+                     Defaults to "linear".
+        :type norm: str, optional
+        :param streamlines: A list of two Idefix field keys used to show vector streamlines,
+                            e.g., ``["VX1", "VX2"]``. Defaults to None.
+        :type streamlines: list[str], optional
+        :param \**kwargs: Additional rendering options.
+            :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
+            :keyword compute (callable): Custom function to calculate new fields on the fly.
+            :keyword contours (str): Field key used to draw contour lines over the pcolormesh.
+            :keyword contour_color (str): Color of the contour lines. Defaults to "green".
+        """
+
         # streamlines should be a list like ["VX1", "VX2"]
 
         super().__init__(key, symbol, plot_coords, **kwargs)
@@ -149,24 +188,44 @@ class MapMovie2D(Data):
         self.cmap = cmap
 
     def set_XYgrid(self, X, Y):
+        """
+        Assign the spatial cartesian grid used for rendering the 2D pcolormesh.
+
+        :param X: 2D array of horizontal coordinates.
+        :type X: numpy.ndarray
+        :param Y: 2D array of vertical coordinates.
+        :type Y: numpy.ndarray
+        """
         self.X, self.Y = X, Y
 
 
 class Field1D(Data):
+    """
+    Base class for 1D fields :math:`f(x, t)`.
+    Increments a global counter for indexing in results arrays.
+    """
+
     def __init__(self, *args, **kwargs):
         self.index = next(Data.timeline_instances)
         super().__init__(*args, **kwargs)
 
 
 class LineMovie1D(Field1D):
-    """1D field meant to be rendered as an animated line plot over time."""
+    """
+    For :math:`f(x, t)` fields, renders as a line plot :math:`f(x, t)` that updates every frame.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 class SpaceTimeHeatmap(Field1D):
-    """1D field meant to be rendered as a 2D heatmap (x-t)."""
+    """
+    For :math:`f(x, t)` fields, renders a space-time heatmap.
+
+    :keyword cmap: Colormap for the heatmap.
+    :keyword trace_over: List of :class:`PartQuantity` objects to overlay as trajectories.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -175,6 +234,10 @@ class SpaceTimeHeatmap(Field1D):
 
 
 class PartQuantity(Data):
+    """
+    Tracks Lagrangian particle properties over time.
+    """
+
     partQuantities_instances = count(1)
 
     def __init__(self, *args, **kwargs):
@@ -342,8 +405,23 @@ class Pipeline:
         streamLines=None,
     ):
         """
-        If there are n dumps, and end=0.5, only 0.5n of the dumps will be read.
-
+        Coordinates the detection, processing, and rendering of the simulation data.
+        :param Context: The RunContext object containing simulation metadata.
+        :type Context: RunContext
+        :param spaceTimeHeatmaps: Objects defining (x, t) heatmap plots.
+        :type spaceTimeHeatmaps: list[SpaceTimeHeatmap], optional
+        :param movies1D: Objects defining 1D line plot animations.
+        :type movies1D: list[LineMovie1D], optional
+        :param movies2D: Objects defining 2D heatmaps animations.
+        :type movies2D: list[MapMovie2D], optional
+        :param partQuantities: Objects defining particles quantities.
+        :type partQuantities: list[PartQuantity], optional
+        :param zoom: Zoom level for the rendering view (for 2D only currently).
+        :type zoom: float, optional
+        :param end: Fraction of the simulation dumps to process (0 to 1) (deprecated).
+        :type end: float, optional
+        :param streamLines: Configuration for streamlines overlays.
+        :type streamLines: StreamlineConfig, optional
         """
         self.context = Context
         self.userArgs = self.context.args
@@ -383,6 +461,9 @@ class Pipeline:
         self._apply_config()
 
     def run(self):
+        """
+        Pray.
+        """
         partInfo = self.context.outputTypes_info["particles"]
 
         if self.userArgs.onlyMovie:
@@ -479,7 +560,7 @@ class Pipeline:
             if self.userArgs.doOnlyFrames:
                 render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
             with Pool(self.userArgs.jobs) as pool:
-                pool.map(self.process_and_render_frame, render_list)
+                pool.map(self._process_and_render_frame, render_list)
 
             if self.doMovie:
                 tools.movie(
@@ -487,7 +568,7 @@ class Pipeline:
                     movie_path=self.framesPaths.slice1_video_path,
                 )
 
-    def process_and_render_frame(self, vtkPath):
+    def _process_and_render_frame(self, vtkPath):
         """1. Read VTK Data, 2. Process Physics Math, 3. Render Requested Frame"""
         V = readVTK(vtkPath)
         self.processor.process(V)
@@ -528,7 +609,7 @@ class Pipeline:
 
         if len(fields_tobound) > 0:
             bound_list = self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
-            all_bounds = self.get_bounds(
+            all_bounds = self._get_bounds(
                 bound_list[min(len(bound_list), 5) :],
                 fields_tobound,
             )
@@ -556,7 +637,7 @@ class Pipeline:
         for qt in self.movies2D:
             LOG(qt, self.movies2D[qt].bounds)
 
-    def get_bounds(self, vtkList, fields):
+    def _get_bounds(self, vtkList, fields):
         """
         Get the bounds (min, max) of all given fields. I recommend not passing the entire vtkList but rather vtkList[1:] to discard the first output(s ?).
 
@@ -572,7 +653,7 @@ class Pipeline:
 
         with Pool(self.userArgs.jobs) as pool:
             all_bounds = pool.map(
-                self.get_bounds_indiv,
+                self.__get_bounds_indiv,
                 [[vtk, mapfields_indexes] for vtk in vtkList],
             )
         all_bounds = np.array(all_bounds)
@@ -587,7 +668,7 @@ class Pipeline:
             )
         return bounds
 
-    def get_bounds_indiv(self, args):
+    def __get_bounds_indiv(self, args):
         """
         args (list[2]) must have two components:
             first:   vtk_path (str)

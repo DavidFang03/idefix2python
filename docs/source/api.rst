@@ -7,8 +7,6 @@ RunContext
 ----------
 .. autoclass:: RunContext
    :members:
-   :undoc-members:
-   :show-inheritance:
 
 Pipeline
 --------
@@ -19,6 +17,10 @@ Pipeline
 Quantity Types
 --------------
 .. autoclass:: MapMovie2D
-   :members:
+   :show-inheritance:
+.. autoclass:: LineMovie1D
+   :show-inheritance:
 .. autoclass:: SpaceTimeHeatmap
-   :members:
+   :show-inheritance:
+.. autoclass:: PartQuantity
+   :show-inheritance:

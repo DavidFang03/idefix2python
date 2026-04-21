@@ -9,22 +9,22 @@ The module is built around 4 components:
 +  **`RunContext`**: Handles IO, directory creation, and data discovery. Detects simulation geometry, dimensions, and available fields.
 +  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
 +  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
-+  **`Pipeline`**: The coordinator:
-    *   Pre-calculates global bounds across all frames.
-    *   Distributes rendering tasks across multiple CPU cores.
-    *   Manages the temporal evolution of SpaceTime heatmaps and particle data.
++  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
 
 ## Supported quantity types
 
 Users define what to plot by passing lists of "Quantity" objects to the Pipeline:
 
-*   **`MapMovie2D`**: For $f(x, z, t)$ fields, 2D pcolormesh plots generated for every frame. Supports:
+*   **`MapMovie2D`**: For $f(x, z, t)$ fields that will be rendered as a heatmap (pcolormesh) animation. Supports:
     *   `streamlines`: Vector overlays (e.g., velocity fields).
-    *   `contours`: Scalar overlays (e.g., density levels).
+    *   `contours`: draw contour lines over the pcolormesh. (e.g., density levels).
     *   `compute`: Custom functions to calculate new fields on the fly.
-*   **`LineMovie1D`**: For $f(x,t)$ fields, 1D plot generated for every frame (e.g., radial profile over time).
-*   **`SpaceTimeHeatmap`**: For $f(x,t)$ fields, generates a space-time heapmap. Supports `ref_function` to overlay analytical trajectories.
-*   **`PartQuantity`**: Tracks Lagrangian particle properties (like `PART_X1`) over time. Supports `ref_function` to overlay analytical functions.
+*   **`LineMovie1D`**: For $f(x,t)$ fields, renders a line plot that updates every frame. (e.g., radial profile over time).
+*   **`SpaceTimeHeatmap`**: For $f(x,t)$ fields, renders a space-time heatmap. Supports `ref_function` to overlay analytical trajectories.
+*   **`PartQuantity`**: Tracks Lagrangian particle properties (like `PART_X1`) over time. 
+
+`SpaceTimeHeatmap` and `PartQuantity` supports `ref_function` to overlay analytical functions.
+One can also plot a particle quantity over a spacetime heatmap with `trace_over`
 
 ## Usage
 

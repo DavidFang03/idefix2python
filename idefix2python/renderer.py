@@ -291,14 +291,20 @@ class SliceRenderer:
                 Points,
                 np.transpose(field1D.values),
                 shading="nearest",
-                # TODO More flexible norm
                 cmap="inferno",
+                # TODO More flexible norm and cmap
             )
             cbar = fig.colorbar(cmesh, ax=ax)
 
             if len(field1D.pointsRef) > 0:
                 ax.plot(field1D.pointsRef, field1D.valuesRef, label="Predicted")
                 ax.legend()
+
+            if hasattr(field1D, "trace_over"):
+                for trace_over in field1D.trace_over:
+                    ax.plot(trace_over.points, trace_over.values, label=trace_over.key)
+                    ax.legend()
+
             ax.set_ylim(np.min(field1D.points), np.max(field1D.points))
             cbar.ax.set_title(field1D.symbol)
             ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
@@ -315,6 +321,8 @@ class SliceRenderer:
         fig, axs = self._setup_figure(self.partQuantities)
 
         for key, qty in self.partQuantities.items():
+            if hasattr(qty, "is_trace_over"):
+                continue
             ax = axs[*qty.plot_coords]
             T = np.asarray(self.context.outputTypes_info["particles"].times)
             ax.plot(T, qty.values, lw=2)

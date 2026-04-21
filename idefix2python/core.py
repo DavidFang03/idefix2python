@@ -91,7 +91,7 @@ class Data:
     # Scalar time graph
     timeline_instances = count(1)
 
-    def __init__(self, key, symbol, plot_coords, vmin=None, vmax=None, **kwargs):
+    def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
         self.key = key
         self.symbol = symbol
         self.plot_coords = plot_coords
@@ -171,6 +171,7 @@ class SpaceTimeHeatmap(Field1D):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cmap = kwargs.get("cmap", DEFAULT_CMAP)
+        self.trace_over = kwargs.get("trace_over", [])
 
 
 class PartQuantity(Data):
@@ -364,6 +365,12 @@ class Pipeline:
         self.spaceTimeHeatmaps = _to_dict(spaceTimeHeatmaps)
         self.movies1D = _to_dict(movies1D)
         self.movies2D = _to_dict(movies2D)
+        for heatmap in spaceTimeHeatmaps:
+            for traceover in heatmap.trace_over:
+                if isinstance(traceover, PartQuantity):
+                    if traceover.key not in self.spaceTimeHeatmaps:
+                        traceover.is_trace_over = True
+                    partQuantities.append(traceover)
         self.partQuantities = _to_dict(partQuantities)
 
         combined_1D = {**self.movies1D, **self.spaceTimeHeatmaps}

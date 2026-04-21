@@ -1,0 +1,46 @@
+from idefix2python import RunContext, Pipeline, PartQuantity, SpaceTimeHeatmap
+import utilities
+from pathlib import Path
+
+projectPath = Path(__file__).parent / "data_test"
+task = "particles_over_test"
+# By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
+# In this example, the vtks/ folder contains both part*.vtk and data*.vtk
+
+
+def analytical_trajectory(t):
+    z0 = 0.1
+    fluid = utilities.Fluid(0.05, -0.5, 0.125, -0.5, Stokes0=1, z0=z0)
+    return utilities.solve_2nd_order_ode(fluid.azSettling, z0, 0, t)
+
+
+analytical_trajectory.plot_kwargs = {"ls": "--", "color": "cyan", "lw": 2}
+
+z_part = PartQuantity(
+    "PART_X3",
+    r"$z^\mathrm{part}$",
+    plot_coords=[0, 0],
+)
+
+custom_partQuantities = [z_part]
+SpaceTimeHeatmaps = [
+    SpaceTimeHeatmap(
+        "Dust0_RHO",
+        r"$\rho^\mathrm{dust}$",
+        plot_coords=[0, 0],
+        trace_over=[z_part],
+        ref_function=analytical_trajectory,
+    )
+]
+runContext = RunContext(
+    task,
+    projectPath,
+    active_directions=[2],  # currently necessary for lagrangian particles.)
+)
+pipeline = Pipeline(
+    runContext,
+    partQuantities=custom_partQuantities,
+    spaceTimeHeatmaps=SpaceTimeHeatmaps,
+)
+
+pipeline.run()

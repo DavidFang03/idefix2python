@@ -249,6 +249,7 @@ class SliceRenderer:
 
             ax.plot(points, V.data[key])
 
+            # To revove?
             if len(field1D.pointsRef) > 0:
                 ax.plot(
                     field1D.points,
@@ -291,14 +292,36 @@ class SliceRenderer:
                 Points,
                 np.transpose(field1D.values),
                 shading="nearest",
-                # TODO More flexible norm
                 cmap="inferno",
+                # TODO More flexible norm and cmap
             )
             cbar = fig.colorbar(cmesh, ax=ax)
 
+            has_legend_items = False
             if len(field1D.pointsRef) > 0:
-                ax.plot(field1D.pointsRef, field1D.valuesRef, label="Predicted")
+                plot_kwargs = {}
+                if hasattr(field1D.ref_function, "plot_kwargs"):
+                    plot_kwargs = field1D.ref_function.plot_kwargs
+                if "label" not in plot_kwargs:
+                    plot_kwargs["label"] = "Predicted"
+                ax.plot(
+                    field1D.pointsRef,
+                    field1D.valuesRef,
+                    **plot_kwargs,
+                )
+                has_legend_items = True
+
+            for trace_over in field1D.trace_over:
+                ax.plot(
+                    trace_over.points,
+                    trace_over.values,
+                    label=trace_over.symbol,
+                    color="lime",  # TODO customize this in later PR
+                )
+                has_legend_items = True
+            if has_legend_items:
                 ax.legend()
+
             ax.set_ylim(np.min(field1D.points), np.max(field1D.points))
             cbar.ax.set_title(field1D.symbol)
             ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
@@ -315,6 +338,8 @@ class SliceRenderer:
         fig, axs = self._setup_figure(self.partQuantities)
 
         for key, qty in self.partQuantities.items():
+            if getattr(qty, "is_trace_over", False):
+                continue
             ax = axs[*qty.plot_coords]
             T = np.asarray(self.context.outputTypes_info["particles"].times)
             ax.plot(T, qty.values, lw=2)

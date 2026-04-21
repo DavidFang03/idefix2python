@@ -25,7 +25,7 @@ def vK(r):
 
 
 class Fluid:
-    def __init__(self, cs0, csSlope, sigma0, sigmaSlope, Stokes0):
+    def __init__(self, cs0, csSlope, sigma0, sigmaSlope, Stokes0, z0=0.1):
         self.cs0 = cs0
         self.csSlope = csSlope
         self.sigma0 = sigma0
@@ -38,6 +38,8 @@ class Fluid:
         # self.csSlope = -0.5
         # self.rhoSlope = -1.5
         self.Stokes0 = Stokes0
+
+        self.z0 = z0
 
     def eta(self, r):
         cs0 = self.cs0
@@ -58,6 +60,26 @@ class Fluid:
         st = self.Stokes(r)
         return self.eta(r) * vK(r) / (st + 1 / st)
 
+    def vzSettling_approx(self, z):
+        r = 2.0
+        st = self.Stokes(r)
+        OmegaK = r ** (-1.5)
+        return -OmegaK * st * z
+
+    def azSettling(self, z, vz, t):
+        r = 2.0
+        tstop = self.Stokes0
+        OmegaK = r ** (-1.5)
+        return -vz / tstop - z * OmegaK**2
+
+    # def z_drift(self, t):
+    #     r = 2.0
+    #     tstop = self.Stokes0
+    #     OmegaK = r ** (-1.5)
+    #     return self.z0 * np.exp(OmegaK*st*z**2/2)
+    #     z = self.z0 * np.exp(-t / (2 * tstop))
+    #     st = self.Stokes(r)
+
     # def eta(self, r):
     #     cs0 = self.cs0
     #     csSlope = self.csSlope
@@ -72,3 +94,19 @@ class Fluid:
 
     # def vrDrift(self, r):
     #     return -self.eta(r) / np.sqrt(r) / (self.Stokes(r) + 1 / self.Stokes(r))
+
+
+def solve_2nd_order_ode(f, u0, du0, times):
+    """
+    u" = f(u',u,t)
+    """
+    u = [u0]
+    du = [du0]
+    dt = np.diff(times)
+    for i, t in enumerate(times[:-1]):
+        u_prev = u[-1]
+        du_prev = du[-1]
+
+        du += [du_prev + f(u_prev, du_prev, t) * dt[i]]
+        u += [u_prev + du_prev * dt[i]]
+    return u

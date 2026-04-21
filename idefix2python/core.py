@@ -343,6 +343,7 @@ class Pipeline:
     ):
         """
         If there are n dumps, and end=0.5, only 0.5n of the dumps will be read.
+
         """
         self.context = Context
         self.userArgs = self.context.args
@@ -365,12 +366,14 @@ class Pipeline:
         self.spaceTimeHeatmaps = _to_dict(spaceTimeHeatmaps)
         self.movies1D = _to_dict(movies1D)
         self.movies2D = _to_dict(movies2D)
-        for heatmap in spaceTimeHeatmaps:
+
+        original_part_quantity_keys = set(_to_dict(partQuantities).keys())
+        for heatmap in self.spaceTimeHeatmaps.values():
             for traceover in heatmap.trace_over:
                 if isinstance(traceover, PartQuantity):
-                    if traceover.key not in self.spaceTimeHeatmaps:
+                    if traceover.key not in original_part_quantity_keys:
                         traceover.is_trace_over = True
-                    partQuantities.append(traceover)
+                        partQuantities.append(traceover)
         self.partQuantities = _to_dict(partQuantities)
 
         combined_1D = {**self.movies1D, **self.spaceTimeHeatmaps}

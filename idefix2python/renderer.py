@@ -249,6 +249,7 @@ class SliceRenderer:
 
             ax.plot(points, V.data[key])
 
+            # To revove?
             if len(field1D.pointsRef) > 0:
                 ax.plot(
                     field1D.points,
@@ -296,6 +297,7 @@ class SliceRenderer:
             )
             cbar = fig.colorbar(cmesh, ax=ax)
 
+            has_legend_items = False
             if len(field1D.pointsRef) > 0:
                 plot_kwargs = {}
                 if hasattr(field1D.ref_function, "plot_kwargs"):
@@ -307,12 +309,13 @@ class SliceRenderer:
                     field1D.valuesRef,
                     **plot_kwargs,
                 )
-                ax.legend()
+                has_legend_items = True
 
-            if hasattr(field1D, "trace_over"):
-                for trace_over in field1D.trace_over:
-                    ax.plot(trace_over.points, trace_over.values, label=trace_over.key)
-                    ax.legend()
+            for trace_over in field1D.trace_over:
+                ax.plot(trace_over.points, trace_over.values, label=trace_over.symbol)
+                has_legend_items = True
+            if has_legend_items:
+                ax.legend()
 
             ax.set_ylim(np.min(field1D.points), np.max(field1D.points))
             cbar.ax.set_title(field1D.symbol)
@@ -330,7 +333,7 @@ class SliceRenderer:
         fig, axs = self._setup_figure(self.partQuantities)
 
         for key, qty in self.partQuantities.items():
-            if hasattr(qty, "is_trace_over"):
+            if getattr(qty, "is_trace_over", False):
                 continue
             ax = axs[*qty.plot_coords]
             T = np.asarray(self.context.outputTypes_info["particles"].times)

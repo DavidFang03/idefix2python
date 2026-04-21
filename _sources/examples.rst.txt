@@ -1,7 +1,7 @@
 Examples Gallery
 ================
 
-Select an example below to explore the capabilities of the pipeline.
+Here are three most basic examples to use the Pipeline, depending on the nature of the quantity: 1D, 2D, or particles.
 
 .. grid:: 1 2 2 3
    :gutter: 3
@@ -33,3 +33,16 @@ Select an example below to explore the capabilities of the pipeline.
    examples/run_1D
    examples/run_2D
    examples/run_particles
+   examples/run_particles_over
+
+Here are more complex examples
+
+.. grid:: 1 2 2 3
+   :gutter: 3
+
+   .. grid-item-card:: Particle over a heatmap
+      :link: examples/run_particles_over
+      :link-type: doc
+      :img-top: ../../examples/data_test/frames/particles_over_test/particles_over_test_spacetimeheatmap.png
+
+      Superimpose a particle trajectory over a :math:`(x,t)` heatmap

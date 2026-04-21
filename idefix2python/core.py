@@ -653,7 +653,7 @@ class Pipeline:
 
         with Pool(self.userArgs.jobs) as pool:
             all_bounds = pool.map(
-                self.__get_bounds_indiv,
+                self._get_bounds_indiv,
                 [[vtk, mapfields_indexes] for vtk in vtkList],
             )
         all_bounds = np.array(all_bounds)
@@ -668,7 +668,7 @@ class Pipeline:
             )
         return bounds
 
-    def __get_bounds_indiv(self, args):
+    def _get_bounds_indiv(self, args):
         """
         args (list[2]) must have two components:
             first:   vtk_path (str)

@@ -1,5 +1,5 @@
-Particle quantities
-===================
+Particle quantities over heatmap
+================================
 
 .. literalinclude:: ../../../examples/run_particles_over.py
    :language: python

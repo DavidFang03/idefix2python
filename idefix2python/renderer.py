@@ -297,7 +297,16 @@ class SliceRenderer:
             cbar = fig.colorbar(cmesh, ax=ax)
 
             if len(field1D.pointsRef) > 0:
-                ax.plot(field1D.pointsRef, field1D.valuesRef, label="Predicted")
+                plot_kwargs = {}
+                if hasattr(field1D.ref_function, "plot_kwargs"):
+                    plot_kwargs = field1D.ref_function.plot_kwargs
+                if "label" not in plot_kwargs:
+                    plot_kwargs["label"] = "Predicted"
+                ax.plot(
+                    field1D.pointsRef,
+                    field1D.valuesRef,
+                    **plot_kwargs,
+                )
                 ax.legend()
 
             if hasattr(field1D, "trace_over"):

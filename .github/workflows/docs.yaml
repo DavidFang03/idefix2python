@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -30,15 +33,22 @@ jobs:
         run: |
           for f in examples/*.py; do 
             echo "Processing $f..."
-            python "$f" -j 2
+            python "$f" -j 2 || exit 1
           done
 
       - name: Build Sphinx
         run: |
-          sphinx-build -b html docs/source docs/_build
+          sphinx-build -W -b html docs/source docs/_build/html
+
+      - name: Upload Documentation Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-preview
+          path: ./docs/_build/html
 
       - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_build
+          publish_dir: ./docs/_build/html

@@ -312,7 +312,12 @@ class SliceRenderer:
                 has_legend_items = True
 
             for trace_over in field1D.trace_over:
-                ax.plot(trace_over.points, trace_over.values, label=trace_over.symbol)
+                ax.plot(
+                    trace_over.points,
+                    trace_over.values,
+                    label=trace_over.symbol,
+                    color="lime",  # TODO customize this in later PR
+                )
                 has_legend_items = True
             if has_legend_items:
                 ax.legend()

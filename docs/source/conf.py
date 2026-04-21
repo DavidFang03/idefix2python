@@ -37,4 +37,10 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "shibuya"
+html_theme_options = {
+    # "github_user": "DavidFang03",
+    "github_url": "https://github.com/DavidFang03/idefix2python",
+    # "github_button": True,
+}
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]

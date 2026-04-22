@@ -112,7 +112,7 @@ class RunContext:
         self.projectPath = Path(projectPath)
         self.projectPath.resolve(strict=True)
 
-        self.args = _get_args()
+        self.args = kwargs.get("args", _get_args())
 
         self.config = {}
         configPath = kwargs.get("configPath", None)
@@ -121,8 +121,8 @@ class RunContext:
             self.config = tools.process_configs(configPath)
 
         self.dataPath = self.projectPath / "outputs" / runName
-        self.iniPath = kwargs.get(
-            "iniPath", self.projectPath / "inputs" / f"{runName}.ini"
+        self.iniPath = Path(
+            kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
         self.format_inputs_text = (
             tools.formatInputs(self.iniPath) if self.iniPath.is_file() else ""

@@ -5,13 +5,13 @@
 ## Usage
 ```bash
 git clone https://github.com/DavidFang03/idefix2python.git
-cd idefix2python/idefix2python
+cd idefix2python
 pip install .
 ```
 
 The minimal example below shows $\rho(x,y)$ in a movie, if your simulation output is 2D.
 ```python
-from Idefix2Python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
+from idefix2python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
 
 ctx = RunContext(runName="test_run")
 

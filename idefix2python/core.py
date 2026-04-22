@@ -110,7 +110,7 @@ class RunContext:
     def __init__(self, runName, projectPath=".", **kwargs):
         self.runName = runName
         self.projectPath = Path(projectPath)
-        self.projectPath.revolve(strict=True)
+        self.projectPath.resolve(strict=True)
 
         self.args = _get_args()
 

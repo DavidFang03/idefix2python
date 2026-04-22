@@ -56,6 +56,14 @@ class Data:
         self.points = points
         self.values = values
 
+    def set_norm(self, norm):
+        self.norm = norm
+        supported_norms = ["linear", "log", "TwoSlopeNorm"]
+        if norm not in supported_norms:
+            raise Exception(
+                f"{norm} not implemented. Supported norms: {supported_norms}"
+            )
+
 
 class MapMovie2D(Data):
     r"""
@@ -95,15 +103,12 @@ class MapMovie2D(Data):
 
         super().__init__(key, symbol, plot_coords, **kwargs)
         self.cmap = cmap
-        self.norm = norm
+        self.set_norm(norm)
         self.streamlines = streamlines
         self.streamline_color = kwargs.get("streamline_color", "w")
         self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
-
-    def set_norm(self, norm):
-        self.norm = norm
 
     def set_cmap(self, cmap):
         self.cmap = cmap
@@ -162,7 +167,7 @@ class SpaceTimeHeatmap(Field1D):
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.cmap = cmap
-        self.norm = norm
+        self.set_norm(norm)
         self.trace_over = trace_over
 
 

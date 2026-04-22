@@ -106,20 +106,6 @@ def movie(pattern_png, movie_path, fps=10):
     print(f"[OK] {movie_path}")
 
 
-def RequirePath(path, dir_or_file=None):
-    if dir_or_file is None:
-        if not os.path.exists(path):
-            raise Exception(f"{path} doesn't seem correct")
-    elif dir_or_file == "dir":
-        if not os.path.isdir(path):
-            raise Exception(f"{path} doesn't seem correct")
-    elif dir_or_file == "file":
-        if not os.path.isfile(path):
-            raise Exception(f"{path} doesn't seem correct")
-    else:
-        raise Exception(f"{path} doesn't seem correct")
-
-
 def convertGrid_toXZ(X1, X2, geometry):
     if geometry == "cartesian":
         return X1, X2

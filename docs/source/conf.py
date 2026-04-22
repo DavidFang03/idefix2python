@@ -29,6 +29,7 @@ extensions = [
     "sphinxcontrib.video",
 ]
 
+napoleon_use_param = True
 templates_path = ["_templates"]
 exclude_patterns = []
 

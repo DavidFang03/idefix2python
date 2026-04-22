@@ -1,15 +1,26 @@
 # Idefix2Python
 
-`Idefix2Python` is a high-level post-processing and visualization pipeline designed for **Idefix** (https://github.com/idefix-code/idefix) simulation outputs. It is currently designed for MHD and Dust (Pressureless fluid or Lagrangian particles) simulations. 
+`Idefix2Python` is a Python post-processing and visualization pipeline designed for **Idefix** (https://github.com/idefix-code/idefix) simulation outputs. It is currently designed for MHD and Dust (Pressureless fluid or Lagrangian particles) simulations. 
 
-## Architecture
+## Usage
+```bash
+git clone https://github.com/DavidFang03/idefix2python.git
+cd idefix2python/idefix2python
+pip install .
+```
 
-The module is built around 4 components:
+The minimal example below shows $\rho(x,y)$ in a movie, if your simulation output is 2D.
+```python
+from Idefix2Python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
 
-+  **`RunContext`**: Handles IO, directory creation, and data discovery. Detects simulation geometry, dimensions, and available fields.
-+  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
-+  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
-+  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
+ctx = RunContext(runName="test_run")
+
+maps = [MapMovie2D("RHO", r"$\rho$")]
+
+pipe = Pipeline(ctx, movies2D=maps)
+pipe.run()
+```
+Check the docs for more examples and explore the other features: https://davidfang03.github.io/idefix2python/
 
 ## Supported quantity types
 
@@ -26,22 +37,7 @@ Users define what to plot by passing lists of "Quantity" objects to the Pipeline
 `SpaceTimeHeatmap` and `PartQuantity` supports `ref_function` to overlay analytical functions.
 One can also plot a particle quantity over a spacetime heatmap with `trace_over`
 
-## Usage
 
-```python
-from Idefix2Python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
-
-# 1. Setup Context
-ctx = RunContext(projectPath="./my_sim", runName="test_run", configPath="./config.json")
-
-# 2. Define Plots
-heatmaps = [SpaceTimeHeatmap("Dust0_RHO", r"$\rho_d$", plot_coords=[0,0], ref_function=my_theory)]
-maps = [MapMovie2D("RHO", r"$\rho$", plot_coords=[0,0], streamlines=["VX1", "VX2"])]
-
-# 3. Run Pipeline
-pipe = Pipeline(ctx, spaceTimeHeatmaps=heatmaps, movies2D=maps)
-pipe.run()
-```
 
 ## Command line options
 
@@ -67,6 +63,16 @@ To ensure constant colorbars across the movies, the user can define fixed bounds
     }
 }
 ```
+
+## Architecture
+
+The module is built around 5 components:
+
++  **`RunContext`**: Handles data location and directory creation. Detects simulation geometry, dimensions, and available fields.
++  **`Quantities`**: Defines all the different types of data and ways to visualize them.
++  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
++  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
++  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
 
 ## TODOs
 

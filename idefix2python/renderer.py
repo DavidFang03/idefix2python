@@ -82,6 +82,7 @@ class SliceRenderer:
             wspace=0.35,
             # hspace=0.3,
         )
+        tools.annotateInputs(fig, self.context.format_inputs_text)
 
         return fig, axs
 
@@ -195,7 +196,6 @@ class SliceRenderer:
         fig.suptitle(
             f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$"
         )
-        tools.annotateInputs(fig, self.context.format_inputs_text)
 
         for qty, qtyInfo in self.movies2D.items():
             ax = axs[*qtyInfo.plot_coords]

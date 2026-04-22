@@ -148,10 +148,22 @@ class SpaceTimeHeatmap(Field1D):
     :keyword trace_over: List of :class:`PartQuantity` objects to overlay as trajectories.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cmap = kwargs.get("cmap", DEFAULT_CMAP)
-        self.trace_over = kwargs.get("trace_over", [])
+    def __init__(
+        self,
+        key,
+        symbol,
+        plot_coords=[0, 0],
+        vmin=None,
+        vmax=None,
+        cmap=DEFAULT_CMAP,
+        norm="linear",
+        trace_over=[],
+        **kwargs,
+    ):
+        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        self.cmap = cmap
+        self.norm = norm
+        self.trace_over = trace_over
 
 
 class PartQuantity(Data):

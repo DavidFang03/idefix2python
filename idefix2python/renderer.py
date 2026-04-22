@@ -5,6 +5,7 @@ import shutil
 from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
 from matplotlib.ticker import FuncFormatter
 from pathlib import Path
+from .quantities import MapMovie2D
 
 from . import tools
 from .tools import LOG
@@ -84,9 +85,8 @@ class SliceRenderer:
 
         return fig, axs
 
-    def _plot_pcolormesh(self, fig, ax, data, qty, qtyInfo):
-        grid1 = self.processor.grid1
-        grid2 = self.processor.grid2
+    def _plot_pcolormesh(self, fig, ax, grid1, grid2, data, qtyInfo):
+
         vmin, vmax = qtyInfo.bounds
         if vmin is None or self.userArgs.noBounds:
             vmin = np.nanmin(data)
@@ -111,7 +111,7 @@ class SliceRenderer:
         cbar = fig.colorbar(cmesh, ax=ax, format=cbar_format)
         cbar.ax.set_title(qtyInfo.symbol)
 
-        if self.userArgs.zoom:
+        if self.userArgs.zoom and isinstance(qtyInfo, MapMovie2D):
             ax.contourf(
                 grid1,
                 grid2,
@@ -201,7 +201,10 @@ class SliceRenderer:
             ax = axs[*qtyInfo.plot_coords]
             data = V.data[qty]
 
-            cbar = self._plot_pcolormesh(fig, ax, data, qty, qtyInfo)
+            grid1 = self.processor.grid1
+            grid2 = self.processor.grid2
+
+            cbar = self._plot_pcolormesh(fig, ax, grid1, grid2, data, qtyInfo)
 
             ax.set_aspect("equal", adjustable="box")
             ax.set_xlim(self.processor.xmin, self.processor.xmax)
@@ -287,15 +290,10 @@ class SliceRenderer:
                 np.asarray(self.context.outputTypes_info["vtk"].times),
                 np.asarray(field1D.points),
             )
-            cmesh = ax.pcolormesh(
-                T,
-                Points,
-                np.transpose(field1D.values),
-                shading="nearest",
-                cmap="inferno",
-                # TODO More flexible norm and cmap
+
+            cbar = self._plot_pcolormesh(
+                fig, ax, T, Points, np.transpose(field1D.values), field1D
             )
-            cbar = fig.colorbar(cmesh, ax=ax)
 
             has_legend_items = False
             if len(field1D.pointsRef) > 0:

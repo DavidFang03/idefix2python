@@ -1,6 +1,9 @@
 from .core import (
     Pipeline,
     RunContext,
+)
+
+from .quantities import (
     MapMovie2D,
     SpaceTimeHeatmap,
     LineMovie1D,

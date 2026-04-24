@@ -113,5 +113,4 @@ class PhysicsProcessor:
             else:
                 PostSpaceTimeHeatmaps[field.index] = V.data[key]
 
-        print(PostSpaceTimeHeatmaps)
         return PostSpaceTimeHeatmaps

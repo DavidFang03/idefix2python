@@ -14,8 +14,8 @@ custom_spaceTimeHeatmaps = [
     )
 ]
 
+SpaceTimeHeatmap.suptitle = "Dust density on a heatmap"
+
 runContext = RunContext(task, projectPath)
-
 pipeline = Pipeline(runContext, spaceTimeHeatmaps=custom_spaceTimeHeatmaps)
-
 pipeline.run()

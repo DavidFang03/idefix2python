@@ -30,6 +30,7 @@ custom_fields2D = [
         contour_color="green",
     ),
 ]
+MapMovie2D.suptitle = "Density and Much number on a heatmap"
 runContext = RunContext(task, projectPath)
 pipeline = Pipeline(runContext, movies2D=custom_fields2D)
 pipeline.run()

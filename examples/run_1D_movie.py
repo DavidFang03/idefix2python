@@ -16,6 +16,7 @@ custom_LineMovie1Ds = [
     )
 ]
 
+LineMovie1D.suptitle = "Evolution of the density profile"
 runContext = RunContext(task, projectPath)
 pipeline = Pipeline(runContext, movies1D=custom_LineMovie1Ds)
 

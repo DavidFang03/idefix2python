@@ -71,6 +71,14 @@ class SliceRenderer:
         fig, axs = plt.subplots(
             rows, columns, figsize=(fig_width, fig_height), squeeze=False
         )
+        title_height = 0.1
+        for qty in quantities_dict.values():
+            if hasattr(qty, "suptitle"):
+                fig.suptitle(
+                    rf"\bfseries {qty.suptitle}",
+                )
+                title_height = 0.0
+                continue
         if self.userArgs.zoom:
             fig.patch.set_linewidth(10)
             fig.patch.set_edgecolor("cornflowerblue")
@@ -83,7 +91,9 @@ class SliceRenderer:
             # hspace=0.3,
         )
         if len(self.context.format_inputs_text) > 0:
-            tools.annotateInputs(fig, self.context.format_inputs_text)
+            tools.annotateInputs(
+                fig, self.context.format_inputs_text, title_space=title_height
+            )
 
         return fig, axs
 

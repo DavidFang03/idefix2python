@@ -133,7 +133,9 @@ class RunContext:
             if self.iniPath.is_file():
                 self.format_inputs_text = tools.formatInputs(self.iniPath)
             else:
-                raise UserWarning(f"debug requested but {self.iniPath} doesn't exist")
+                raise FileNotFoundError(
+                    f"debug requested but {self.iniPath} doesn't exist"
+                )
 
         self.partFolder = kwargs.get("partFolder", None)
 

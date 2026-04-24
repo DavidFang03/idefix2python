@@ -153,9 +153,10 @@ Automatic Bounds</label><div class="sd-tab-content docutils">
 </span><span data-line="30"><span class="linenos">30</span>        <span class="n">contour_color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span>
 </span><span data-line="31"><span class="linenos">31</span>    <span class="p">),</span>
 </span><span data-line="32"><span class="linenos">32</span><span class="p">]</span>
-</span><span data-line="33"><span class="linenos">33</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
-</span><span data-line="34"><span class="linenos">34</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies2D</span><span class="o">=</span><span class="n">custom_fields2D</span><span class="p">)</span>
-</span><span data-line="35"><span class="linenos">35</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="33"><span class="linenos">33</span><span class="n">MapMovie2D</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Density and Mach number on a heatmap&quot;</span>
+</span><span data-line="34"><span class="linenos">34</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
+</span><span data-line="35"><span class="linenos">35</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies2D</span><span class="o">=</span><span class="n">custom_fields2D</span><span class="p">)</span>
+</span><span data-line="36"><span class="linenos">36</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
 <figure  class="sphinx-contrib-video-container align-left"><video autoplay="True" controls="True" loop="True" muted="True" preload="auto" width="100%"><source src="../_images/2D_test.mp4" type="video/mp4"></video><figcaption class="align-center"><p style="text-align: left; display:inline-block"><span class="caption-text">2D_test.mp4</span></p></figcaption></figure><p>The result is not very good because the pipeline automatically computed the bounds of the colorbar by looking at the minimum/maximum values all over the simulation. Also, you might want a different colormap.</p>
@@ -201,9 +202,10 @@ Fixed Bounds (config.json)</label><div class="sd-tab-content docutils">
 </span><span data-line="31"><span class="linenos">31</span>        <span class="n">contour_color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span>
 </span><span data-line="32"><span class="linenos">32</span>    <span class="p">),</span>
 </span><span data-line="33"><span class="linenos">33</span><span class="p">]</span>
-</span><span data-line="34"><span class="linenos">34</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">,</span> <span class="n">configPath</span><span class="o">=</span><span class="n">configPath</span><span class="p">)</span>
-</span><span data-line="35"><span class="linenos">35</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies2D</span><span class="o">=</span><span class="n">custom_fields2D</span><span class="p">)</span>
-</span><span data-line="36"><span class="linenos">36</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="34"><span class="linenos">34</span><span class="n">MapMovie2D</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Density and Mach number on a beautiful heatmap&quot;</span>
+</span><span data-line="35"><span class="linenos">35</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">,</span> <span class="n">configPath</span><span class="o">=</span><span class="n">configPath</span><span class="p">)</span>
+</span><span data-line="36"><span class="linenos">36</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies2D</span><span class="o">=</span><span class="n">custom_fields2D</span><span class="p">)</span>
+</span><span data-line="37"><span class="linenos">37</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id1">

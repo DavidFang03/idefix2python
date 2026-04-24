@@ -145,10 +145,11 @@ Movie 1D</div>
 </span><span data-line="16"><span class="linenos">16</span>    <span class="p">)</span>
 </span><span data-line="17"><span class="linenos">17</span><span class="p">]</span>
 </span><span data-line="18"><span class="linenos">18</span>
-</span><span data-line="19"><span class="linenos">19</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
-</span><span data-line="20"><span class="linenos">20</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies1D</span><span class="o">=</span><span class="n">custom_LineMovie1Ds</span><span class="p">)</span>
-</span><span data-line="21"><span class="linenos">21</span>
-</span><span data-line="22"><span class="linenos">22</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="19"><span class="linenos">19</span><span class="n">LineMovie1D</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Evolution of the density profile&quot;</span>
+</span><span data-line="20"><span class="linenos">20</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
+</span><span data-line="21"><span class="linenos">21</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies1D</span><span class="o">=</span><span class="n">custom_LineMovie1Ds</span><span class="p">)</span>
+</span><span data-line="22"><span class="linenos">22</span>
+</span><span data-line="23"><span class="linenos">23</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
 <div  class="sphinx-contrib-video-container align-left"><video autoplay="True" controls="True" loop="True" muted="True" preload="auto" width="600"><source src="../_images/1D_test.mp4" type="video/mp4"></video></div></div>
@@ -176,10 +177,10 @@ Space-Time Heatmap</div>
 </span><span data-line="14"><span class="linenos">14</span>    <span class="p">)</span>
 </span><span data-line="15"><span class="linenos">15</span><span class="p">]</span>
 </span><span data-line="16"><span class="linenos">16</span>
-</span><span data-line="17"><span class="linenos">17</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
+</span><span data-line="17"><span class="linenos">17</span><span class="n">SpaceTimeHeatmap</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Dust density on a heatmap&quot;</span>
 </span><span data-line="18"><span class="linenos">18</span>
-</span><span data-line="19"><span class="linenos">19</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">spaceTimeHeatmaps</span><span class="o">=</span><span class="n">custom_spaceTimeHeatmaps</span><span class="p">)</span>
-</span><span data-line="20"><span class="linenos">20</span>
+</span><span data-line="19"><span class="linenos">19</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
+</span><span data-line="20"><span class="linenos">20</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">spaceTimeHeatmaps</span><span class="o">=</span><span class="n">custom_spaceTimeHeatmaps</span><span class="p">)</span>
 </span><span data-line="21"><span class="linenos">21</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
@@ -219,17 +220,19 @@ Space-Time Heatmap</div>
 </span><span data-line="24"><span class="linenos">24</span>    <span class="p">)</span>
 </span><span data-line="25"><span class="linenos">25</span><span class="p">]</span>
 </span><span data-line="26"><span class="linenos">26</span>
-</span><span data-line="27"><span class="linenos">27</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span>
-</span><span data-line="28"><span class="linenos">28</span>    <span class="n">task</span><span class="p">,</span>
-</span><span data-line="29"><span class="linenos">29</span>    <span class="n">projectPath</span><span class="p">,</span>
-</span><span data-line="30"><span class="linenos">30</span>    <span class="n">frameFolder</span><span class="o">=</span><span class="s2">&quot;1D_test_withref&quot;</span><span class="p">,</span>
-</span><span data-line="31"><span class="linenos">31</span><span class="p">)</span>
-</span><span data-line="32"><span class="linenos">32</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
-</span><span data-line="33"><span class="linenos">33</span>    <span class="n">runContext</span><span class="p">,</span>
-</span><span data-line="34"><span class="linenos">34</span>    <span class="n">spaceTimeHeatmaps</span><span class="o">=</span><span class="n">custom_spaceTimeHeatmaps</span><span class="p">,</span>
-</span><span data-line="35"><span class="linenos">35</span><span class="p">)</span>
-</span><span data-line="36"><span class="linenos">36</span>
-</span><span data-line="37"><span class="linenos">37</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="27"><span class="linenos">27</span><span class="n">SpaceTimeHeatmap</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Dust density on heatmap, with an analytical trajectory&quot;</span>
+</span><span data-line="28"><span class="linenos">28</span>
+</span><span data-line="29"><span class="linenos">29</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span>
+</span><span data-line="30"><span class="linenos">30</span>    <span class="n">task</span><span class="p">,</span>
+</span><span data-line="31"><span class="linenos">31</span>    <span class="n">projectPath</span><span class="p">,</span>
+</span><span data-line="32"><span class="linenos">32</span>    <span class="n">frameFolder</span><span class="o">=</span><span class="s2">&quot;1D_test_withref&quot;</span><span class="p">,</span>
+</span><span data-line="33"><span class="linenos">33</span><span class="p">)</span>
+</span><span data-line="34"><span class="linenos">34</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
+</span><span data-line="35"><span class="linenos">35</span>    <span class="n">runContext</span><span class="p">,</span>
+</span><span data-line="36"><span class="linenos">36</span>    <span class="n">spaceTimeHeatmaps</span><span class="o">=</span><span class="n">custom_spaceTimeHeatmaps</span><span class="p">,</span>
+</span><span data-line="37"><span class="linenos">37</span><span class="p">)</span>
+</span><span data-line="38"><span class="linenos">38</span>
+</span><span data-line="39"><span class="linenos">39</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
 <figure class="align-center" id="id1">

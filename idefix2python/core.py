@@ -96,11 +96,13 @@ class RunContext:
         **kwargs: Additional optional parameters:
 
             * configPath (str | Path): Path to a specific configuration file.
-            * iniPath (Path): Custom path to the .ini input file. Defaults to
-              `projectPath/inputs/{runName}.ini`.
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
+            * debug (bool): debug mode will show the .ini file.
+                Defaults to False.
+            * iniPath (Path): Custom path to the .ini input file. Defaults to
+              `projectPath/inputs/{runName}.ini`.
 
     Note:
         The expected location for the .vtk files is `projectPath/outputs/runName/vtks`.
@@ -111,6 +113,8 @@ class RunContext:
         self.runName = runName
         self.projectPath = Path(projectPath)
         self.projectPath.resolve(strict=True)
+
+        self.debug = kwargs.get("debug", False)
 
         self.args = kwargs.get("args", _get_args())
 
@@ -124,9 +128,14 @@ class RunContext:
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
-        self.format_inputs_text = (
-            tools.formatInputs(self.iniPath) if self.iniPath.is_file() else ""
-        )
+        self.format_inputs_text = ""
+        if self.debug:
+            if self.iniPath.is_file():
+                self.format_inputs_text = tools.formatInputs(self.iniPath)
+            else:
+                raise FileNotFoundError(
+                    f"debug requested but {self.iniPath} doesn't exist"
+                )
 
         self.partFolder = kwargs.get("partFolder", None)
 

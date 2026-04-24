@@ -91,7 +91,7 @@ class SliceRenderer:
             wspace=0.35,
             # hspace=0.3,
         )
-        if len(self.context.format_inputs_text) > 0:
+        if self.context.debug and len(self.context.format_inputs_text) > 0:
             tools.annotateInputs(
                 fig, self.context.format_inputs_text, padding_top=padding_top
             )

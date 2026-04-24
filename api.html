@@ -135,8 +135,34 @@ data-aria-dark="Switch to auto color mode">
 <h2>RunContext<a class="headerlink" href="#runcontext" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="idefix2python.RunContext">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">idefix2python.</span></span><span class="sig-name descname"><span class="pre">RunContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#RunContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.RunContext" title="Link to this definition">¶</a></dt>
-<dd><p>The input. Also creates some frames directories.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">idefix2python.</span></span><span class="sig-name descname"><span class="pre">RunContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/idefix2python/core.html#RunContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#idefix2python.RunContext" title="Link to this definition">¶</a></dt>
+<dd><p>The first thing to initiate.</p>
+<p>Handles data location and directory creation. Detects simulation geometry,
+dimensions, and available fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>runName</strong> (<em>str</em>) – The unique name of the run.</p></li>
+<li><p><strong>projectPath</strong> (<em>str</em><em> | </em><em>Path</em><em>, </em><em>optional</em>) – The root directory of the project.
+Defaults to the current directory (“.”).</p></li>
+<li><p><strong>**kwargs</strong> – <p>Additional optional parameters:</p>
+<ul>
+<li><p>configPath (str | Path): Path to a specific configuration file.</p></li>
+<li><p>iniPath (Path): Custom path to the .ini input file. Defaults to
+<cite>projectPath/inputs/{runName}.ini</cite>.</p></li>
+<li><p>partFolder (str): Folder path containing the particles data.</p></li>
+<li><p>frameFolder (str): Folder name where the rendered frames will be stored.</p></li>
+<li><p>active_directions (list): List of active coordinate directions.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The expected location for the .vtk files is <cite>projectPath/outputs/runName/vtks</cite>.
+By default, the rendered frame will be located in <cite>projectPath/frames/runName</cite>.</p>
+</div>
 </dd></dl>
 
 </section>

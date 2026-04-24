@@ -1,6 +1,6 @@
 import numpy as np
 import json
-from itertools import islice, zip_longest
+from itertools import zip_longest
 
 
 def LOG(*args):
@@ -47,6 +47,8 @@ def formatInputs(iniPath):
     sections = {}
     current_section = None
 
+    MAX_VAL_LEN = 22
+
     for line in content.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -61,8 +63,8 @@ def formatInputs(iniPath):
                 key = parts[0]
                 val = " ".join(parts[1:])
                 val = "".join(val.split("#")[0])
-                if len(val) > 22:
-                    val = "..." + val[18:]
+                if len(val) > MAX_VAL_LEN:
+                    val = "..." + val[MAX_VAL_LEN - 3 :]
                 sections[current_section].append(f"{key:<14} {val}")
 
     return {k: "\n".join(v) for k, v in sections.items() if v}
@@ -72,6 +74,8 @@ def annotateInputs(fig, ini_dict):
     """
     Writes text on the `fig` with distinctive sections.
     """
+    if ini_dict == {}:
+        return
 
     COL_WIDTH = 42
     COLS_NB = 3

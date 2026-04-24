@@ -1,6 +1,7 @@
 from .vtk_io import readVTK
 from . import tools
 import numpy as np
+from .quantities import PartQuantity
 
 
 class PhysicsProcessor:
@@ -101,5 +102,15 @@ class PhysicsProcessor:
         PostSpaceTimeHeatmaps = [None] * (1 + len(quantities))
         PostSpaceTimeHeatmaps[0] = V.t[0]
         for key, field in quantities.items():
-            PostSpaceTimeHeatmaps[field.index] = V.data[key]
+            if isinstance(field, PartQuantity):
+                PostSpaceTimeHeatmaps[field.index] = np.full(
+                    self.context.particles_nb, np.nan
+                )
+                for ii in range(len(V.data[key])):
+                    uid = V.data["uid"][ii]
+                    PostSpaceTimeHeatmaps[field.index][uid] = V.data[key][ii]
+
+            else:
+                PostSpaceTimeHeatmaps[field.index] = V.data[key]
+
         return PostSpaceTimeHeatmaps

@@ -215,6 +215,12 @@ class RunContext:
         LOG("Dimensions detected: ", self.dimensions)
         LOG("Active axes", self.active_directions_labels)
 
+        if self.outputTypes_info["particles"].status:
+            self.particles_nb = len(self.outputTypes_info["particles"].vtk.x)
+            LOG(f"Particles detected: {self.particles_nb}")
+        else:
+            self.particles_nb = None
+
     def get_global_vtkFiles(self, end=1):
         pattern = "vtks/data*.vtk"
         filelist = sorted(self.dataPath.glob(pattern))

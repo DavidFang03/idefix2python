@@ -70,7 +70,7 @@ def formatInputs(iniPath):
     return {k: "\n".join(v) for k, v in sections.items() if v}
 
 
-def annotateInputs(fig, ini_dict, title_space=0.0):
+def annotateInputs(fig, ini_dict, padding_top=0.0):
     """
     Writes text on the `fig` with distinctive sections.
     """
@@ -106,7 +106,7 @@ def annotateInputs(fig, ini_dict, title_space=0.0):
 
     total_lines = final_display_string.count("\n") + 1
     header_space = total_lines * 0.014
-    margin_top = header_space + title_space
+    margin_top = header_space + padding_top
 
     fig.text(
         0.55,

@@ -71,12 +71,12 @@ class SliceRenderer:
         fig, axs = plt.subplots(
             rows, columns, figsize=(fig_width, fig_height), squeeze=False
         )
-        title_height = 0.1
+        padding_top = 0.1
         if custom_suptitle is None:
             for qty in quantities_dict.values():
                 if hasattr(qty, "suptitle"):
                     fig.suptitle(rf"\bfseries {qty.suptitle}", weight="bold")
-                    title_height = 0.0
+                    padding_top = 0.0
                     continue
         else:
             fig.suptitle(custom_suptitle)
@@ -93,7 +93,7 @@ class SliceRenderer:
         )
         if len(self.context.format_inputs_text) > 0:
             tools.annotateInputs(
-                fig, self.context.format_inputs_text, title_space=title_height
+                fig, self.context.format_inputs_text, padding_top=padding_top
             )
 
         return fig, axs

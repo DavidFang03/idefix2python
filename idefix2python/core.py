@@ -215,6 +215,11 @@ class RunContext:
         LOG("Dimensions detected: ", self.dimensions)
         LOG("Active axes", self.active_directions_labels)
 
+        if self.outputTypes_info["particles"].status:
+            self.particles_nb = len(self.outputTypes_info["particles"].vtk.x)
+        else:
+            self.particles_nb = None
+
     def get_global_vtkFiles(self, end=1):
         pattern = "vtks/data*.vtk"
         filelist = sorted(self.dataPath.glob(pattern))
@@ -364,7 +369,8 @@ class Pipeline:
 
             for qty in self.partQuantities.values():
                 values = np.array(
-                    [particles_result[i][qty.index] for i in range(nb_vtktimes)]
+                    [particles_result[i][qty.index] for i in range(nb_vtktimes)],
+                    dtype="object",
                 )
                 qty.set_data(points=times, values=values)
 

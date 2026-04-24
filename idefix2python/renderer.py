@@ -326,6 +326,7 @@ class SliceRenderer:
                 has_legend_items = True
 
             for trace_over in field1D.trace_over:
+                print(trace_over.values)
                 ax.plot(
                     trace_over.points,
                     trace_over.values,

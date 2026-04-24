@@ -101,5 +101,9 @@ class PhysicsProcessor:
         PostSpaceTimeHeatmaps = [None] * (1 + len(quantities))
         PostSpaceTimeHeatmaps[0] = V.t[0]
         for key, field in quantities.items():
-            PostSpaceTimeHeatmaps[field.index] = V.data[key]
+            if len(V.data[key]) > 0:
+                PostSpaceTimeHeatmaps[field.index] = V.data[key]
+            else:
+                PostSpaceTimeHeatmaps[field.index] = [None] * self.context.particles_nb
+        print(PostSpaceTimeHeatmaps)
         return PostSpaceTimeHeatmaps

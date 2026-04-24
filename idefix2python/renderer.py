@@ -75,7 +75,12 @@ class SliceRenderer:
         if custom_suptitle is None:
             for qty in quantities_dict.values():
                 if hasattr(qty, "suptitle"):
-                    fig.suptitle(qty.suptitle, weight="bold")
+                    fig.suptitle(
+                        rf"\bfseries {qty.suptitle}"
+                        if plt.rcParams["text.usetex"]
+                        else qty.suptitle,
+                        weight="bold",
+                    )
                     padding_top = 0.0
                     continue
         else:

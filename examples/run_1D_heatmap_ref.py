@@ -24,6 +24,8 @@ custom_spaceTimeHeatmaps = [
     )
 ]
 
+SpaceTimeHeatmap.suptitle = "Dust density on heatmap, with an analytical trajectory"
+
 runContext = RunContext(
     task,
     projectPath,

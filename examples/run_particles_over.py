@@ -32,6 +32,11 @@ SpaceTimeHeatmaps = [
         ref_function=analytical_trajectory,
     )
 ]
+
+SpaceTimeHeatmap.suptitle = (
+    "Dust density: presureless fluid, particles, and an analytical trajectory"
+)
+
 runContext = RunContext(
     task,
     projectPath,

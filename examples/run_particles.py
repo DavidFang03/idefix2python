@@ -17,11 +17,12 @@ def analytical_drift(t_array):
 custom_partQuantities = [
     PartQuantity(
         "PART_X1",
-        r"$x$",
+        r"$r$",
         plot_coords=[0, 0],
         ref_function=analytical_drift,
     )
 ]
+PartQuantity.suptitle = "A particle radial evolution, with an analytical trajectory"
 
 runContext = RunContext(
     task,

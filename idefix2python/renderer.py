@@ -61,7 +61,7 @@ class SliceRenderer:
         self.userArgs = userArgs
         self.framesPaths = framesPaths
 
-    def _setup_figure(self, quantities_dict):
+    def _setup_figure(self, quantities_dict, custom_suptitle=None):
         rows = max([qtyInfo.plot_coords[0] for qtyInfo in quantities_dict.values()]) + 1
         columns = (
             max([qtyInfo.plot_coords[1] for qtyInfo in quantities_dict.values()]) + 1
@@ -72,13 +72,14 @@ class SliceRenderer:
             rows, columns, figsize=(fig_width, fig_height), squeeze=False
         )
         title_height = 0.1
-        for qty in quantities_dict.values():
-            if hasattr(qty, "suptitle"):
-                fig.suptitle(
-                    rf"\bfseries {qty.suptitle}",
-                )
-                title_height = 0.0
-                continue
+        if custom_suptitle is None:
+            for qty in quantities_dict.values():
+                if hasattr(qty, "suptitle"):
+                    fig.suptitle(rf"\bfseries {qty.suptitle}", weight="bold")
+                    title_height = 0.0
+                    continue
+        else:
+            fig.suptitle(custom_suptitle)
         if self.userArgs.zoom:
             fig.patch.set_linewidth(10)
             fig.patch.set_edgecolor("cornflowerblue")
@@ -202,10 +203,9 @@ class SliceRenderer:
     def render_2D(self, V, vtkPath):
 
         time = V.t[0]
-        fig, axs = self._setup_figure(self.movies2D)
-
-        fig.suptitle(
-            f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$"
+        fig, axs = self._setup_figure(
+            self.movies2D,
+            custom_suptitle=f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$",
         )
 
         for qty, qtyInfo in self.movies2D.items():
@@ -252,11 +252,11 @@ class SliceRenderer:
     def render_1D(self, V, vtkPath):
         if not self.movies1D:
             return
-        fig, axs = self._setup_figure(self.movies1D)
+
+        t = V.t[0]
+        fig, axs = self._setup_figure(self.movies1D, custom_suptitle=rf"$t={t:.1e}$")
 
         points = self.processor.X1Line
-        t = V.t[0]
-        fig.suptitle(rf"$t={t:.1e}$")
 
         for key, field1D in self.movies1D.items():
             ax = axs[*field1D.plot_coords]

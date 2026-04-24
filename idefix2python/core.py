@@ -217,6 +217,7 @@ class RunContext:
 
         if self.outputTypes_info["particles"].status:
             self.particles_nb = len(self.outputTypes_info["particles"].vtk.x)
+            LOG(f"Particles detected: {self.particles_nb}")
         else:
             self.particles_nb = None
 
@@ -369,8 +370,7 @@ class Pipeline:
 
             for qty in self.partQuantities.values():
                 values = np.array(
-                    [particles_result[i][qty.index] for i in range(nb_vtktimes)],
-                    dtype="object",
+                    [particles_result[i][qty.index] for i in range(nb_vtktimes)]
                 )
                 qty.set_data(points=times, values=values)
 

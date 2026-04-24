@@ -75,12 +75,7 @@ class SliceRenderer:
         if custom_suptitle is None:
             for qty in quantities_dict.values():
                 if hasattr(qty, "suptitle"):
-                    fig.suptitle(
-                        rf"\bfseries {qty.suptitle}"
-                        if plt.rcParams["text.usetex"]
-                        else qty.suptitle,
-                        weight="bold",
-                    )
+                    fig.suptitle(rf"\bfseries {qty.suptitle}", weight="bold")
                     padding_top = 0.0
                     continue
         else:
@@ -96,7 +91,7 @@ class SliceRenderer:
             wspace=0.35,
             # hspace=0.3,
         )
-        if self.context.debug and len(self.context.format_inputs_text) > 0:
+        if len(self.context.format_inputs_text) > 0:
             tools.annotateInputs(
                 fig, self.context.format_inputs_text, padding_top=padding_top
             )
@@ -326,7 +321,6 @@ class SliceRenderer:
                 has_legend_items = True
 
             for trace_over in field1D.trace_over:
-                print(trace_over.values)
                 ax.plot(
                     trace_over.points,
                     trace_over.values,

@@ -84,16 +84,35 @@ class OutputTypeInfo:
 
 class RunContext:
     """
-    The input. Also creates some frames directories.
+    The first thing to initiate.
+
+    Handles data location and directory creation. Detects simulation geometry,
+    dimensions, and available fields.
+
+    Args:
+        runName (str): The unique name of the run.
+        projectPath (str | Path, optional): The root directory of the project.
+            Defaults to the current directory (".").
+        **kwargs: Additional optional parameters:
+
+            * configPath (str | Path): Path to a specific configuration file.
+            * iniPath (Path): Custom path to the .ini input file. Defaults to
+              `projectPath/inputs/{runName}.ini`.
+            * partFolder (str): Folder path containing the particles data.
+            * frameFolder (str): Folder name where the rendered frames will be stored.
+            * active_directions (list): List of active coordinate directions.
+
+    Note:
+        The expected location for the .vtk files is `projectPath/outputs/runName/vtks`.
+        By default, the rendered frame will be located in `projectPath/frames/runName`.
     """
 
-    def __init__(self, runName, projectPath=".", args=None, **kwargs):
-        tools.RequirePath(projectPath, dir_or_file="dir")
-
+    def __init__(self, runName, projectPath=".", **kwargs):
         self.runName = runName
         self.projectPath = Path(projectPath)
+        self.projectPath.resolve(strict=True)
 
-        self.args = args if args is not None else _get_args()
+        self.args = kwargs.get("args", _get_args())
 
         self.config = {}
         configPath = kwargs.get("configPath", None)
@@ -102,8 +121,12 @@ class RunContext:
             self.config = tools.process_configs(configPath)
 
         self.dataPath = self.projectPath / "outputs" / runName
-        self.iniPath = self.projectPath / "inputs" / f"{runName}.ini"
-        self.format_inputs_text = tools.formatInputs(self.iniPath)
+        self.iniPath = Path(
+            kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
+        )
+        self.format_inputs_text = (
+            tools.formatInputs(self.iniPath) if self.iniPath.is_file() else ""
+        )
 
         self.partFolder = kwargs.get("partFolder", None)
 

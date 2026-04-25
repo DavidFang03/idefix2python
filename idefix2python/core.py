@@ -313,17 +313,12 @@ class Pipeline:
 
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)
 
-        def _to_dict(obj_input):
-            if isinstance(obj_input, list):
-                return {item.key: item for item in obj_input}
-            return obj_input
+        self.spaceTimeHeatmaps = spaceTimeHeatmaps
+        self.movies1D = movies1D
+        self.movies2D = movies2D
 
-        self.spaceTimeHeatmaps = _to_dict(spaceTimeHeatmaps)
-        self.movies1D = _to_dict(movies1D)
-        self.movies2D = _to_dict(movies2D)
-
-        original_part_quantity_keys = set(_to_dict(partQuantities).keys())
-        for heatmap in self.spaceTimeHeatmaps.values():
+        original_part_quantity_keys = {v.key for v in partQuantities}
+        for heatmap in self.spaceTimeHeatmaps:
             for traceover in heatmap.trace_over:
                 if isinstance(traceover, PartQuantity):
                     if traceover.key not in original_part_quantity_keys:
@@ -333,9 +328,9 @@ class Pipeline:
                     raise NotImplementedError(
                         "a traceover has to be a PartQuantity instance"
                     )
-        self.partQuantities = _to_dict(partQuantities)  # TODO dict is not a good idea
+        self.partQuantities = partQuantities  # TODO dict is not a good idea
 
-        combined_1D = {**self.movies1D, **self.spaceTimeHeatmaps}
+        combined_1D = [*self.movies1D, *self.spaceTimeHeatmaps]
         self.processor.set_fields(combined_1D, self.movies2D)
 
         self._name_frames()
@@ -374,7 +369,7 @@ class Pipeline:
             else:
                 t_smooth = np.array(times)
 
-            for qty in self.partQuantities.values():
+            for qty in self.partQuantities:
                 values = np.array(
                     [particles_result[i][qty.index] for i in range(nb_vtktimes)]
                 )
@@ -403,7 +398,7 @@ class Pipeline:
             times = [spat_results[i][0] for i in range(nb_vtktimes)]
             vtkInfo.set_times(times)
 
-            for qty in self.spaceTimeHeatmaps.values():
+            for qty in self.spaceTimeHeatmaps:
                 values = np.array(
                     [spat_results[i][qty.index] for i in range(nb_vtktimes)]
                 )
@@ -472,7 +467,7 @@ class Pipeline:
         if self.userArgs.onlyMovie or self.userArgs.onlyAnalysis:
             return
 
-        all_fields = self.movies2D.keys()
+        all_fields = [v.key for v in self.movies2D]
         config = self.context.config
         LOG(config)
         all_bounds = {}
@@ -518,7 +513,7 @@ class Pipeline:
         for qt in self.movies2D:
             LOG(qt, self.movies2D[qt].bounds)
 
-    def _get_bounds(self, vtkList, fields):
+    def _get_bounds(self, vtkList, fields_keys):
         """
         Get the bounds (min, max) of all given fields. I recommend not passing the entire vtkList but rather vtkList[1:] to discard the first output(s ?).
 
@@ -528,22 +523,22 @@ class Pipeline:
         returns
         dict where dict[field] = (min, max)
         """
-        mapfields_indexes = {}
-        for i, field in enumerate(fields):
-            mapfields_indexes[field] = i
+        fieldskeys_indexes = {}
+        for i, key in enumerate(fields_keys):
+            fieldskeys_indexes[key] = i
 
         with Pool(self.userArgs.jobs) as pool:
             all_bounds = pool.map(
                 self._get_bounds_indiv,
-                [[vtk, mapfields_indexes] for vtk in vtkList],
+                [[vtk, fieldskeys_indexes] for vtk in vtkList],
             )
         all_bounds = np.array(all_bounds)
         bounds = {}
         if len(all_bounds) == 0:
             return bounds
-        for field in fields:
-            i = mapfields_indexes[field]
-            bounds[field] = (
+        for key in fields_keys:
+            i = fieldskeys_indexes[key]
+            bounds[key] = (
                 np.nanmin(all_bounds[:, i, 0]),
                 np.nanmax(all_bounds[:, i, 1]),
             )
@@ -556,13 +551,13 @@ class Pipeline:
             second:   fields_indexes (dict) where fields_indexes[field] = index
         """
         vtk_path = args[0]
-        fields_indexes = args[1]
+        fieldskeys_indexes = args[1]
         V = readVTK(vtk_path)
         self.processor.process(V)
-        bounds = np.empty((len(fields_indexes), 2))
-        for field in fields_indexes.keys():
+        bounds = np.empty((len(fieldskeys_indexes), 2))
+        for field in fieldskeys_indexes.keys():
             data = V.data[field]
-            index = fields_indexes[field]
+            index = fieldskeys_indexes[field]
             bounds[index, 0] = np.nanmin(data)
             bounds[index, 1] = np.nanmax(data)
         return bounds

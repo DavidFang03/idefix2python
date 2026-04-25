@@ -85,13 +85,12 @@ class PhysicsProcessor:
             V.data["PART_X2"] = tools.get_Position(V, self.context.geometry, 1)
             V.data["PART_X3"] = tools.get_Position(V, self.context.geometry, 2)
 
-        for movie_dict in [self.movies1D, self.movies2D]:
-            for key, qtyInfo in movie_dict.items():
-                if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
-                    # Execute the user function.
-                    # Pass the whole V.data so they can use multiple variables
-                    # (e.g. Mach Number = velocity / sound_speed)
-                    V.data[key] = qtyInfo.compute(V.data)
+        for qtyInfo in [*self.movies1D, *self.movies2D]:
+            if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
+                # Execute the user function.
+                # Pass the whole V.data so they can use multiple variables
+                # (e.g. Mach Number = velocity / sound_speed)
+                V.data[qtyInfo.key] = qtyInfo.compute(V.data)
 
     def get_quantities(self, vtkPath, quantities):
         """
@@ -101,7 +100,8 @@ class PhysicsProcessor:
         self.process(V)
         PostSpaceTimeHeatmaps = [None] * (1 + len(quantities))
         PostSpaceTimeHeatmaps[0] = V.t[0]
-        for key, field in quantities.items():
+        for field in quantities:
+            key = field.key
             if isinstance(field, PartQuantity):
                 PostSpaceTimeHeatmaps[field.index] = np.full(
                     self.context.particles_nb, np.nan

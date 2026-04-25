@@ -179,7 +179,7 @@ class PartQuantity(Data):
         Defaults to None (all particles)
     """
 
-    partQuantities_instances = count(1)
+    _key_index_map = {}
 
     def __init__(
         self,
@@ -191,7 +191,9 @@ class PartQuantity(Data):
         uids=None,
         **kwargs,
     ):
-        self.index = next(PartQuantity.partQuantities_instances)
+        if key not in PartQuantity._key_index_map:
+            PartQuantity._key_index_map[key] = len(PartQuantity._key_index_map) + 1
+        self.index = PartQuantity._key_index_map[key]
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.trace_over = False  # default

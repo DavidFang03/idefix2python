@@ -61,11 +61,9 @@ class SliceRenderer:
         self.userArgs = userArgs
         self.framesPaths = framesPaths
 
-    def _setup_figure(self, quantities_dict, custom_suptitle=None):
-        rows = max([qtyInfo.plot_coords[0] for qtyInfo in quantities_dict.values()]) + 1
-        columns = (
-            max([qtyInfo.plot_coords[1] for qtyInfo in quantities_dict.values()]) + 1
-        )
+    def _setup_figure(self, quantities_list, custom_suptitle=None):
+        rows = max([qtyInfo.plot_coords[0] for qtyInfo in quantities_list]) + 1
+        columns = max([qtyInfo.plot_coords[1] for qtyInfo in quantities_list]) + 1
         fig_width = max(8, 5 * columns)  # minimum width of 8
         fig_height = max(10, 5 * rows)  # minimum height of 10
         fig, axs = plt.subplots(
@@ -73,9 +71,9 @@ class SliceRenderer:
         )
         padding_top = 0.1
         if custom_suptitle is None:
-            for qty in quantities_dict.values():
-                if hasattr(qty, "suptitle"):
-                    fig.suptitle(rf"\bfseries {qty.suptitle}", weight="bold")
+            for qtyInfo in quantities_list:
+                if hasattr(qtyInfo, "suptitle"):
+                    fig.suptitle(rf"\bfseries {qtyInfo.suptitle}", weight="bold")
                     padding_top = 0.0
                     continue
         else:
@@ -194,7 +192,7 @@ class SliceRenderer:
 
     def _clean_unused_axes(self, axs, fields):
         rows, columns = axs.shape
-        used_coords = [list(f.plot_coords) for f in fields.values()]
+        used_coords = [list(f.plot_coords) for f in fields]
         for i in range(rows):
             for j in range(columns):
                 if [i, j] not in used_coords:
@@ -208,7 +206,8 @@ class SliceRenderer:
             custom_suptitle=f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$",
         )
 
-        for qty, qtyInfo in self.movies2D.items():
+        for qtyInfo in self.movies2D:
+            qty = qtyInfo.key
             ax = axs[*qtyInfo.plot_coords]
             data = V.data[qty]
 
@@ -258,7 +257,8 @@ class SliceRenderer:
 
         points = self.processor.X1Line
 
-        for key, field1D in self.movies1D.items():
+        for field1D in self.movies1D:
+            key = field1D.key
             ax = axs[*field1D.plot_coords]
 
             ax.plot(points, V.data[key])
@@ -295,7 +295,7 @@ class SliceRenderer:
             return
         fig, axs = self._setup_figure(self.spaceTimeHeatmaps)
 
-        for key, field1D in self.spaceTimeHeatmaps.items():
+        for field1D in self.spaceTimeHeatmaps:
             ax = axs[*field1D.plot_coords]
             T, Points = np.meshgrid(
                 np.asarray(self.context.outputTypes_info["vtk"].times),
@@ -370,14 +370,14 @@ class SliceRenderer:
     def render_timeSeries(self):
         if not self.partQuantities:
             return
-        not_traceover_partquantities = {
-            k: v for k, v in self.partQuantities.items() if not v.is_trace_over
-        }
+        not_traceover_partquantities = [
+            v for v in self.partQuantities if not v.is_trace_over
+        ]
         print(not_traceover_partquantities)
         if len(not_traceover_partquantities) > 0:
             fig, axs = self._setup_figure(not_traceover_partquantities)
-            for qty in not_traceover_partquantities.values():
-                self._plot_particles_on_ax(axs[*qty.plot_coords], qty)
+            for qtyInfo in not_traceover_partquantities:
+                self._plot_particles_on_ax(axs[*qtyInfo.plot_coords], qtyInfo)
 
             self._clean_unused_axes(axs, not_traceover_partquantities)
             self._save_and_close(fig, self.framesPaths.timeSeries_frame_path)

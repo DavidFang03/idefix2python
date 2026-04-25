@@ -196,4 +196,4 @@ class PartQuantity(Data):
         self.index = PartQuantity._key_index_map[key]
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
-        self.trace_over = False  # default
+        self.is_trace_over = False  # default

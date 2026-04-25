@@ -497,21 +497,23 @@ class Pipeline:
             LOG("All fields are already bounded in config")
 
         LOG(all_fields)
-        for qt in all_fields:
-            if qt in config and "bounds" in config[qt]:
-                self.movies2D[qt].set_bounds(config[qt]["bounds"])
-            elif qt in all_bounds and not self.userArgs.noBounds:
-                self.movies2D[qt].set_bounds(all_bounds[qt])
+        all_movies = [*self.movies1D, *self.movies2D]
+        for qtyInfo in all_movies:
+            key = qtyInfo.key
+            if key in config and "bounds" in config[key]:
+                qtyInfo.set_bounds(config[key]["bounds"])
+            elif key in all_bounds and not self.userArgs.noBounds:
+                qtyInfo.set_bounds(all_bounds[key])
 
-            if qt in config:
-                if "cmap" in config[qt]:
-                    self.movies2D[qt].set_cmap(config[qt]["cmap"])
-                if "norm" in config[qt]:
-                    self.movies2D[qt].set_norm(config[qt]["norm"])
+            if key in config:
+                if "cmap" in config[key]:
+                    qtyInfo.set_cmap(config[key]["cmap"])
+                if "norm" in config[key]:
+                    qtyInfo.set_norm(config[key]["norm"])
 
         LOG("Final Bounds:")
-        for qt in self.movies2D:
-            LOG(qt, self.movies2D[qt].bounds)
+        for qtyInfo in all_movies:
+            LOG(qtyInfo.key, qtyInfo.bounds)
 
     def _get_bounds(self, vtkList, fields_keys):
         """

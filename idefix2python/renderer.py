@@ -313,12 +313,13 @@ class SliceRenderer:
                     plot_kwargs = field1D.ref_function.plot_kwargs
                     if "zorder" not in plot_kwargs:
                         plot_kwargs["zorder"] = 3
+                    if "label" in plot_kwargs:
+                        has_legend_items = True
                 ax.plot(
                     field1D.pointsRef,
                     field1D.valuesRef,
                     **plot_kwargs,
                 )
-                has_legend_items = True
 
             for trace_over in field1D.trace_over:
                 self._plot_particles_on_ax(ax, trace_over)
@@ -341,7 +342,11 @@ class SliceRenderer:
         T = np.asarray(self.context.outputTypes_info["particles"].times)
         cmap = plt.get_cmap("tab10")
 
-        uids = qty.uids if qty.uids else self.context.all_particles_uids
+        uids = (
+            self.context.all_particles_uids
+            if (qty.uids is None or len(qty.uids) == 0)
+            else qty.uids
+        )
         for ii, uid in enumerate(uids):
             if hasattr(qty, "labels") and ii < len(qty.labels):
                 label = qty.labels[ii]
@@ -373,7 +378,6 @@ class SliceRenderer:
         not_traceover_partquantities = [
             v for v in self.partQuantities if not v.is_trace_over
         ]
-        print(not_traceover_partquantities)
         if len(not_traceover_partquantities) > 0:
             fig, axs = self._setup_figure(not_traceover_partquantities)
             for qtyInfo in not_traceover_partquantities:

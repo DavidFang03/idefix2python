@@ -217,9 +217,11 @@ class RunContext:
 
         if self.outputTypes_info["particles"].status:
             self.particles_nb = len(self.outputTypes_info["particles"].vtk.x)
+            self.all_particles_uids = self.outputTypes_info["particles"].testData["uid"]
             LOG(f"Particles detected: {self.particles_nb}")
         else:
             self.particles_nb = None
+            self.all_particles_uids = None
 
     def get_global_vtkFiles(self, end=1):
         pattern = "vtks/data*.vtk"
@@ -327,7 +329,11 @@ class Pipeline:
                     if traceover.key not in original_part_quantity_keys:
                         traceover.is_trace_over = True
                         partQuantities.append(traceover)
-        self.partQuantities = _to_dict(partQuantities)
+                else:
+                    raise NotImplementedError(
+                        "a traceover has to be a PartQuantity instance"
+                    )
+        self.partQuantities = _to_dict(partQuantities)  # TODO dict is not a good idea
 
         combined_1D = {**self.movies1D, **self.spaceTimeHeatmaps}
         self.processor.set_fields(combined_1D, self.movies2D)

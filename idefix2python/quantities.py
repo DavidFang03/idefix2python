@@ -174,10 +174,24 @@ class SpaceTimeHeatmap(Field1D):
 class PartQuantity(Data):
     """
     Tracks Lagrangian particle properties over time.
+
+    :keyword: uids (optional) the ids of the particles wanted.
+        Defaults to None (all particles)
     """
 
     partQuantities_instances = count(1)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        key,
+        symbol,
+        plot_coords=[0, 0],
+        vmin=None,
+        vmax=None,
+        uids=None,
+        **kwargs,
+    ):
         self.index = next(PartQuantity.partQuantities_instances)
-        super().__init__(*args, **kwargs)
+        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        self.uids = uids
+        self.trace_over = False  # default

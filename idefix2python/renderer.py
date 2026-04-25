@@ -84,12 +84,12 @@ class SliceRenderer:
             fig.patch.set_linewidth(10)
             fig.patch.set_edgecolor("cornflowerblue")
         fig.subplots_adjust(
-            left=0.15,
-            right=1 - 0.1,
+            left=0.1,
+            right=1 - 0.05,
             bottom=0.1,
-            top=0.7,
-            wspace=0.35,
-            # hspace=0.3,
+            top=0.8,
+            wspace=0.5,
+            hspace=0.3,
         )
         if len(self.context.format_inputs_text) > 0:
             tools.annotateInputs(
@@ -311,8 +311,8 @@ class SliceRenderer:
                 plot_kwargs = {}
                 if hasattr(field1D.ref_function, "plot_kwargs"):
                     plot_kwargs = field1D.ref_function.plot_kwargs
-                if "label" not in plot_kwargs:
-                    plot_kwargs["label"] = "Predicted"
+                    if "zorder" not in plot_kwargs:
+                        plot_kwargs["zorder"] = 3
                 ax.plot(
                     field1D.pointsRef,
                     field1D.valuesRef,
@@ -321,13 +321,8 @@ class SliceRenderer:
                 has_legend_items = True
 
             for trace_over in field1D.trace_over:
-                ax.plot(
-                    trace_over.points,
-                    trace_over.values,
-                    label=trace_over.symbol,
-                    color="lime",  # TODO customize this in later PR
-                )
-                has_legend_items = True
+                self._plot_particles_on_ax(ax, trace_over)
+                has_legend_items = False
             if has_legend_items:
                 ax.legend()
 
@@ -341,26 +336,48 @@ class SliceRenderer:
         self._clean_unused_axes(axs, self.spaceTimeHeatmaps)
         self._save_and_close(fig, self.framesPaths.spacetimeheatmap_frame_path)
 
+    def _plot_particles_on_ax(self, ax, qty):
+        has_legend_items = False
+        T = np.asarray(self.context.outputTypes_info["particles"].times)
+        cmap = plt.get_cmap("tab10")
+
+        uids = qty.uids if qty.uids else self.context.all_particles_uids
+        for ii, uid in enumerate(uids):
+            if hasattr(qty, "labels") and ii < len(qty.labels):
+                label = qty.labels[ii]
+            else:
+                label = uid
+
+            if hasattr(qty, "colors") and ii < len(qty.colors):
+                color = qty.colors[ii]
+            else:
+                color = cmap(ii)
+            ax.plot(T, qty.values[:, uid], label=label, color=color, lw=2)
+            has_legend_items = True
+
+        if len(qty.pointsRef) > 0:
+            ax.plot(qty.pointsRef, qty.valuesRef, ls="--", lw=2, label="Predicted")
+            has_legend_items = True
+
+        if has_legend_items:
+            ax.legend()
+
+        ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
+        ax.set_ylabel(qty.symbol)
+        ax.set_title(qty.title)
+        ax.grid()
+
     def render_timeSeries(self):
         if not self.partQuantities:
             return
-        fig, axs = self._setup_figure(self.partQuantities)
+        not_traceover_partquantities = {
+            k: v for k, v in self.partQuantities.items() if not v.is_trace_over
+        }
+        print(not_traceover_partquantities)
+        if len(not_traceover_partquantities) > 0:
+            fig, axs = self._setup_figure(not_traceover_partquantities)
+            for qty in not_traceover_partquantities.values():
+                self._plot_particles_on_ax(axs[*qty.plot_coords], qty)
 
-        for key, qty in self.partQuantities.items():
-            if getattr(qty, "is_trace_over", False):
-                continue
-            ax = axs[*qty.plot_coords]
-            T = np.asarray(self.context.outputTypes_info["particles"].times)
-            ax.plot(T, qty.values, lw=2)
-
-            if len(qty.pointsRef) > 0:
-                ax.plot(qty.pointsRef, qty.valuesRef, ls="--", lw=2, label="Predicted")
-                ax.legend()
-
-            ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-            ax.set_ylabel(qty.symbol)
-            ax.set_title(qty.title)
-            ax.grid()
-
-        self._clean_unused_axes(axs, self.partQuantities)
-        self._save_and_close(fig, self.framesPaths.timeSeries_frame_path)
+            self._clean_unused_axes(axs, not_traceover_partquantities)
+            self._save_and_close(fig, self.framesPaths.timeSeries_frame_path)

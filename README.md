@@ -83,7 +83,7 @@ The module is built around 5 components:
 * More flexibility on plot parameters (linestyle, color, etc...)
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 
-### Not in priority
+### Not a priority
 * Support multiple pipelines
 * Support mixed outputs (e.g `data*.vtk` + `slice1*.vtk`)
 * Add a `discard` option to replace non-physical values (e.g., $<0$) with `NaN`

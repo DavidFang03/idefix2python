@@ -94,8 +94,8 @@ class MapMovie2D(Data):
                             e.g., ``["VX1", "VX2"]``. Defaults to None.
         :type streamlines: list[str], optional
         :param particles: List of the particles uid. Their trajectories will be showed over the maps. To show every particle, set it to "all".
-                            e.g., ``["VX1", "VX2"]``. Defaults to None.
-        :type particles: list[int], optional
+                            e.g., ``[1,2]``. Defaults to None.
+        :type particles: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
             :keyword compute (callable): Custom function to calculate new fields on the fly.

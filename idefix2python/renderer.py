@@ -358,7 +358,7 @@ class SliceRenderer:
             if hasattr(qty, "colors") and ii < len(qty.colors):
                 color = qty.colors[ii]
             else:
-                color = cmap(ii)
+                color = cmap(ii / max(1, len(uids) - 1))
 
             if qty.is_for2D:
                 points = qty.points[: frame_nb + 1, uid]

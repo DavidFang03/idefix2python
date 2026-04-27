@@ -223,24 +223,54 @@ class RunContext:
             self.particles_nb = None
             self.all_particles_uids = None
 
-    def get_global_vtkFiles(self, end=1):
+    def _get_lastfile_to_read(self, filelist):
+        """
+        expects a sorted list
+        """
+        until = self.args.until
+        if len(filelist) == 0:
+            lastframe = -1
+        elif 0 <= until <= 1:
+            lastframe = int(len(filelist) * until)
+        elif isinstance(until, int):
+            lastframe = until
+        elif isinstance(until, float):
+            if str(filelist[-1]).endswith(".vtk"):
+                tend = readVTK(filelist[-1]).t[0]
+                tstart = readVTK(filelist[0]).t[0]
+                if until < tstart:
+                    raise Exception(
+                        f"Value of until ({until}) is inferior than the first file time"
+                    )
+                lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
+                if lastframe + 1 < len(filelist):
+                    lastframe += 1
+        return lastframe
+
+    def get_global_vtkFiles(self):
         pattern = "vtks/data*.vtk"
         filelist = sorted(self.dataPath.glob(pattern))
-        return filelist[: int(len(filelist) * end)]
+        lastfile = self._get_lastfile_to_read(filelist)
+        filelist = filelist[:lastfile]
+        return filelist[:: self.args.every]
 
-    def get_slice1_vtkFiles(self, end=1):
+    def get_slice1_vtkFiles(self):
         pattern = "vtks/slice1*.vtk"
         filelist = sorted(self.dataPath.glob(pattern))
-        return filelist[: int(len(filelist) * end)]
+        lastfile = self._get_lastfile_to_read(filelist)
+        filelist = filelist[:lastfile]
+        return filelist[:: self.args.every]
 
-    def get_particles_vtkFiles(self, end=1):
+    def get_particles_vtkFiles(self):
         if self.partFolder is not None:
             filelist = sorted(Path(self.partFolder).glob("part*.vtk"))
         else:
             pattern = "vtks/part*.vtk"
             filelist = sorted(self.dataPath.glob(pattern))
 
-        return filelist[: int(len(filelist) * end)]
+        lastfile = self._get_lastfile_to_read(filelist)
+        filelist = filelist[:lastfile]
+        return filelist[:: self.args.every]
 
 
 class FramesPaths:
@@ -278,7 +308,6 @@ class Pipeline:
         movies2D=[],
         partQuantities=[],
         zoom=0,
-        end=1,
         streamLines=None,
     ):
         """
@@ -295,14 +324,11 @@ class Pipeline:
         :type partQuantities: list[PartQuantity], optional
         :param zoom: Zoom level for the rendering view (for 2D only currently).
         :type zoom: float, optional
-        :param end: Fraction of the simulation dumps to process (0 to 1) (deprecated).
-        :type end: float, optional
         :param streamLines: Configuration for streamlines overlays.
         :type streamLines: StreamlineConfig, optional
         """
         self.context = Context
         self.userArgs = self.context.args
-        self.end = end
 
         self.doMovie = True
 
@@ -637,6 +663,23 @@ def _get_args():
         type=int,
         default=1,
         help="Number of CPU cores to use",
+    )
+
+    parser.add_argument(
+        "-u",
+        "--until",
+        type=lambda s: int(s) if s.isdigit() else float(s),
+        default=1,
+        help="To read only a part of the data. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        dest="until",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--every",
+        type=int,
+        default=1,
+        help="Read every Nth output file (N>=1). For example, -e 2 reads every second file.",
     )
 
     args = parser.parse_args()

@@ -249,13 +249,15 @@ class RunContext:
         pattern = "vtks/data*.vtk"
         filelist = sorted(self.dataPath.glob(pattern))
         lastfile = self._get_lastfile_to_read(filelist)
-        return filelist[:lastfile]
+        filelist = filelist[:lastfile]
+        return filelist[:: self.args.every]
 
     def get_slice1_vtkFiles(self):
         pattern = "vtks/slice1*.vtk"
         filelist = sorted(self.dataPath.glob(pattern))
         lastfile = self._get_lastfile_to_read(filelist)
-        return filelist[:lastfile]
+        filelist = filelist[:lastfile]
+        return filelist[:: self.args.every]
 
     def get_particles_vtkFiles(self):
         if self.partFolder is not None:
@@ -265,7 +267,8 @@ class RunContext:
             filelist = sorted(self.dataPath.glob(pattern))
 
         lastfile = self._get_lastfile_to_read(filelist)
-        return filelist[:lastfile]
+        filelist = filelist[:lastfile]
+        return filelist[:: self.args.every]
 
 
 class FramesPaths:
@@ -638,6 +641,14 @@ def _get_args():
         default=1,
         help="To read only a part of the data. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
         dest="until",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--every",
+        type=int,
+        default=1,
+        help="To only read a limited part of the data. For example -e 2 will read one file in 2 ",  # TODO find better phrasing
     )
 
     args = parser.parse_args()

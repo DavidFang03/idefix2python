@@ -48,6 +48,7 @@ One can also plot a particle quantity over a spacetime heatmap with `trace_over`
 | `-f`, `--frame` | `int...` | Renders only specific frame indices (e.g., `-f 0 10 -1`). |
 | `--no-bounds` | Flag | Ignores `config.json`. User expects colobar to be different at each frame and to match local data. |
 | `-om` | Flag | Only movie: Skips everything and only renders the movie on existing frames. |
+| `-u`, `--until` | `float` or `int` | To read only a part of the data. `float` between 0 and 1 is interpreted as a fraction, `int` as an output number, and a `float` > 1 as a time. |
 
 
 ## Config file (`config.json`)

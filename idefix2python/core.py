@@ -648,7 +648,7 @@ def _get_args():
         "--every",
         type=int,
         default=1,
-        help="Read every Nth output file (N>=1). For example, -e 2 reads every second file. ",
+        help="Read every Nth output file (N>=1). For example, -e 2 reads every second file.",
     )
 
     args = parser.parse_args()

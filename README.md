@@ -77,6 +77,7 @@ The module is built around 5 components:
 ## TODOs
 
 * **Lagrangian Dust**: Plot particles positions on the 2D heatmaps.
+* Better colorbar and dynamic layout
 * More flexibility on plot parameters (linestyle, color, etc...)
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 

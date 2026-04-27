@@ -78,6 +78,7 @@ class MapMovie2D(Data):
         cmap=DEFAULT_CMAP,
         norm="linear",
         streamlines=None,
+        particles=None,
         **kwargs,
     ):
         r"""
@@ -92,6 +93,9 @@ class MapMovie2D(Data):
         :param streamlines: A list of two Idefix field keys used to show vector streamlines,
                             e.g., ``["VX1", "VX2"]``. Defaults to None.
         :type streamlines: list[str], optional
+        :param particles: List of the particles uid. Their trajectories will be showed over the maps. To show every particle, set it to "all".
+                            e.g., ``["VX1", "VX2"]``. Defaults to None.
+        :type particles: list[int], optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
             :keyword compute (callable): Custom function to calculate new fields on the fly.
@@ -109,6 +113,7 @@ class MapMovie2D(Data):
         self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
+        self.particles = particles
 
     def set_cmap(self, cmap):
         self.cmap = cmap
@@ -123,6 +128,9 @@ class MapMovie2D(Data):
         :type Y: numpy.ndarray
         """
         self.X, self.Y = X, Y
+
+    def set_particles_trajectories(self, data):
+        pass
 
 
 class Field1D(Data):
@@ -176,7 +184,7 @@ class PartQuantity(Data):
     Tracks Lagrangian particle properties over time.
 
     :keyword: uids (optional) the ids of the particles wanted.
-        Defaults to None (all particles)
+        Defaults to "all" (all particles)
     """
 
     _key_index_map = {}
@@ -184,11 +192,11 @@ class PartQuantity(Data):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,
-        uids=None,
+        uids="all",
         **kwargs,
     ):
         if key not in PartQuantity._key_index_map:
@@ -197,3 +205,4 @@ class PartQuantity(Data):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.is_trace_over = False  # default
+        self.is_for2D = False  # default

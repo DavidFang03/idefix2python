@@ -324,11 +324,33 @@ class Pipeline:
                     if traceover.key not in original_part_quantity_keys:
                         traceover.is_trace_over = True
                         partQuantities.append(traceover)
+                        original_part_quantity_keys.append(traceover.key)
                 else:
                     raise NotImplementedError(
                         "a traceover has to be a PartQuantity instance"
                     )
-        self.partQuantities = partQuantities  # TODO dict is not a good idea
+
+        self.processor.parts_X = None
+        self.processor.parts_Y = None
+        for movie2D in self.movies2D:
+            if movie2D.particles:
+                X_index = self.context.active_directions[0]
+                Y_index = self.context.active_directions[1]
+                parts_X = PartQuantity(f"PART_X{X_index + 1}", uids=movie2D.particles)
+                parts_Y = PartQuantity(f"PART_X{Y_index + 1}", uids=movie2D.particles)
+
+                parts_X.is_trace_over = True
+                parts_X.is_for2D = True
+                partQuantities.append(parts_X)
+                parts_Y.is_trace_over = True
+                parts_Y.is_for2D = True
+                partQuantities.append(parts_Y)
+
+                self.processor.parts_X = parts_X
+                self.processor.parts_Y = parts_Y
+
+                continue
+        self.partQuantities = partQuantities
 
         combined_1D = [*self.movies1D, *self.spaceTimeHeatmaps]
         self.processor.set_fields(combined_1D, self.movies2D)
@@ -386,6 +408,12 @@ class Pipeline:
 
             self.context.outputTypes_info["particles"].set_times(times)
 
+            if self.processor.parts_Y is not None:
+                self.processor.parts_Y.set_data(
+                    points=self.processor.parts_X.values,
+                    values=self.processor.parts_Y.values,
+                )
+
         vtkInfo = self.context.outputTypes_info["vtk"]
         if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
             with Pool(self.userArgs.jobs) as pool:
@@ -436,7 +464,7 @@ class Pipeline:
             if self.userArgs.doOnlyFrames:
                 render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
             with Pool(self.userArgs.jobs) as pool:
-                pool.map(self._process_and_render_frame, render_list)
+                pool.starmap(self._process_and_render_frame, enumerate(render_list))
 
             if self.doMovie:
                 tools.movie(
@@ -444,13 +472,13 @@ class Pipeline:
                     movie_path=self.framesPaths.slice1_video_path,
                 )
 
-    def _process_and_render_frame(self, vtkPath):
+    def _process_and_render_frame(self, frame_nb, vtkPath):
         """1. Read VTK Data, 2. Process Physics Math, 3. Render Requested Frame"""
         V = readVTK(vtkPath)
         self.processor.process(V)
 
         if len(self.movies2D) > 0:
-            self.renderer.render_2D(V, vtkPath)
+            self.renderer.render_2D(V, frame_nb, vtkPath)
 
         if len(self.movies1D) > 0:
             self.renderer.render_1D(V, vtkPath)

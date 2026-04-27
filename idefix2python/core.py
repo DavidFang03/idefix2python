@@ -630,7 +630,7 @@ def _get_args():
     parser.add_argument(
         "-u",
         "--until",
-        type=float,
+        type=lambda s: int(s) if s.isdigit() else float(s),
         default=1,
         help="To read only a part of the data. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
         dest="until",

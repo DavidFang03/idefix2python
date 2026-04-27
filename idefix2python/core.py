@@ -236,6 +236,10 @@ class RunContext:
             if str(filelist[-1]).endswith(".vtk"):
                 tend = readVTK(filelist[-1]).t[0]
                 tstart = readVTK(filelist[0]).t[0]
+                if until < tstart:
+                    raise Exception(
+                        f"Value of until ({until}) is inferior than the first file time"
+                    )
                 lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
                 if lastframe + 1 < len(filelist):
                     lastframe += 1

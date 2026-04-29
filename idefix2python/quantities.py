@@ -41,6 +41,11 @@ class Data:
         )  # some custom id, to distinguish different instances of the same field nature (for example tau)
         self.scale = kwargs.get("scale", "linear")
 
+        self.xmin = kwargs.get("xmin", None)
+        self.xmax = kwargs.get("xmax", None)
+        self.ymin = kwargs.get("ymin", None)
+        self.ymax = kwargs.get("ymax", None)
+
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
@@ -64,6 +69,9 @@ class Data:
                 f"{norm} not implemented. Supported norms: {supported_norms}"
             )
 
+    def __str__(self):
+        return self.key
+
 
 class MapMovie2D(Data):
     r"""
@@ -78,7 +86,7 @@ class MapMovie2D(Data):
         cmap=DEFAULT_CMAP,
         norm="linear",
         streamlines=None,
-        particles=None,
+        uids=None,
         **kwargs,
     ):
         r"""
@@ -93,9 +101,9 @@ class MapMovie2D(Data):
         :param streamlines: A list of two Idefix field keys used to show vector streamlines,
                             e.g., ``["VX1", "VX2"]``. Defaults to None.
         :type streamlines: list[str], optional
-        :param particles: List of the particles uid. Their trajectories will be showed over the maps. To show every particle, set it to "all".
+        :param uids: List of the particles uid. Their trajectories will be showed over the maps. To show every particle, set it to "all".
                             e.g., ``[1,2]``. Defaults to None.
-        :type particles: list[int] | Literal["all"] | None, optional
+        :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
             :keyword compute (callable): Custom function to calculate new fields on the fly.
@@ -113,7 +121,7 @@ class MapMovie2D(Data):
         self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
-        self.particles = particles
+        self.uids = uids
 
     def set_cmap(self, cmap):
         self.cmap = cmap
@@ -158,7 +166,7 @@ class SpaceTimeHeatmap(Field1D):
     For :math:`f(x, t)` fields, renders a space-time heatmap.
 
     :keyword cmap: Colormap for the heatmap.
-    :keyword trace_over: List of :class:`PartQuantity` objects to overlay as trajectories.
+    :keyword uids: List of particles' uids which trajectories will be diplayed.
     """
 
     def __init__(
@@ -170,13 +178,13 @@ class SpaceTimeHeatmap(Field1D):
         vmax=None,
         cmap=DEFAULT_CMAP,
         norm="linear",
-        trace_over=[],
+        uids=[],
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.cmap = cmap
         self.set_norm(norm)
-        self.trace_over = trace_over
+        self.uids = uids
 
 
 class PartQuantity(Data):
@@ -204,5 +212,5 @@ class PartQuantity(Data):
         self.index = PartQuantity._key_index_map[key]
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
-        self.is_trace_over = False  # default
-        self.is_for2D = False  # default
+        self.is_global = False  # default
+        # self.is_for2D = False  # default

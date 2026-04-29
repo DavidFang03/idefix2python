@@ -35,7 +35,7 @@ Users define what to plot by passing lists of "Quantity" objects to the Pipeline
 *   **`PartQuantity`**: Tracks Lagrangian particle properties (like `PART_X1`) over time. 
 
 `SpaceTimeHeatmap` and `PartQuantity` supports `ref_function` to overlay analytical functions.
-One can also plot a particle quantity over a spacetime heatmap with `trace_over`
+One can also plot a particle quantity over a spacetime heatmap or a 2D movie with `uids`
 
 
 

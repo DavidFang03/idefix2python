@@ -15,6 +15,7 @@ class PhysicsProcessor:
     def _setup(self):
         if self.context.outputTypes_info["vtk"].status:
             vtk = self.context.outputTypes_info["vtk"].vtk
+            print(f"active {self.context.active_directions[0]}")
             self.X1Line = tools.get_Position(
                 vtk, self.context.geometry, self.context.active_directions[0]
             )
@@ -75,7 +76,7 @@ class PhysicsProcessor:
         if not is_particle_vtk:
             for qt in V.data:
                 if self.context.dimensions == 2:
-                    V.data[qt] = np.transpose(V.data[qt][:, :, 0])
+                    V.data[qt] = np.transpose(np.squeeze(V.data[qt]))
                     V.data[qt] = np.where(self.mask, V.data[qt], np.nan)
 
                 elif self.context.dimensions == 1 and len(np.shape(V.data[qt])) == 3:

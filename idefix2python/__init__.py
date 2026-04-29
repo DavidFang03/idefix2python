@@ -3,6 +3,8 @@ from .core import (
     RunContext,
 )
 
+from .vtk_io import readVTK
+
 from .quantities import (
     MapMovie2D,
     SpaceTimeHeatmap,
@@ -18,4 +20,5 @@ __all__ = [
     "SpaceTimeHeatmap",
     "LineMovie1D",
     "PartQuantity",
+    "readVTK",
 ]

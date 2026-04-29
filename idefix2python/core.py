@@ -216,8 +216,9 @@ class RunContext:
         LOG("Active axes", self.active_directions_labels)
 
         if self.outputTypes_info["particles"].status:
-            self.particles_nb = len(self.outputTypes_info["particles"].vtk.x)
             self.all_particles_uids = self.outputTypes_info["particles"].testData["uid"]
+            print(self.all_particles_uids)
+            self.particles_nb = len(self.all_particles_uids)
             LOG(f"Particles detected: {self.particles_nb}")
         else:
             self.particles_nb = None
@@ -343,53 +344,57 @@ class Pipeline:
         self.movies1D = movies1D
         self.movies2D = movies2D
 
-        original_part_quantity_keys = {v.key for v in partQuantities}
-        for heatmap in self.spaceTimeHeatmaps:
-            for traceover in heatmap.trace_over:
-                if isinstance(traceover, PartQuantity):
-                    if traceover.key not in original_part_quantity_keys:
-                        traceover.is_trace_over = True
-                        partQuantities.append(traceover)
-                        original_part_quantity_keys.append(traceover.key)
-                else:
-                    raise NotImplementedError(
-                        "a traceover has to be a PartQuantity instance"
-                    )
-
         self.processor.parts_X = None
         self.processor.parts_Y = None
-        for movie2D in self.movies2D:
-            if movie2D.particles:
+        for qty in [*self.movies2D, *self.spaceTimeHeatmaps]:
+            if qty.uids:
                 X_index = self.context.active_directions[0]
-                Y_index = self.context.active_directions[1]
-                parts_X = PartQuantity(f"PART_X{X_index + 1}", uids=movie2D.particles)
-                parts_Y = PartQuantity(f"PART_X{Y_index + 1}", uids=movie2D.particles)
-
-                parts_X.is_trace_over = True
-                parts_X.is_for2D = True
+                parts_X = PartQuantity(f"PART_X{X_index + 1}", uids="all")
+                parts_X.is_global = True
                 partQuantities.append(parts_X)
-                parts_Y.is_trace_over = True
-                parts_Y.is_for2D = True
-                partQuantities.append(parts_Y)
+                qty.parts_X = parts_X
 
-                self.processor.parts_X = parts_X
-                self.processor.parts_Y = parts_Y
+                if len(self.context.active_directions) == 2:
+                    Y_index = self.context.active_directions[1]
+                    parts_Y = PartQuantity(f"PART_X{Y_index + 1}", uids="all")
 
-                continue
+                    parts_Y.is_global = True
+                    partQuantities.append(parts_Y)
+                    qty.parts_Y = parts_Y
+
         self.partQuantities = partQuantities
 
-        combined_1D = [*self.movies1D, *self.spaceTimeHeatmaps]
-        self.processor.set_fields(combined_1D, self.movies2D)
+        self.processor.set_fields(
+            [*self.movies1D, *self.spaceTimeHeatmaps], self.movies2D
+        )
 
         self._name_frames()
         self._apply_config()
+
+        if len(self.partQuantities) > 0:
+            if not self.context.outputTypes_info["particles"].status:
+                raise Exception(
+                    "Particle quantities were requested, but no particle files were found."
+                )
+
+    def _check_everything_alright(self):
+        # Check whether the particles requested exist
+        for qty in [*self.partQuantities, *self.spaceTimeHeatmaps, *self.movies2D]:
+            if (
+                isinstance(qty.uids, list)
+                and len(qty.uids) > 0
+                and np.max(qty.uids) > self.context.particles_nb
+            ):
+                raise Exception(
+                    f"One of the uid requested ({np.max(qty.uids)}) is larger than the number of detected particles ({self.context.particles_nb})"
+                )
 
     def run(self):
         """
         Pray.
         """
-        partInfo = self.context.outputTypes_info["particles"]
-
+        # partInfo = self.context.outputTypes_info["particles"]
+        self._check_everything_alright()
         if self.userArgs.onlyMovie:
             if self.doMovie:
                 tools.movie(
@@ -398,47 +403,44 @@ class Pipeline:
                 )
             return  # Exit early
 
-        if len(self.partQuantities) > 0:
-            if not partInfo.status:
-                raise Exception(
-                    "Particle quantities were requested, but no particle files were found."
-                )
+        with Pool(self.userArgs.jobs) as pool:
+            particles_result = pool.starmap(
+                self.processor.get_quantities,
+                zip(self.partList, repeat(self.partQuantities)),
+            )
 
-            with Pool(self.userArgs.jobs) as pool:
-                particles_result = pool.starmap(
-                    self.processor.get_quantities,
-                    zip(self.partList, repeat(self.partQuantities)),
-                )
+        nb_vtktimes = len(particles_result)
+        times = [particles_result[i][0] for i in range(nb_vtktimes)]
+        if len(times) > 1:
+            t_smooth = np.linspace(min(times), max(times), 10000)
+        else:
+            t_smooth = np.array(times)
 
-            nb_vtktimes = len(particles_result)
-            times = [particles_result[i][0] for i in range(nb_vtktimes)]
-            if len(times) > 1:
-                t_smooth = np.linspace(min(times), max(times), 1000)
-            else:
-                t_smooth = np.array(times)
+        [print("parts", q, q.index) for q in self.partQuantities]
+        for qty in self.partQuantities:
+            print(qty)
+            values = np.array(
+                [particles_result[i][qty.index] for i in range(nb_vtktimes)]
+            )
+            qty.set_data(points=times, values=values)
+            print(qty, qty.is_global, len(particles_result[0]))
 
-            for qty in self.partQuantities:
-                values = np.array(
-                    [particles_result[i][qty.index] for i in range(nb_vtktimes)]
-                )
-                qty.set_data(points=times, values=values)
+            if qty.ref_function is not None:
+                try:
+                    predicted_values = qty.ref_function(t_smooth)
+                    qty.set_ref_data(t_smooth, predicted_values)
+                except Exception as e:
+                    LOG(
+                        f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
+                    )
 
-                if qty.ref_function is not None:
-                    try:
-                        predicted_values = qty.ref_function(t_smooth)
-                        qty.set_ref_data(t_smooth, predicted_values)
-                    except Exception as e:
-                        LOG(
-                            f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
-                        )
+        self.context.outputTypes_info["particles"].set_times(times)
 
-            self.context.outputTypes_info["particles"].set_times(times)
-
-            if self.processor.parts_Y is not None:
-                self.processor.parts_Y.set_data(
-                    points=self.processor.parts_X.values,
-                    values=self.processor.parts_Y.values,
-                )
+        if self.processor.parts_Y is not None:
+            self.processor.parts_Y.set_data(
+                points=self.processor.parts_X.values,
+                values=self.processor.parts_Y.values,
+            )
 
         vtkInfo = self.context.outputTypes_info["vtk"]
         if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:

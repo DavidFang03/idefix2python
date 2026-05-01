@@ -191,6 +191,14 @@ class RunContext:
         ].dimensions
         # There's no way to deduce the number of dimensions from the part*.vtk files but it has to be the same as in the global vtk
 
+        if (
+            self.partFolder is not None
+            and not self.outputTypes_info["particles"].status
+        ):
+            raise FileNotFoundError(
+                f"the folder {self.partFolder} doesn't seem to contain any part*vtk"
+            )
+
         ## Everything is deduced from the global vtk
         vtkInfo = self.outputTypes_info["vtk"]
         if not vtkInfo.status and len(self.active_directions) < 1:
@@ -207,6 +215,9 @@ class RunContext:
         elif len(self.active_directions) >= 1:
             self.geometry = self.outputTypes_info["particles"].geometry
             self.dimensions = len(self.active_directions)
+
+        else:
+            raise Exception("hmm")
 
         self.active_directions_labels = [
             tools.get_Position_name(self.geometry, dir)

@@ -19,7 +19,7 @@ class Data:
     :type vmin: float, optional
     :param vmax: Maximum value for manual scaling, defaults to None.
     :type vmax: float, optional
-    :param \**kwargs:
+    :param kwargs:
         * **title** (str): Custom title for the plot. Defaults to `symbol`.
         * **id** (str): Unique ID to distinguish instances of the same field nature.
         * **scale** (str): Scaling type, e.g., 'linear' or 'log'.

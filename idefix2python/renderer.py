@@ -61,11 +61,9 @@ class SliceRenderer:
         self.userArgs = userArgs
         self.framesPaths = framesPaths
 
-    def _setup_figure(self, quantities_dict, custom_suptitle=None):
-        rows = max([qtyInfo.plot_coords[0] for qtyInfo in quantities_dict.values()]) + 1
-        columns = (
-            max([qtyInfo.plot_coords[1] for qtyInfo in quantities_dict.values()]) + 1
-        )
+    def _setup_figure(self, quantities_list, custom_suptitle=None):
+        rows = max([qtyInfo.plot_coords[0] for qtyInfo in quantities_list]) + 1
+        columns = max([qtyInfo.plot_coords[1] for qtyInfo in quantities_list]) + 1
         fig_width = max(8, 5 * columns)  # minimum width of 8
         fig_height = max(10, 5 * rows)  # minimum height of 10
         fig, axs = plt.subplots(
@@ -73,9 +71,9 @@ class SliceRenderer:
         )
         padding_top = 0.1
         if custom_suptitle is None:
-            for qty in quantities_dict.values():
-                if hasattr(qty, "suptitle"):
-                    fig.suptitle(rf"\bfseries {qty.suptitle}", weight="bold")
+            for qtyInfo in quantities_list:
+                if hasattr(qtyInfo, "suptitle"):
+                    fig.suptitle(rf"\bfseries {qtyInfo.suptitle}", weight="bold")
                     padding_top = 0.0
                     continue
         else:
@@ -84,12 +82,12 @@ class SliceRenderer:
             fig.patch.set_linewidth(10)
             fig.patch.set_edgecolor("cornflowerblue")
         fig.subplots_adjust(
-            left=0.15,
-            right=1 - 0.1,
+            left=0.1,
+            right=1 - 0.05,
             bottom=0.1,
-            top=0.7,
-            wspace=0.35,
-            # hspace=0.3,
+            top=0.8,
+            wspace=0.5,
+            hspace=0.3,
         )
         if len(self.context.format_inputs_text) > 0:
             tools.annotateInputs(
@@ -119,7 +117,9 @@ class SliceRenderer:
             vmax = vmax if vmax > 0 else 1e-7
             norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
 
-        cmesh = ax.pcolormesh(grid1, grid2, data, cmap=qtyInfo.cmap, norm=norm)
+        cmesh = ax.pcolormesh(
+            grid1, grid2, data, cmap=qtyInfo.cmap, norm=norm, alpha=0.5
+        )
 
         cbar = fig.colorbar(cmesh, ax=ax, format=cbar_format)
         cbar.ax.set_title(qtyInfo.symbol)
@@ -194,13 +194,13 @@ class SliceRenderer:
 
     def _clean_unused_axes(self, axs, fields):
         rows, columns = axs.shape
-        used_coords = [list(f.plot_coords) for f in fields.values()]
+        used_coords = [list(f.plot_coords) for f in fields]
         for i in range(rows):
             for j in range(columns):
                 if [i, j] not in used_coords:
                     axs[i, j].remove()
 
-    def render_2D(self, V, vtkPath):
+    def render_2D(self, V, frame_nb, vtkPath):
 
         time = V.t[0]
         fig, axs = self._setup_figure(
@@ -208,7 +208,8 @@ class SliceRenderer:
             custom_suptitle=f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$",
         )
 
-        for qty, qtyInfo in self.movies2D.items():
+        for qtyInfo in self.movies2D:
+            qty = qtyInfo.key
             ax = axs[*qtyInfo.plot_coords]
             data = V.data[qty]
 
@@ -235,6 +236,8 @@ class SliceRenderer:
                 self._plot_streamlines(ax, V, qtyInfo)
             if getattr(qtyInfo, "contours", None) is not None:
                 self._plot_contours(ax, data, qtyInfo, cbar)
+            if qtyInfo.uids is not None:
+                self._plot_particles_on_ax(ax, self.processor.parts_Y, frame_nb)
 
             if color is not None:
                 ax.set_title(title, color=color)
@@ -258,7 +261,8 @@ class SliceRenderer:
 
         points = self.processor.X1Line
 
-        for key, field1D in self.movies1D.items():
+        for field1D in self.movies1D:
+            key = field1D.key
             ax = axs[*field1D.plot_coords]
 
             ax.plot(points, V.data[key])
@@ -295,7 +299,7 @@ class SliceRenderer:
             return
         fig, axs = self._setup_figure(self.spaceTimeHeatmaps)
 
-        for key, field1D in self.spaceTimeHeatmaps.items():
+        for field1D in self.spaceTimeHeatmaps:
             ax = axs[*field1D.plot_coords]
             T, Points = np.meshgrid(
                 np.asarray(self.context.outputTypes_info["vtk"].times),
@@ -306,32 +310,40 @@ class SliceRenderer:
                 fig, ax, T, Points, np.transpose(field1D.values), field1D
             )
 
+            if hasattr(field1D, "parts_X"):
+                self._plot_particles_on_ax(ax, field1D.parts_X, uids=field1D.uids)
+                has_legend_items = False
+
             has_legend_items = False
             if len(field1D.pointsRef) > 0:
+                print(field1D, field1D.pointsRef)
                 plot_kwargs = {}
                 if hasattr(field1D.ref_function, "plot_kwargs"):
                     plot_kwargs = field1D.ref_function.plot_kwargs
-                if "label" not in plot_kwargs:
-                    plot_kwargs["label"] = "Predicted"
+                    if "zorder" not in plot_kwargs:
+                        plot_kwargs["zorder"] = 3
+                    if "label" in plot_kwargs:
+                        has_legend_items = True
                 ax.plot(
                     field1D.pointsRef,
                     field1D.valuesRef,
                     **plot_kwargs,
                 )
-                has_legend_items = True
 
-            for trace_over in field1D.trace_over:
-                ax.plot(
-                    trace_over.points,
-                    trace_over.values,
-                    label=trace_over.symbol,
-                    color="lime",  # TODO customize this in later PR
-                )
-                has_legend_items = True
             if has_legend_items:
                 ax.legend()
 
-            ax.set_ylim(np.min(field1D.points), np.max(field1D.points))
+            ymin = np.min(field1D.points)
+            ymax = np.max(field1D.points)
+            xmin = field1D.xmin
+            xmax = field1D.xmax
+            if field1D.ymin is not None:
+                ymin = field1D.ymin
+            if field1D.ymax is not None:
+                ymax = field1D.ymax
+            ax.set_xlim(xmin, xmax)
+            ax.set_ylim(ymin, ymax)
+
             cbar.ax.set_title(field1D.symbol)
             ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
             ax.set_ylabel(self.processor.axis_name_1)
@@ -341,26 +353,71 @@ class SliceRenderer:
         self._clean_unused_axes(axs, self.spaceTimeHeatmaps)
         self._save_and_close(fig, self.framesPaths.spacetimeheatmap_frame_path)
 
+    def _plot_particles_on_ax(self, ax, qty, frame_nb=None, uids=None):
+        has_legend_items = False
+        # T = np.asarray()
+        cmap = plt.get_cmap("Pastel1")
+
+        print("coucou", qty.values.shape)
+
+        if uids is None:
+            uids = qty.uids
+
+        uids = (
+            self.context.all_particles_uids
+            if (uids == "all" or len(uids) == 0)
+            else uids
+        )
+        for ii, uid in enumerate(uids):
+            if hasattr(qty, "labels") and ii < len(qty.labels):
+                label = qty.labels[ii]
+            else:
+                label = uid
+
+            if hasattr(qty, "colors") and ii < len(qty.colors):
+                color = qty.colors[ii]
+            else:
+                color = cmap(ii / max(1, len(uids) - 1))
+
+            if isinstance(qty, MapMovie2D):
+                points = qty.points[: frame_nb + 1, uid]
+                values = qty.values[: frame_nb + 1, uid]
+                alpha = 1
+                lw = 1
+            else:
+                points = qty.points
+                print(qty.values.shape)
+                values = qty.values[:, uid]
+                alpha = 1
+                lw = 2
+            ax.plot(points, values, label=label, color=color, lw=lw, alpha=alpha)
+            has_legend_items = True
+
+        if len(qty.pointsRef) > 0:
+            ax.plot(qty.pointsRef, qty.valuesRef, ls="--", lw=2, label="Predicted")
+            has_legend_items = True
+
+        if has_legend_items and not qty.is_global:
+            ax.legend()
+        # if has_legend_items:
+        #     loc = "best"
+        #     if qty.is_for2D:
+        #         loc = "lower right"
+        #     ax.legend(loc=loc)
+
     def render_timeSeries(self):
         if not self.partQuantities:
             return
-        fig, axs = self._setup_figure(self.partQuantities)
+        notglobal_partquantities = [v for v in self.partQuantities if not v.is_global]
+        if len(notglobal_partquantities) > 0:
+            fig, axs = self._setup_figure(notglobal_partquantities)
+            for qtyInfo in notglobal_partquantities:
+                ax = axs[*qtyInfo.plot_coords]
+                self._plot_particles_on_ax(ax, qtyInfo)
 
-        for key, qty in self.partQuantities.items():
-            if getattr(qty, "is_trace_over", False):
-                continue
-            ax = axs[*qty.plot_coords]
-            T = np.asarray(self.context.outputTypes_info["particles"].times)
-            ax.plot(T, qty.values, lw=2)
-
-            if len(qty.pointsRef) > 0:
-                ax.plot(qty.pointsRef, qty.valuesRef, ls="--", lw=2, label="Predicted")
-                ax.legend()
-
-            ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-            ax.set_ylabel(qty.symbol)
-            ax.set_title(qty.title)
-            ax.grid()
-
-        self._clean_unused_axes(axs, self.partQuantities)
-        self._save_and_close(fig, self.framesPaths.timeSeries_frame_path)
+                ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
+                ax.set_ylabel(qtyInfo.symbol)
+                ax.set_title(qtyInfo.title)
+                ax.grid()
+            self._clean_unused_axes(axs, notglobal_partquantities)
+            self._save_and_close(fig, self.framesPaths.timeSeries_frame_path)

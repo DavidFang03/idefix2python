@@ -35,7 +35,7 @@ Users define what to plot by passing lists of "Quantity" objects to the Pipeline
 *   **`PartQuantity`**: Tracks Lagrangian particle properties (like `PART_X1`) over time. 
 
 `SpaceTimeHeatmap` and `PartQuantity` supports `ref_function` to overlay analytical functions.
-One can also plot a particle quantity over a spacetime heatmap with `trace_over`
+One can also plot a particle quantity over a spacetime heatmap or a 2D movie with `uids`
 
 
 
@@ -79,10 +79,12 @@ The module is built around 5 components:
 ## TODOs
 
 * **Lagrangian Dust**: Plot particles positions on the 2D heatmaps.
+* Better colorbar and dynamic layout
 * More flexibility on plot parameters (linestyle, color, etc...)
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 
-### Not prority
+### Not a priority
+* Support multiple pipelines
 * Support mixed outputs (e.g `data*.vtk` + `slice1*.vtk`)
 * Add a `discard` option to replace non-physical values (e.g., $<0$) with `NaN`
 

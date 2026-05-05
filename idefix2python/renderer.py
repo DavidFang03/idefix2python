@@ -398,7 +398,7 @@ class SliceRenderer:
                 points = part_qty.values[: frame_nb + 1, uid]
                 values = 0 * points
                 ax.scatter(points[-1], 0, color=color, marker="x")
-            elif isinstance(qty, PartQuantity):
+            elif qty is None:
                 points = part_qty.points
                 values = part_qty.values[:, uid]
                 alpha = 1

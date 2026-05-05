@@ -60,9 +60,10 @@ class PhysicsProcessor:
             pass
             # TODO: support for particles
 
-    def set_fields(self, movies1D, movies2D):
+    def set_fields(self, movies1D, movies2D, partQuantities):
         self.movies1D = movies1D
         self.movies2D = movies2D
+        self.partQuantities = partQuantities
 
     def process(self, V):
         """
@@ -84,14 +85,21 @@ class PhysicsProcessor:
 
             for qtyInfo in [*self.movies1D, *self.movies2D]:
                 if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
-                    # Execute the user function.
-                    # (e.g. Mach Number = velocity / sound_speed)
                     V.data[qtyInfo.key] = qtyInfo.compute(V.data)
 
         else:
             V.data["PART_X1"] = tools.get_Position(V, self.context.geometry, 0)
             V.data["PART_X2"] = tools.get_Position(V, self.context.geometry, 1)
             V.data["PART_X3"] = tools.get_Position(V, self.context.geometry, 2)
+
+            for qtyInfo in [*self.partQuantities]:
+                if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
+                    computed_data = qtyInfo.compute(V)
+                    if np.shape(computed_data) != (self.context.particles_nb,):
+                        raise ValueError(
+                            f"the computed output isn't right: {np.shape(computed_data)}"
+                        )
+                    V.data[qtyInfo.key] = computed_data
 
     def get_quantities(self, vtkPath, quantities):
         """

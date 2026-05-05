@@ -215,6 +215,7 @@ class PartQuantity(Data):
         vmin=None,
         vmax=None,
         uids="all",
+        compute=None,
         **kwargs,
     ):
         if key not in PartQuantity._key_index_map:
@@ -223,4 +224,5 @@ class PartQuantity(Data):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.is_global = False  # default
+        self.compute = compute
         # self.is_for2D = False  # default

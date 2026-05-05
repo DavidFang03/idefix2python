@@ -376,7 +376,9 @@ class Pipeline:
         self.partQuantities = partQuantities
 
         self.processor.set_fields(
-            [*self.movies1D, *self.spaceTimeHeatmaps], self.movies2D
+            [*self.movies1D, *self.spaceTimeHeatmaps],
+            self.movies2D,
+            self.partQuantities,
         )
 
         self._name_frames()
@@ -456,6 +458,7 @@ class Pipeline:
         vtkInfo = self.context.outputTypes_info["vtk"]
         if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
             with Pool(self.userArgs.jobs) as pool:
+                print("heatmap")
                 spat_results = pool.starmap(
                     self.processor.get_quantities,
                     zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),

@@ -357,7 +357,7 @@ class Pipeline:
 
         self.processor.parts_X = None
         self.processor.parts_Y = None
-        for qty in [*self.movies2D, *self.spaceTimeHeatmaps]:
+        for qty in [*self.movies2D, *self.spaceTimeHeatmaps, *self.movies1D]:
             if qty.uids:
                 X_index = self.context.active_directions[0]
                 parts_X = PartQuantity(f"PART_X{X_index + 1}", uids="all")
@@ -520,7 +520,7 @@ class Pipeline:
             self.renderer.render_2D(V, frame_nb, vtkPath)
 
         if len(self.movies1D) > 0:
-            self.renderer.render_1D(V, vtkPath)
+            self.renderer.render_1D(V, frame_nb, vtkPath)
 
     def _name_frames(self):
         context = self.context

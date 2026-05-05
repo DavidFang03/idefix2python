@@ -5,7 +5,7 @@ import shutil
 from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
 from matplotlib.ticker import FuncFormatter
 from pathlib import Path
-from .quantities import MapMovie2D
+from .quantities import MapMovie2D, LineMovie1D, PartQuantity
 
 from . import tools
 from .tools import LOG
@@ -237,7 +237,9 @@ class SliceRenderer:
             if getattr(qtyInfo, "contours", None) is not None:
                 self._plot_contours(ax, data, qtyInfo, cbar)
             if qtyInfo.uids is not None:
-                self._plot_particles_on_ax(ax, self.processor.parts_Y, frame_nb)
+                self._plot_particles_on_ax(
+                    ax, self.processor.parts_Y, qty=qtyInfo, frame_nb=frame_nb
+                )
 
             if color is not None:
                 ax.set_title(title, color=color)
@@ -252,7 +254,7 @@ class SliceRenderer:
         )
         self._save_and_close(fig, slice1_png_path)
 
-    def render_1D(self, V, vtkPath):
+    def render_1D(self, V, frame_nb, vtkPath):
         if not self.movies1D:
             return
 
@@ -266,6 +268,15 @@ class SliceRenderer:
             ax = axs[*field1D.plot_coords]
 
             ax.plot(points, V.data[key])
+
+            if hasattr(field1D, "parts_X"):
+                self._plot_particles_on_ax(
+                    ax,
+                    field1D.parts_X,
+                    qty=field1D,
+                    uids=field1D.uids,
+                    frame_nb=frame_nb,
+                )
 
             # To revove?
             if len(field1D.pointsRef) > 0:
@@ -299,69 +310,66 @@ class SliceRenderer:
             return
         fig, axs = self._setup_figure(self.spaceTimeHeatmaps)
 
-        for field1D in self.spaceTimeHeatmaps:
-            ax = axs[*field1D.plot_coords]
+        for sptime in self.spaceTimeHeatmaps:
+            ax = axs[*sptime.plot_coords]
             T, Points = np.meshgrid(
                 np.asarray(self.context.outputTypes_info["vtk"].times),
-                np.asarray(field1D.points),
+                np.asarray(sptime.points),
             )
 
             cbar = self._plot_pcolormesh(
-                fig, ax, T, Points, np.transpose(field1D.values), field1D
+                fig, ax, T, Points, np.transpose(sptime.values), sptime
             )
 
-            if hasattr(field1D, "parts_X"):
-                self._plot_particles_on_ax(ax, field1D.parts_X, uids=field1D.uids)
+            if hasattr(sptime, "parts_X"):
+                self._plot_particles_on_ax(ax, sptime.parts_X, uids=sptime.uids)
                 has_legend_items = False
 
             has_legend_items = False
-            if len(field1D.pointsRef) > 0:
-                print(field1D, field1D.pointsRef)
+            if len(sptime.pointsRef) > 0:
+                print(sptime, sptime.pointsRef)
                 plot_kwargs = {}
-                if hasattr(field1D.ref_function, "plot_kwargs"):
-                    plot_kwargs = field1D.ref_function.plot_kwargs
+                if hasattr(sptime.ref_function, "plot_kwargs"):
+                    plot_kwargs = sptime.ref_function.plot_kwargs
                     if "zorder" not in plot_kwargs:
                         plot_kwargs["zorder"] = 3
                     if "label" in plot_kwargs:
                         has_legend_items = True
                 ax.plot(
-                    field1D.pointsRef,
-                    field1D.valuesRef,
+                    sptime.pointsRef,
+                    sptime.valuesRef,
                     **plot_kwargs,
                 )
 
             if has_legend_items:
                 ax.legend()
 
-            ymin = np.min(field1D.points)
-            ymax = np.max(field1D.points)
-            xmin = field1D.xmin
-            xmax = field1D.xmax
-            if field1D.ymin is not None:
-                ymin = field1D.ymin
-            if field1D.ymax is not None:
-                ymax = field1D.ymax
+            ymin = np.min(sptime.points)
+            ymax = np.max(sptime.points)
+            xmin = sptime.xmin
+            xmax = sptime.xmax
+            if sptime.ymin is not None:
+                ymin = sptime.ymin
+            if sptime.ymax is not None:
+                ymax = sptime.ymax
             ax.set_xlim(xmin, xmax)
             ax.set_ylim(ymin, ymax)
 
-            cbar.ax.set_title(field1D.symbol)
+            cbar.ax.set_title(sptime.symbol)
             ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
             ax.set_ylabel(self.processor.axis_name_1)
-            ax.set_title(field1D.title)
+            ax.set_title(sptime.title)
             ax.grid()
 
         self._clean_unused_axes(axs, self.spaceTimeHeatmaps)
         self._save_and_close(fig, self.framesPaths.spacetimeheatmap_frame_path)
 
-    def _plot_particles_on_ax(self, ax, qty, frame_nb=None, uids=None):
+    def _plot_particles_on_ax(self, ax, part_qty, qty=None, frame_nb=None, uids=None):
         has_legend_items = False
-        # T = np.asarray()
         cmap = plt.get_cmap("Pastel1")
 
-        print("coucou", qty.values.shape)
-
         if uids is None:
-            uids = qty.uids
+            uids = part_qty.uids
 
         uids = (
             self.context.all_particles_uids
@@ -369,35 +377,44 @@ class SliceRenderer:
             else uids
         )
         for ii, uid in enumerate(uids):
-            if hasattr(qty, "labels") and ii < len(qty.labels):
-                label = qty.labels[ii]
+            lw = 1
+            alpha = 1
+            if hasattr(part_qty, "labels") and ii < len(part_qty.labels):
+                label = part_qty.labels[ii]
             else:
                 label = uid
 
-            if hasattr(qty, "colors") and ii < len(qty.colors):
-                color = qty.colors[ii]
+            if hasattr(part_qty, "colors") and ii < len(part_qty.colors):
+                color = part_qty.colors[ii]
             else:
                 color = cmap(ii / max(1, len(uids) - 1))
 
             if isinstance(qty, MapMovie2D):
-                points = qty.points[: frame_nb + 1, uid]
-                values = qty.values[: frame_nb + 1, uid]
+                points = part_qty.points[: frame_nb + 1, uid]
+                values = part_qty.values[: frame_nb + 1, uid]
                 alpha = 1
                 lw = 1
-            else:
-                points = qty.points
-                print(qty.values.shape)
-                values = qty.values[:, uid]
+            elif isinstance(qty, LineMovie1D):
+                points = part_qty.values[: frame_nb + 1, uid]
+                values = 0 * points
+                ax.scatter(points[-1], 0, color=color, marker="x")
+            elif isinstance(qty, PartQuantity):
+                points = part_qty.points
+                values = part_qty.values[:, uid]
                 alpha = 1
                 lw = 2
+            else:
+                raise NotImplementedError(f"{qty} doesn't support particles")
             ax.plot(points, values, label=label, color=color, lw=lw, alpha=alpha)
             has_legend_items = True
 
-        if len(qty.pointsRef) > 0:
-            ax.plot(qty.pointsRef, qty.valuesRef, ls="--", lw=2, label="Predicted")
+        if len(part_qty.pointsRef) > 0:
+            ax.plot(
+                part_qty.pointsRef, part_qty.valuesRef, ls="--", lw=2, label="Predicted"
+            )
             has_legend_items = True
 
-        if has_legend_items and not qty.is_global:
+        if has_legend_items and not part_qty.is_global:
             ax.legend()
         # if has_legend_items:
         #     loc = "best"

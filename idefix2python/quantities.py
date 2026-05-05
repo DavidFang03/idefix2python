@@ -157,8 +157,18 @@ class LineMovie1D(Field1D):
     For :math:`f(x, t)` fields, renders as a line plot :math:`f(x, t)` that updates every frame.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        key,
+        symbol,
+        plot_coords=[0, 0],
+        vmin=None,
+        vmax=None,
+        uids=[],
+        **kwargs,
+    ):
+        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        self.uids = uids
 
 
 class SpaceTimeHeatmap(Field1D):

@@ -392,7 +392,12 @@ class Pipeline:
 
     def _check_everything_alright(self):
         # Check whether the particles requested exist
-        for qty in [*self.partQuantities, *self.spaceTimeHeatmaps, *self.movies2D]:
+        for qty in [
+            *self.partQuantities,
+            *self.spaceTimeHeatmaps,
+            *self.movies1D,
+            *self.movies2D,
+        ]:
             if (
                 isinstance(qty.uids, list)
                 and len(qty.uids) > 0
@@ -576,7 +581,7 @@ class Pipeline:
                 qtyInfo.set_bounds(all_bounds[key])
 
             if key in config:
-                if "cmap" in config[key]:
+                if "cmap" in config[key] and hasattr(qtyInfo, "set_cmap"):
                     qtyInfo.set_cmap(config[key]["cmap"])
                 if "norm" in config[key]:
                     qtyInfo.set_norm(config[key]["norm"])

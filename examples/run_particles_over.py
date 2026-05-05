@@ -28,7 +28,7 @@ SpaceTimeHeatmaps = [
         "Dust0_RHO",
         r"$\rho^\mathrm{dust}$",
         plot_coords=[0, 0],
-        trace_over=[z_part],
+        uids="all",
         ref_function=analytical_trajectory,
     )
 ]

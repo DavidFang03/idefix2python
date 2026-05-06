@@ -78,9 +78,6 @@ class OutputTypeInfo:
         elif "dat" in self.ext:
             raise NotImplementedError()
 
-    def set_times(self, times):
-        self.times = times
-
 
 class RunContext:
     """
@@ -392,26 +389,24 @@ class Pipeline:
 
     def _check_everything_alright(self):
         # Check whether the particles requested exist
+        available_uids = set(self.context.all_particles_uids)
         for qty in [
             *self.partQuantities,
             *self.spaceTimeHeatmaps,
             *self.movies1D,
             *self.movies2D,
         ]:
-            if (
-                isinstance(qty.uids, list)
-                and len(qty.uids) > 0
-                and np.max(qty.uids) > self.context.particles_nb
-            ):
-                raise Exception(
-                    f"One of the uid requested ({np.max(qty.uids)}) is larger than the number of detected particles ({self.context.particles_nb})"
-                )
+            if isinstance(qty.uids, list) and len(qty.uids) > 0:
+                missing_uids = set(qty.uids) - available_uids
+                if len(missing_uids) > 0:
+                    raise Exception(
+                        f"One or more requested particle uids do not exist: {sorted(missing_uids)}"
+                    )
 
     def run(self):
         """
         Pray.
         """
-        # partInfo = self.context.outputTypes_info["particles"]
         self._check_everything_alright()
         if self.userArgs.onlyMovie:
             if self.doMovie:
@@ -434,56 +429,45 @@ class Pipeline:
         else:
             t_smooth = np.array(times)
 
-        [print("parts", q, q.index) for q in self.partQuantities]
-        for qty in self.partQuantities:
-            print(qty)
-            values = np.array(
-                [particles_result[i][qty.index] for i in range(nb_vtktimes)]
-            )
-            qty.set_data(points=times, values=values)
-            print(qty, qty.is_global, len(particles_result[0]))
-
-            if qty.ref_function is not None:
-                try:
-                    predicted_values = qty.ref_function(t_smooth)
-                    qty.set_ref_data(t_smooth, predicted_values)
-                except Exception as e:
-                    LOG(
-                        f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
-                    )
-
-        self.context.outputTypes_info["particles"].set_times(times)
-
-        if self.processor.parts_Y is not None:
-            self.processor.parts_Y.set_data(
-                points=self.processor.parts_X.values,
-                values=self.processor.parts_Y.values,
-            )
-
-        vtkInfo = self.context.outputTypes_info["vtk"]
-        if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
-            with Pool(self.userArgs.jobs) as pool:
-                print("heatmap")
-                spat_results = pool.starmap(
-                    self.processor.get_quantities,
-                    zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),
-                )
-
-            nb_vtktimes = len(spat_results)
-            times = [spat_results[i][0] for i in range(nb_vtktimes)]
-            vtkInfo.set_times(times)
-
-            for qty in self.spaceTimeHeatmaps:
+        if len(self.partQuantities) > 0:
+            for qty in self.partQuantities:
                 values = np.array(
-                    [spat_results[i][qty.index] for i in range(nb_vtktimes)]
+                    [particles_result[i][qty.index] for i in range(nb_vtktimes)]
                 )
-                qty.set_data(points=self.processor.X1Line, values=values)
+                qty.set_data(points=times, values=values)
 
                 if qty.ref_function is not None:
-                    t_array = np.array(times)
-                    if len(t_array) > 1:
-                        t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
-                        qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
+                    try:
+                        predicted_values = qty.ref_function(t_smooth)
+                        qty.set_ref_data(t_smooth, predicted_values)
+                    except Exception as e:
+                        LOG(
+                            f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
+                        )
+
+            vtkInfo = self.context.outputTypes_info["vtk"]
+            if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
+                with Pool(self.userArgs.jobs) as pool:
+                    spat_results = pool.starmap(
+                        self.processor.get_quantities,
+                        zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),
+                    )
+
+                nb_vtktimes = len(spat_results)
+                times = [spat_results[i][0] for i in range(nb_vtktimes)]
+                vtkInfo.set_times(times)
+
+                for qty in self.spaceTimeHeatmaps:
+                    values = np.array(
+                        [spat_results[i][qty.index] for i in range(nb_vtktimes)]
+                    )
+                    qty.set_data(points=self.processor.X1Line, values=values)
+
+                    if qty.ref_function is not None:
+                        t_array = np.array(times)
+                        if len(t_array) > 1:
+                            t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
+                            qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
 
         self.renderer = SliceRenderer(
             self.context,

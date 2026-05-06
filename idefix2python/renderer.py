@@ -237,8 +237,11 @@ class SliceRenderer:
             if getattr(qtyInfo, "contours", None) is not None:
                 self._plot_contours(ax, data, qtyInfo, cbar)
             if qtyInfo.uids is not None:
+                qtyInfo.parts_Y.set_data(
+                    points=qtyInfo.parts_X.values, values=qtyInfo.parts_Y.values
+                )
                 self._plot_particles_on_ax(
-                    ax, self.processor.parts_Y, qty=qtyInfo, frame_nb=frame_nb
+                    ax, qtyInfo.parts_Y, qty=qtyInfo, frame_nb=frame_nb
                 )
 
             if color is not None:
@@ -390,8 +393,8 @@ class SliceRenderer:
                 color = cmap(ii / max(1, len(uids) - 1))
 
             if isinstance(qty, MapMovie2D):
-                points = part_qty.points[: frame_nb + 1, uid]
-                values = part_qty.values[: frame_nb + 1, uid]
+                points = part_qty.points[: frame_nb + 1][uid]
+                values = part_qty.values[: frame_nb + 1][uid]
                 alpha = 1
                 lw = 1
             elif isinstance(qty, LineMovie1D):

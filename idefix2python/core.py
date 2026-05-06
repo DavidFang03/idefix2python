@@ -225,12 +225,11 @@ class RunContext:
 
         if self.outputTypes_info["particles"].status:
             self.all_particles_uids = self.outputTypes_info["particles"].testData["uid"]
-            print(self.all_particles_uids)
             self.particles_nb = len(self.all_particles_uids)
             LOG(f"Particles detected: {self.particles_nb}")
         else:
-            self.particles_nb = None
-            self.all_particles_uids = None
+            self.particles_nb = 0
+            self.all_particles_uids = []
 
     def _get_lastfile_to_read(self, filelist):
         """
@@ -445,29 +444,29 @@ class Pipeline:
                             f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
                         )
 
-            vtkInfo = self.context.outputTypes_info["vtk"]
-            if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
-                with Pool(self.userArgs.jobs) as pool:
-                    spat_results = pool.starmap(
-                        self.processor.get_quantities,
-                        zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),
-                    )
+        vtkInfo = self.context.outputTypes_info["vtk"]
+        if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
+            with Pool(self.userArgs.jobs) as pool:
+                spat_results = pool.starmap(
+                    self.processor.get_quantities,
+                    zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),
+                )
 
-                nb_vtktimes = len(spat_results)
-                times = [spat_results[i][0] for i in range(nb_vtktimes)]
-                vtkInfo.set_times(times)
+            nb_vtktimes = len(spat_results)
+            times = [spat_results[i][0] for i in range(nb_vtktimes)]
+            vtkInfo.set_times(times)
 
-                for qty in self.spaceTimeHeatmaps:
-                    values = np.array(
-                        [spat_results[i][qty.index] for i in range(nb_vtktimes)]
-                    )
-                    qty.set_data(points=self.processor.X1Line, values=values)
+            for qty in self.spaceTimeHeatmaps:
+                values = np.array(
+                    [spat_results[i][qty.index] for i in range(nb_vtktimes)]
+                )
+                qty.set_data(points=self.processor.X1Line, values=values)
 
-                    if qty.ref_function is not None:
-                        t_array = np.array(times)
-                        if len(t_array) > 1:
-                            t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
-                            qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
+                if qty.ref_function is not None:
+                    t_array = np.array(times)
+                    if len(t_array) > 1:
+                        t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
+                        qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
 
         self.renderer = SliceRenderer(
             self.context,

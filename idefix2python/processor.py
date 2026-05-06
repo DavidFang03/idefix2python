@@ -15,7 +15,6 @@ class PhysicsProcessor:
     def _setup(self):
         if self.context.outputTypes_info["vtk"].status:
             vtk = self.context.outputTypes_info["vtk"].vtk
-            print(f"active {self.context.active_directions[0]}")
             self.X1Line = tools.get_Position(
                 vtk, self.context.geometry, self.context.active_directions[0]
             )

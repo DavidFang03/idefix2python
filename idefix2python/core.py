@@ -78,6 +78,9 @@ class OutputTypeInfo:
         elif "dat" in self.ext:
             raise NotImplementedError()
 
+    def set_times(self, times):
+        self.times = times
+
 
 class RunContext:
     """

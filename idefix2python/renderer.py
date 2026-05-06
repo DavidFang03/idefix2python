@@ -330,7 +330,6 @@ class SliceRenderer:
 
             has_legend_items = False
             if len(sptime.pointsRef) > 0:
-                print(sptime, sptime.pointsRef)
                 plot_kwargs = {}
                 if hasattr(sptime.ref_function, "plot_kwargs"):
                     plot_kwargs = sptime.ref_function.plot_kwargs

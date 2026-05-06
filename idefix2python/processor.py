@@ -93,10 +93,11 @@ class PhysicsProcessor:
 
             for qtyInfo in [*self.partQuantities]:
                 if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
+                    # Currently the computed shape must be (len(V.data["uid"]))
                     computed_data = qtyInfo.compute(V)
-                    if np.shape(computed_data) != (self.context.particles_nb,):
+                    if len(computed_data) != len(V.data["uid"]):
                         raise ValueError(
-                            f"the computed output isn't right: {np.shape(computed_data)}"
+                            f"The computed data has shape {np.shape(computed_data)} but should have the same shape as V.data['uid']"
                         )
                     V.data[qtyInfo.key] = computed_data
 

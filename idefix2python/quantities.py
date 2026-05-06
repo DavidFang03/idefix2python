@@ -26,8 +26,6 @@ class Data:
         * **ref_function** (callable): Analytical function for comparison.
     """
 
-    timeline_instances = count(1)
-
     def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
         self.key = key
         self.symbol = symbol
@@ -148,7 +146,6 @@ class Field1D(Data):
     """
 
     def __init__(self, *args, **kwargs):
-        self.index = next(Data.timeline_instances)
         super().__init__(*args, **kwargs)
 
 
@@ -179,6 +176,8 @@ class SpaceTimeHeatmap(Field1D):
     :keyword uids: List of particles' uids which trajectories will be diplayed.
     """
 
+    instances = count(1)
+
     def __init__(
         self,
         key,
@@ -195,6 +194,7 @@ class SpaceTimeHeatmap(Field1D):
         self.cmap = cmap
         self.set_norm(norm)
         self.uids = uids
+        self.index = next(SpaceTimeHeatmap.instances)
 
 
 class PartQuantity(Data):

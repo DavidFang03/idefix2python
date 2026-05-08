@@ -281,16 +281,16 @@ class SliceRenderer:
 
             ax.plot(points, V.data[key])
 
-            if hasattr(field1D, "parts_X"):
+            if field1D.uids is not None:
                 self._plot_particles_on_ax(
                     ax,
-                    field1D.parts_X,
+                    self.processor.parts_X,
                     qty=field1D,
                     uids=field1D.uids,
                     frame_nb=frame_nb,
                 )
 
-            # To revove?
+            # To remove?
             if len(field1D.pointsRef) > 0:
                 ax.plot(
                     field1D.points,
@@ -333,7 +333,7 @@ class SliceRenderer:
                 fig, ax, T, Points, np.transpose(sptime.values), sptime
             )
 
-            if hasattr(sptime, "parts_X"):
+            if sptime.uids is not None:
                 self._plot_particles_on_ax(ax, sptime.parts_X, uids=sptime.uids)
                 has_legend_items = False
 

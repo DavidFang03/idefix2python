@@ -354,23 +354,29 @@ class Pipeline:
         self.movies1D = movies1D
         self.movies2D = movies2D
 
+        self.processor.parts_X1 = None
+        self.processor.parts_X2 = None
         self.processor.parts_X = None
-        self.processor.parts_Y = None
-        for qty in [*self.movies2D, *self.spaceTimeHeatmaps, *self.movies1D]:
-            if qty.uids:
-                X_index = self.context.active_directions[0]
-                parts_X = PartQuantity(f"PART_X{X_index + 1}", uids="all")
-                parts_X.is_global = True
-                partQuantities.append(parts_X)
-                qty.parts_X = parts_X
+        self.processor.parts_Z = None
 
-                if len(self.context.active_directions) == 2:
-                    Y_index = self.context.active_directions[1]
-                    parts_Y = PartQuantity(f"PART_X{Y_index + 1}", uids="all")
+        self.particles_requested = True in [
+            qty.uids is not None
+            for qty in [*self.movies2D, *self.spaceTimeHeatmaps, *self.movies1D]
+        ]
+        if self.particles_requested:
+            X_index = self.context.active_directions[0]
+            self.processor.parts_X1 = PartQuantity(f"PART_X{X_index + 1}", uids="all")
+            self.processor.parts_X1.is_global = True
+            partQuantities.append(self.processor.parts_X1)
 
-                    parts_Y.is_global = True
-                    partQuantities.append(parts_Y)
-                    qty.parts_Y = parts_Y
+            if len(self.context.active_directions) == 2:
+                Y_index = self.context.active_directions[1]
+                self.processor.parts_X2 = PartQuantity(
+                    f"PART_X{Y_index + 1}", uids="all"
+                )
+
+                self.processor.parts_X2.is_global = True
+                partQuantities.append(self.processor.parts_X2)
 
         self.partQuantities = partQuantities
 
@@ -446,6 +452,19 @@ class Pipeline:
                         LOG(
                             f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
                         )
+            if self.particles_requested:
+                # self.processor.parts_X = PartQuantity("PART_X")
+                # self.processor.parts_X.is_global = True
+                # cartesian for pcolormesh
+                self.processor.parts_Z = PartQuantity("PART_Z")
+                self.processor.parts_Z.is_global = True
+                self.processor.parts_Z.set_data(
+                    *tools.convertGrid_toXZ(
+                        self.processor.parts_X1.values,
+                        self.processor.parts_X2.values,
+                        self.context.geometry,
+                    )
+                )
 
         vtkInfo = self.context.outputTypes_info["vtk"]
         if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:

@@ -245,15 +245,12 @@ class SliceRenderer:
             if getattr(qtyInfo, "contours", None) is not None:
                 self._plot_contours(ax, data, qtyInfo, cbar)
             if qtyInfo.uids is not None:
-                # cartesian for pcolormesh
-                partx, partz = tools.convertGrid_toXZ(
-                    qtyInfo.parts_X.values,
-                    qtyInfo.parts_Y.values,
-                    self.context.geometry,
-                )
-                qtyInfo.parts_Y.set_data(points=partx, values=partz)
                 self._plot_particles_on_ax(
-                    ax, qtyInfo.parts_Y, qty=qtyInfo, frame_nb=frame_nb
+                    ax,
+                    self.processor.parts_Z,
+                    qty=qtyInfo,
+                    frame_nb=frame_nb,
+                    uids=qtyInfo.uids,
                 )
 
             if color is not None:
@@ -384,7 +381,6 @@ class SliceRenderer:
 
         if uids is None:
             uids = part_qty.uids
-
         uids = (
             self.context.all_particles_uids
             if (uids == "all" or len(uids) == 0)

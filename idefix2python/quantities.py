@@ -161,7 +161,7 @@ class LineMovie1D(Field1D):
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,
-        uids=[],
+        uids=None,
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
@@ -187,7 +187,7 @@ class SpaceTimeHeatmap(Field1D):
         vmax=None,
         cmap=DEFAULT_CMAP,
         norm="linear",
-        uids=[],
+        uids=None,
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)

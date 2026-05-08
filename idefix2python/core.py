@@ -453,8 +453,6 @@ class Pipeline:
                             f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
                         )
             if self.particles_requested:
-                # self.processor.parts_X = PartQuantity("PART_X")
-                # self.processor.parts_X.is_global = True
                 # cartesian for pcolormesh
                 self.processor.parts_Z = PartQuantity("PART_Z")
                 self.processor.parts_Z.is_global = True

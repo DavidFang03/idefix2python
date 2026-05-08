@@ -292,9 +292,9 @@ def get_streamline_name(u_key1):
     Determines a nice LaTeX name for the streamline based on the field key.
     """
     if u_key1 == "VX1":
-        return r"$\mathbf{v}_p$"
+        return r"$\mathbf{u}_\mathrm{p}$"
     elif u_key1 == "BX1":
-        return r"$\mathbf{B}_p$"
+        return r"$\mathbf{B}_\mathrm{p}$"
     elif u_key1.startswith("Dust") and "VX" in u_key1:
         dust_id = u_key1.split("_")[0]  # E.g. 'Dust0'
         return rf"$\mathbf{{v}}_{{p, \mathrm{{{dust_id}}}}}$"

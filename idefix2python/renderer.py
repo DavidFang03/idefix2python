@@ -13,6 +13,7 @@ from .tools import LOG
 matplotlib.use("Agg")
 
 LABEL_FONTSIZE = 16
+DPI = 350
 
 lw_streamline = 0.2
 density_streamline = [1, 2]
@@ -118,7 +119,12 @@ class SliceRenderer:
             norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
 
         cmesh = ax.pcolormesh(
-            grid1, grid2, data, cmap=qtyInfo.cmap, norm=norm, alpha=0.5
+            grid1,
+            grid2,
+            data,
+            cmap=qtyInfo.cmap,
+            norm=norm,
+            alpha=0.25,  # TODO more customization
         )
 
         cbar = fig.colorbar(cmesh, ax=ax, format=cbar_format)
@@ -188,7 +194,7 @@ class SliceRenderer:
         cbar.add_lines(levels)
 
     def _save_and_close(self, fig, path):
-        fig.savefig(path, dpi=300)
+        fig.savefig(path, dpi=DPI)
         plt.close(fig)
         LOG(f"[OK] {path}")
 
@@ -392,10 +398,11 @@ class SliceRenderer:
                 color = cmap(ii / max(1, len(uids) - 1))
 
             if isinstance(qty, MapMovie2D):
-                points = part_qty.points[: frame_nb + 1][uid]
-                values = part_qty.values[: frame_nb + 1][uid]
+                points = part_qty.points[: frame_nb + 1, uid]
+                values = part_qty.values[: frame_nb + 1, uid]
                 alpha = 1
                 lw = 1
+                ax.scatter(points[-1], values[-1], color=color, marker="x", s=0.2)
             elif isinstance(qty, LineMovie1D):
                 points = part_qty.values[: frame_nb + 1, uid]
                 values = 0 * points

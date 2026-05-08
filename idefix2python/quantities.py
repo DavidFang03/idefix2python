@@ -173,7 +173,7 @@ class SpaceTimeHeatmap(Field1D):
     For :math:`f(x, t)` fields, renders a space-time heatmap.
 
     :keyword cmap: Colormap for the heatmap.
-    :keyword uids: List of particles' uids which trajectories will be diplayed.
+    :keyword uids: List of particles' uids which trajectories will be displayed.
     """
 
     instances = count(1)

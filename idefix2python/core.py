@@ -369,7 +369,7 @@ class Pipeline:
             self.processor.parts_X1.is_global = True
             partQuantities.append(self.processor.parts_X1)
 
-            if len(self.context.active_directions) == 2:
+            if len(self.context.active_directions) >= 2:
                 Y_index = self.context.active_directions[1]
                 self.processor.parts_X2 = PartQuantity(
                     f"PART_X{Y_index + 1}", uids="all"
@@ -452,7 +452,7 @@ class Pipeline:
                         LOG(
                             f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
                         )
-            if self.particles_requested:
+            if self.particles_requested and len(self.context.active_directions) >= 2:
                 # cartesian for pcolormesh
                 self.processor.parts_Z = PartQuantity("PART_Z")
                 self.processor.parts_Z.is_global = True

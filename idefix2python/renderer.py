@@ -5,7 +5,7 @@ import shutil
 from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
 from matplotlib.ticker import FuncFormatter
 from pathlib import Path
-from .quantities import MapMovie2D, LineMovie1D, PartQuantity
+from .quantities import MapMovie2D, LineMovie1D
 
 from . import tools
 from .tools import LOG
@@ -124,7 +124,8 @@ class SliceRenderer:
             data,
             cmap=qtyInfo.cmap,
             norm=norm,
-            alpha=0.25,  # TODO more customization
+            alpha=0.20,  # TODO more customization
+            antialiased=True,  # to remove artefacts
         )
 
         cbar = fig.colorbar(cmesh, ax=ax, format=cbar_format)
@@ -194,6 +195,7 @@ class SliceRenderer:
         cbar.add_lines(levels)
 
     def _save_and_close(self, fig, path):
+        fig.tight_layout()
         fig.savefig(path, dpi=DPI)
         plt.close(fig)
         LOG(f"[OK] {path}")
@@ -243,9 +245,13 @@ class SliceRenderer:
             if getattr(qtyInfo, "contours", None) is not None:
                 self._plot_contours(ax, data, qtyInfo, cbar)
             if qtyInfo.uids is not None:
-                qtyInfo.parts_Y.set_data(
-                    points=qtyInfo.parts_X.values, values=qtyInfo.parts_Y.values
+                # cartesian for pcolormesh
+                partx, partz = tools.convertGrid_toXZ(
+                    qtyInfo.parts_X.values,
+                    qtyInfo.parts_Y.values,
+                    self.context.geometry,
                 )
+                qtyInfo.parts_Y.set_data(points=partx, values=partz)
                 self._plot_particles_on_ax(
                     ax, qtyInfo.parts_Y, qty=qtyInfo, frame_nb=frame_nb
                 )
@@ -401,8 +407,15 @@ class SliceRenderer:
                 points = part_qty.points[: frame_nb + 1, uid]
                 values = part_qty.values[: frame_nb + 1, uid]
                 alpha = 1
-                lw = 1
-                ax.scatter(points[-1], values[-1], color=color, marker="x", s=0.2)
+                lw = 0.5
+                ax.scatter(
+                    points[-1],
+                    values[-1],
+                    color=color,
+                    marker="x",
+                    s=1,
+                    linewidths=0.3,
+                )
             elif isinstance(qty, LineMovie1D):
                 points = part_qty.values[: frame_nb + 1, uid]
                 values = 0 * points
@@ -414,7 +427,16 @@ class SliceRenderer:
                 lw = 2
             else:
                 raise NotImplementedError(f"{qty} doesn't support particles")
-            ax.plot(points, values, label=label, color=color, lw=lw, alpha=alpha)
+            ax.plot(
+                points,
+                values,
+                label=label,
+                color=color,
+                lw=lw,
+                alpha=alpha,
+                marker="8",
+                markersize=0.2,
+            )
             has_legend_items = True
 
         if len(part_qty.pointsRef) > 0:

@@ -115,7 +115,7 @@ class MapMovie2D(Data):
         self.cmap = cmap
         self.set_norm(norm)
         self.streamlines = streamlines
-        self.streamline_color = kwargs.get("streamline_color", "w")
+        self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
         self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")

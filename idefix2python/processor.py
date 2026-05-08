@@ -115,8 +115,7 @@ class PhysicsProcessor:
                 PostSpaceTimeHeatmaps[field.index] = np.full(
                     self.context.particles_nb, np.nan
                 )
-                for ii in range(len(V.data[key])):
-                    uid = V.data["uid"][ii]
+                for ii, uid in enumerate(V.data["uid"]):
                     PostSpaceTimeHeatmaps[field.index][uid] = V.data[key][ii]
 
             else:

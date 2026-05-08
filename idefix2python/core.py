@@ -424,20 +424,20 @@ class Pipeline:
                 )
             return  # Exit early
 
-        with Pool(self.userArgs.jobs) as pool:
-            particles_result = pool.starmap(
-                self.processor.get_quantities,
-                zip(self.partList, repeat(self.partQuantities)),
-            )
-
-        nb_vtktimes = len(particles_result)
-        times = [particles_result[i][0] for i in range(nb_vtktimes)]
-        if len(times) > 1:
-            t_smooth = np.linspace(min(times), max(times), 10000)
-        else:
-            t_smooth = np.array(times)
-
         if len(self.partQuantities) > 0:
+            with Pool(self.userArgs.jobs) as pool:
+                particles_result = pool.starmap(
+                    self.processor.get_quantities,
+                    zip(self.partList, repeat(self.partQuantities)),
+                )
+
+            nb_vtktimes = len(particles_result)
+            times = [particles_result[i][0] for i in range(nb_vtktimes)]
+            if len(times) > 1:
+                t_smooth = np.linspace(min(times), max(times), 10000)
+            else:
+                t_smooth = np.array(times)
+
             for qty in self.partQuantities:
                 values = np.array(
                     [particles_result[i][qty.index] for i in range(nb_vtktimes)]

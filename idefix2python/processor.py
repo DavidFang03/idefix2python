@@ -64,6 +64,9 @@ class PhysicsProcessor:
         self.movies2D = movies2D
         self.partQuantities = partQuantities
 
+    def set_times(self, times):
+        self.times = times
+
     def process(self, V):
         """
         Transposes the vtk datas and add some stuff:

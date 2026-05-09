@@ -284,7 +284,7 @@ class SliceRenderer:
             if field1D.uids is not None:
                 self._plot_particles_on_ax(
                     ax,
-                    self.processor.parts_X,
+                    self.processor.parts_X1,
                     qty=field1D,
                     uids=field1D.uids,
                     frame_nb=frame_nb,
@@ -325,7 +325,7 @@ class SliceRenderer:
         for sptime in self.spaceTimeHeatmaps:
             ax = axs[*sptime.plot_coords]
             T, Points = np.meshgrid(
-                np.asarray(self.context.outputTypes_info["vtk"].times),
+                np.asarray(self.processor.times),
                 np.asarray(sptime.points),
             )
 
@@ -334,7 +334,9 @@ class SliceRenderer:
             )
 
             if sptime.uids is not None:
-                self._plot_particles_on_ax(ax, sptime.parts_X, uids=sptime.uids)
+                self._plot_particles_on_ax(
+                    ax, self.processor.parts_X1, uids=sptime.uids
+                )
                 has_legend_items = False
 
             has_legend_items = False

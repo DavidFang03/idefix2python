@@ -78,9 +78,6 @@ class OutputTypeInfo:
         elif "dat" in self.ext:
             raise NotImplementedError()
 
-    def set_times(self, times):
-        self.times = times
-
 
 class RunContext:
     """
@@ -356,7 +353,7 @@ class Pipeline:
 
         self.processor.parts_X1 = None
         self.processor.parts_X2 = None
-        self.processor.parts_X = None
+        # self.processor.parts_X = None
         self.processor.parts_Z = None
 
         self.particles_requested = True in [
@@ -474,7 +471,6 @@ class Pipeline:
 
             nb_vtktimes = len(spat_results)
             times = [spat_results[i][0] for i in range(nb_vtktimes)]
-            vtkInfo.set_times(times)
 
             for qty in self.spaceTimeHeatmaps:
                 values = np.array(
@@ -488,6 +484,9 @@ class Pipeline:
                         t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
                         qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
 
+        self.processor.set_times(
+            times
+        )  # TODO add safeguard if keys from data*.vtk requested but no data*.vtk found
         self.renderer = SliceRenderer(
             self.context,
             self.processor,

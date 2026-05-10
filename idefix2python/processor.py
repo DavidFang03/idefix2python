@@ -64,8 +64,8 @@ class PhysicsProcessor:
         self.movies2D = movies2D
         self.partQuantities = partQuantities
 
-    def set_times(self, times):
-        self.times = times
+    def set_vtktimes(self, vtktimes):
+        self.vtktimes = vtktimes
 
     def process(self, V):
         """

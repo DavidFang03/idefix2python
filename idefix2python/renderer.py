@@ -325,7 +325,7 @@ class SliceRenderer:
         for sptime in self.spaceTimeHeatmaps:
             ax = axs[*sptime.plot_coords]
             T, Points = np.meshgrid(
-                np.asarray(self.processor.times),
+                np.asarray(self.processor.vtktimes),
                 np.asarray(sptime.points),
             )
 

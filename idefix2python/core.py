@@ -421,6 +421,7 @@ class Pipeline:
                 )
             return  # Exit early
 
+        vtktimes = None
         if len(self.partQuantities) > 0:
             with Pool(self.userArgs.jobs) as pool:
                 particles_result = pool.starmap(
@@ -429,17 +430,17 @@ class Pipeline:
                 )
 
             nb_vtktimes = len(particles_result)
-            times = [particles_result[i][0] for i in range(nb_vtktimes)]
-            if len(times) > 1:
-                t_smooth = np.linspace(min(times), max(times), 10000)
+            vtktimes = [particles_result[i][0] for i in range(nb_vtktimes)]
+            if len(vtktimes) > 1:
+                t_smooth = np.linspace(min(vtktimes), max(vtktimes), 10000)
             else:
-                t_smooth = np.array(times)
+                t_smooth = np.array(vtktimes)
 
             for qty in self.partQuantities:
                 values = np.array(
                     [particles_result[i][qty.index] for i in range(nb_vtktimes)]
                 )
-                qty.set_data(points=times, values=values)
+                qty.set_data(points=vtktimes, values=values)
 
                 if qty.ref_function is not None:
                     try:
@@ -470,7 +471,7 @@ class Pipeline:
                 )
 
             nb_vtktimes = len(spat_results)
-            times = [spat_results[i][0] for i in range(nb_vtktimes)]
+            vtktimes = [spat_results[i][0] for i in range(nb_vtktimes)]
 
             for qty in self.spaceTimeHeatmaps:
                 values = np.array(
@@ -479,14 +480,14 @@ class Pipeline:
                 qty.set_data(points=self.processor.X1Line, values=values)
 
                 if qty.ref_function is not None:
-                    t_array = np.array(times)
+                    t_array = np.array(vtktimes)
                     if len(t_array) > 1:
                         t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
                         qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
-
-        self.processor.set_times(
-            times
-        )  # TODO add safeguard if keys from data*.vtk requested but no data*.vtk found
+        if vtktimes is not None:
+            self.processor.set_vtktimes(
+                vtktimes
+            )  # TODO add safeguard if keys from data*.vtk requested but no data*.vtk found
         self.renderer = SliceRenderer(
             self.context,
             self.processor,

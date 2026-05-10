@@ -78,9 +78,6 @@ class OutputTypeInfo:
         elif "dat" in self.ext:
             raise NotImplementedError()
 
-    def set_times(self, times):
-        self.times = times
-
 
 class RunContext:
     """
@@ -191,22 +188,37 @@ class RunContext:
         ].dimensions
         # There's no way to deduce the number of dimensions from the part*.vtk files but it has to be the same as in the global vtk
 
+        if (
+            self.partFolder is not None
+            and not self.outputTypes_info["particles"].status
+        ):
+            raise FileNotFoundError(
+                f"the folder {self.partFolder} doesn't seem to contain any part*vtk"
+            )
+
         ## Everything is deduced from the global vtk
         vtkInfo = self.outputTypes_info["vtk"]
-        if not vtkInfo.status and len(self.active_directions) < 1:
-            raise Exception("at least one data.vtk is required to detect the geometry")
+        partInfo = self.outputTypes_info["particles"]
+        if vtkInfo.status:
+            geometry = vtkInfo.geometry
+        elif partInfo.status:
+            geometry = partInfo.geometry
+        else:
+            raise Exception("No vtk files were found?")
 
-        if vtkInfo.status and not len(self.active_directions) >= 1:
-            self.geometry = vtkInfo.geometry
-            self.dimensions = vtkInfo.dimensions
+        if len(self.active_directions) == 0:
+            if not vtkInfo.status:
+                raise Exception(
+                    "No data*.vtk detected. Please provide active_directions."
+                )
             vtk = vtkInfo.vtk
             for direction, ncell in enumerate([vtk.nx, vtk.ny, vtk.nz]):
                 if ncell > 1:
                     self.active_directions.append(direction)
 
-        elif len(self.active_directions) >= 1:
-            self.geometry = self.outputTypes_info["particles"].geometry
-            self.dimensions = len(self.active_directions)
+        dimensions = len(self.active_directions)
+        self.geometry = geometry
+        self.dimensions = dimensions
 
         self.active_directions_labels = [
             tools.get_Position_name(self.geometry, dir)
@@ -216,10 +228,12 @@ class RunContext:
         LOG("Active axes", self.active_directions_labels)
 
         if self.outputTypes_info["particles"].status:
-            self.particles_nb = len(self.outputTypes_info["particles"].vtk.x)
+            self.all_particles_uids = self.outputTypes_info["particles"].testData["uid"]
+            self.particles_nb = len(self.all_particles_uids)
             LOG(f"Particles detected: {self.particles_nb}")
         else:
-            self.particles_nb = None
+            self.particles_nb = 0
+            self.all_particles_uids = []
 
     def _get_lastfile_to_read(self, filelist):
         """
@@ -337,36 +351,72 @@ class Pipeline:
 
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)
 
-        def _to_dict(obj_input):
-            if isinstance(obj_input, list):
-                return {item.key: item for item in obj_input}
-            return obj_input
+        self.spaceTimeHeatmaps = spaceTimeHeatmaps
+        self.movies1D = movies1D
+        self.movies2D = movies2D
 
-        self.spaceTimeHeatmaps = _to_dict(spaceTimeHeatmaps)
-        self.movies1D = _to_dict(movies1D)
-        self.movies2D = _to_dict(movies2D)
+        self.processor.parts_X1 = None
+        self.processor.parts_X2 = None
+        # self.processor.parts_X = None
+        self.processor.parts_Z = None
 
-        original_part_quantity_keys = set(_to_dict(partQuantities).keys())
-        for heatmap in self.spaceTimeHeatmaps.values():
-            for traceover in heatmap.trace_over:
-                if isinstance(traceover, PartQuantity):
-                    if traceover.key not in original_part_quantity_keys:
-                        traceover.is_trace_over = True
-                        partQuantities.append(traceover)
-        self.partQuantities = _to_dict(partQuantities)
+        self.particles_requested = True in [
+            qty.uids is not None
+            for qty in [*self.movies2D, *self.spaceTimeHeatmaps, *self.movies1D]
+        ]
+        if self.particles_requested:
+            X_index = self.context.active_directions[0]
+            self.processor.parts_X1 = PartQuantity(f"PART_X{X_index + 1}", uids="all")
+            self.processor.parts_X1.is_global = True
+            partQuantities.append(self.processor.parts_X1)
 
-        combined_1D = {**self.movies1D, **self.spaceTimeHeatmaps}
-        self.processor.set_fields(combined_1D, self.movies2D)
+            if len(self.context.active_directions) >= 2:
+                Y_index = self.context.active_directions[1]
+                self.processor.parts_X2 = PartQuantity(
+                    f"PART_X{Y_index + 1}", uids="all"
+                )
+
+                self.processor.parts_X2.is_global = True
+                partQuantities.append(self.processor.parts_X2)
+
+        self.partQuantities = partQuantities
+
+        self.processor.set_fields(
+            [*self.movies1D, *self.spaceTimeHeatmaps],
+            self.movies2D,
+            self.partQuantities,
+        )
 
         self._name_frames()
         self._apply_config()
+
+        if len(self.partQuantities) > 0:
+            if not self.context.outputTypes_info["particles"].status:
+                raise Exception(
+                    "Particle quantities were requested, but no particle files were found."
+                )
+
+    def _check_everything_alright(self):
+        # Check whether the particles requested exist
+        available_uids = set(self.context.all_particles_uids)
+        for qty in [
+            *self.partQuantities,
+            *self.spaceTimeHeatmaps,
+            *self.movies1D,
+            *self.movies2D,
+        ]:
+            if isinstance(qty.uids, list) and len(qty.uids) > 0:
+                missing_uids = set(qty.uids) - available_uids
+                if len(missing_uids) > 0:
+                    raise Exception(
+                        f"One or more requested particle uids do not exist: {sorted(missing_uids)}"
+                    )
 
     def run(self):
         """
         Pray.
         """
-        partInfo = self.context.outputTypes_info["particles"]
-
+        self._check_everything_alright()
         if self.userArgs.onlyMovie:
             if self.doMovie:
                 tools.movie(
@@ -375,12 +425,8 @@ class Pipeline:
                 )
             return  # Exit early
 
+        vtktimes = None
         if len(self.partQuantities) > 0:
-            if not partInfo.status:
-                raise Exception(
-                    "Particle quantities were requested, but no particle files were found."
-                )
-
             with Pool(self.userArgs.jobs) as pool:
                 particles_result = pool.starmap(
                     self.processor.get_quantities,
@@ -388,17 +434,17 @@ class Pipeline:
                 )
 
             nb_vtktimes = len(particles_result)
-            times = [particles_result[i][0] for i in range(nb_vtktimes)]
-            if len(times) > 1:
-                t_smooth = np.linspace(min(times), max(times), 1000)
+            vtktimes = [particles_result[i][0] for i in range(nb_vtktimes)]
+            if len(vtktimes) > 1:
+                t_smooth = np.linspace(min(vtktimes), max(vtktimes), 10000)
             else:
-                t_smooth = np.array(times)
+                t_smooth = np.array(vtktimes)
 
-            for qty in self.partQuantities.values():
+            for qty in self.partQuantities:
                 values = np.array(
                     [particles_result[i][qty.index] for i in range(nb_vtktimes)]
                 )
-                qty.set_data(points=times, values=values)
+                qty.set_data(points=vtktimes, values=values)
 
                 if qty.ref_function is not None:
                     try:
@@ -408,8 +454,17 @@ class Pipeline:
                         LOG(
                             f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
                         )
-
-            self.context.outputTypes_info["particles"].set_times(times)
+            if self.particles_requested and len(self.context.active_directions) >= 2:
+                # cartesian for pcolormesh
+                self.processor.parts_Z = PartQuantity("PART_Z")
+                self.processor.parts_Z.is_global = True
+                self.processor.parts_Z.set_data(
+                    *tools.convertGrid_toXZ(
+                        self.processor.parts_X1.values,
+                        self.processor.parts_X2.values,
+                        self.context.geometry,
+                    )
+                )
 
         vtkInfo = self.context.outputTypes_info["vtk"]
         if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
@@ -420,21 +475,23 @@ class Pipeline:
                 )
 
             nb_vtktimes = len(spat_results)
-            times = [spat_results[i][0] for i in range(nb_vtktimes)]
-            vtkInfo.set_times(times)
+            vtktimes = [spat_results[i][0] for i in range(nb_vtktimes)]
 
-            for qty in self.spaceTimeHeatmaps.values():
+            for qty in self.spaceTimeHeatmaps:
                 values = np.array(
                     [spat_results[i][qty.index] for i in range(nb_vtktimes)]
                 )
                 qty.set_data(points=self.processor.X1Line, values=values)
 
                 if qty.ref_function is not None:
-                    t_array = np.array(times)
+                    t_array = np.array(vtktimes)
                     if len(t_array) > 1:
                         t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
                         qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
-
+        if vtktimes is not None:
+            self.processor.set_vtktimes(
+                vtktimes
+            )  # TODO add safeguard if keys from data*.vtk requested but no data*.vtk found
         self.renderer = SliceRenderer(
             self.context,
             self.processor,
@@ -461,7 +518,7 @@ class Pipeline:
             if self.userArgs.doOnlyFrames:
                 render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
             with Pool(self.userArgs.jobs) as pool:
-                pool.map(self._process_and_render_frame, render_list)
+                pool.starmap(self._process_and_render_frame, enumerate(render_list))
 
             if self.doMovie:
                 tools.movie(
@@ -469,16 +526,16 @@ class Pipeline:
                     movie_path=self.framesPaths.slice1_video_path,
                 )
 
-    def _process_and_render_frame(self, vtkPath):
+    def _process_and_render_frame(self, frame_nb, vtkPath):
         """1. Read VTK Data, 2. Process Physics Math, 3. Render Requested Frame"""
         V = readVTK(vtkPath)
         self.processor.process(V)
 
         if len(self.movies2D) > 0:
-            self.renderer.render_2D(V, vtkPath)
+            self.renderer.render_2D(V, frame_nb, vtkPath)
 
         if len(self.movies1D) > 0:
-            self.renderer.render_1D(V, vtkPath)
+            self.renderer.render_1D(V, frame_nb, vtkPath)
 
     def _name_frames(self):
         context = self.context
@@ -492,7 +549,7 @@ class Pipeline:
         if self.userArgs.onlyMovie or self.userArgs.onlyAnalysis:
             return
 
-        all_fields = self.movies2D.keys()
+        all_fields = [v.key for v in self.movies2D]
         config = self.context.config
         LOG(config)
         all_bounds = {}
@@ -522,23 +579,25 @@ class Pipeline:
             LOG("All fields are already bounded in config")
 
         LOG(all_fields)
-        for qt in all_fields:
-            if qt in config and "bounds" in config[qt]:
-                self.movies2D[qt].set_bounds(config[qt]["bounds"])
-            elif qt in all_bounds and not self.userArgs.noBounds:
-                self.movies2D[qt].set_bounds(all_bounds[qt])
+        all_movies = [*self.movies1D, *self.movies2D]
+        for qtyInfo in all_movies:
+            key = qtyInfo.key
+            if key in config and "bounds" in config[key]:
+                qtyInfo.set_bounds(config[key]["bounds"])
+            elif key in all_bounds and not self.userArgs.noBounds:
+                qtyInfo.set_bounds(all_bounds[key])
 
-            if qt in config:
-                if "cmap" in config[qt]:
-                    self.movies2D[qt].set_cmap(config[qt]["cmap"])
-                if "norm" in config[qt]:
-                    self.movies2D[qt].set_norm(config[qt]["norm"])
+            if key in config:
+                if "cmap" in config[key] and hasattr(qtyInfo, "set_cmap"):
+                    qtyInfo.set_cmap(config[key]["cmap"])
+                if "norm" in config[key]:
+                    qtyInfo.set_norm(config[key]["norm"])
 
         LOG("Final Bounds:")
-        for qt in self.movies2D:
-            LOG(qt, self.movies2D[qt].bounds)
+        for qtyInfo in all_movies:
+            LOG(qtyInfo.key, qtyInfo.bounds)
 
-    def _get_bounds(self, vtkList, fields):
+    def _get_bounds(self, vtkList, fields_keys):
         """
         Get the bounds (min, max) of all given fields. I recommend not passing the entire vtkList but rather vtkList[1:] to discard the first output(s ?).
 
@@ -548,22 +607,22 @@ class Pipeline:
         returns
         dict where dict[field] = (min, max)
         """
-        mapfields_indexes = {}
-        for i, field in enumerate(fields):
-            mapfields_indexes[field] = i
+        fieldskeys_indexes = {}
+        for i, key in enumerate(fields_keys):
+            fieldskeys_indexes[key] = i
 
         with Pool(self.userArgs.jobs) as pool:
             all_bounds = pool.map(
                 self._get_bounds_indiv,
-                [[vtk, mapfields_indexes] for vtk in vtkList],
+                [[vtk, fieldskeys_indexes] for vtk in vtkList],
             )
         all_bounds = np.array(all_bounds)
         bounds = {}
         if len(all_bounds) == 0:
             return bounds
-        for field in fields:
-            i = mapfields_indexes[field]
-            bounds[field] = (
+        for key in fields_keys:
+            i = fieldskeys_indexes[key]
+            bounds[key] = (
                 np.nanmin(all_bounds[:, i, 0]),
                 np.nanmax(all_bounds[:, i, 1]),
             )
@@ -576,13 +635,13 @@ class Pipeline:
             second:   fields_indexes (dict) where fields_indexes[field] = index
         """
         vtk_path = args[0]
-        fields_indexes = args[1]
+        fieldskeys_indexes = args[1]
         V = readVTK(vtk_path)
         self.processor.process(V)
-        bounds = np.empty((len(fields_indexes), 2))
-        for field in fields_indexes.keys():
+        bounds = np.empty((len(fieldskeys_indexes), 2))
+        for field in fieldskeys_indexes.keys():
             data = V.data[field]
-            index = fields_indexes[field]
+            index = fieldskeys_indexes[field]
             bounds[index, 0] = np.nanmin(data)
             bounds[index, 1] = np.nanmax(data)
         return bounds

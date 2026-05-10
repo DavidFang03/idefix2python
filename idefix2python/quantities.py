@@ -19,14 +19,12 @@ class Data:
     :type vmin: float, optional
     :param vmax: Maximum value for manual scaling, defaults to None.
     :type vmax: float, optional
-    :param \**kwargs:
+    :param kwargs:
         * **title** (str): Custom title for the plot. Defaults to `symbol`.
         * **id** (str): Unique ID to distinguish instances of the same field nature.
         * **scale** (str): Scaling type, e.g., 'linear' or 'log'.
         * **ref_function** (callable): Analytical function for comparison.
     """
-
-    timeline_instances = count(1)
 
     def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
         self.key = key
@@ -40,6 +38,11 @@ class Data:
             "id", None
         )  # some custom id, to distinguish different instances of the same field nature (for example tau)
         self.scale = kwargs.get("scale", "linear")
+
+        self.xmin = kwargs.get("xmin", None)
+        self.xmax = kwargs.get("xmax", None)
+        self.ymin = kwargs.get("ymin", None)
+        self.ymax = kwargs.get("ymax", None)
 
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
@@ -64,6 +67,9 @@ class Data:
                 f"{norm} not implemented. Supported norms: {supported_norms}"
             )
 
+    def __str__(self):
+        return self.key
+
 
 class MapMovie2D(Data):
     r"""
@@ -78,6 +84,7 @@ class MapMovie2D(Data):
         cmap=DEFAULT_CMAP,
         norm="linear",
         streamlines=None,
+        uids=None,
         **kwargs,
     ):
         r"""
@@ -92,6 +99,9 @@ class MapMovie2D(Data):
         :param streamlines: A list of two Idefix field keys used to show vector streamlines,
                             e.g., ``["VX1", "VX2"]``. Defaults to None.
         :type streamlines: list[str], optional
+        :param uids: List of the particles uid. Their trajectories will be showed over the maps. To show every particle, set it to "all".
+                            e.g., ``[1,2]``. Defaults to None.
+        :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
             :keyword compute (callable): Custom function to calculate new fields on the fly.
@@ -105,10 +115,11 @@ class MapMovie2D(Data):
         self.cmap = cmap
         self.set_norm(norm)
         self.streamlines = streamlines
-        self.streamline_color = kwargs.get("streamline_color", "w")
+        self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
         self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
+        self.uids = uids
 
     def set_cmap(self, cmap):
         self.cmap = cmap
@@ -124,6 +135,9 @@ class MapMovie2D(Data):
         """
         self.X, self.Y = X, Y
 
+    def set_particles_trajectories(self, data):
+        pass
+
 
 class Field1D(Data):
     """
@@ -132,7 +146,6 @@ class Field1D(Data):
     """
 
     def __init__(self, *args, **kwargs):
-        self.index = next(Data.timeline_instances)
         super().__init__(*args, **kwargs)
 
 
@@ -141,8 +154,18 @@ class LineMovie1D(Field1D):
     For :math:`f(x, t)` fields, renders as a line plot :math:`f(x, t)` that updates every frame.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        key,
+        symbol,
+        plot_coords=[0, 0],
+        vmin=None,
+        vmax=None,
+        uids=None,
+        **kwargs,
+    ):
+        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        self.uids = uids
 
 
 class SpaceTimeHeatmap(Field1D):
@@ -150,8 +173,10 @@ class SpaceTimeHeatmap(Field1D):
     For :math:`f(x, t)` fields, renders a space-time heatmap.
 
     :keyword cmap: Colormap for the heatmap.
-    :keyword trace_over: List of :class:`PartQuantity` objects to overlay as trajectories.
+    :keyword uids: List of particles' uids which trajectories will be displayed.
     """
+
+    instances = count(1)
 
     def __init__(
         self,
@@ -162,22 +187,42 @@ class SpaceTimeHeatmap(Field1D):
         vmax=None,
         cmap=DEFAULT_CMAP,
         norm="linear",
-        trace_over=[],
+        uids=None,
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.cmap = cmap
         self.set_norm(norm)
-        self.trace_over = trace_over
+        self.uids = uids
+        self.index = next(SpaceTimeHeatmap.instances)
 
 
 class PartQuantity(Data):
     """
     Tracks Lagrangian particle properties over time.
+
+    :keyword: uids (optional) the ids of the particles wanted.
+        Defaults to "all" (all particles)
     """
 
-    partQuantities_instances = count(1)
+    _key_index_map = {}
 
-    def __init__(self, *args, **kwargs):
-        self.index = next(PartQuantity.partQuantities_instances)
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        key,
+        symbol="",
+        plot_coords=[0, 0],
+        vmin=None,
+        vmax=None,
+        uids="all",
+        compute=None,
+        **kwargs,
+    ):
+        if key not in PartQuantity._key_index_map:
+            PartQuantity._key_index_map[key] = len(PartQuantity._key_index_map) + 1
+        self.index = PartQuantity._key_index_map[key]
+        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        self.uids = uids
+        self.is_global = False  # default
+        self.compute = compute
+        # self.is_for2D = False  # default

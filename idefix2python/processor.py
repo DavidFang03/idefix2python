@@ -59,9 +59,13 @@ class PhysicsProcessor:
             pass
             # TODO: support for particles
 
-    def set_fields(self, movies1D, movies2D):
+    def set_fields(self, movies1D, movies2D, partQuantities):
         self.movies1D = movies1D
         self.movies2D = movies2D
+        self.partQuantities = partQuantities
+
+    def set_vtktimes(self, vtktimes):
+        self.vtktimes = vtktimes
 
     def process(self, V):
         """
@@ -71,27 +75,38 @@ class PhysicsProcessor:
             - Positions of particles if there are
         Also collect the SpaceTimeHeatmaps
         """
+        is_particle_vtk = "uid" in V.data
+        if not is_particle_vtk:
+            for qt in V.data:
+                if self.context.dimensions == 2:
+                    V.data[qt] = np.transpose(np.squeeze(V.data[qt]))
+                    V.data[qt] = np.where(self.mask, V.data[qt], np.nan)
 
-        for qt in V.data:
-            if self.context.dimensions == 2:
-                V.data[qt] = np.transpose(V.data[qt][:, :, 0])
-                V.data[qt] = np.where(self.mask, V.data[qt], np.nan)
+                elif self.context.dimensions == 1 and len(np.shape(V.data[qt])) == 3:
+                    V.data[qt] = np.squeeze(V.data[qt])
 
-            elif self.context.dimensions == 1 and len(np.shape(V.data[qt])) == 3:
-                V.data[qt] = np.squeeze(V.data[qt])
+            for qtyInfo in [*self.movies1D, *self.movies2D]:
+                if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
+                    V.data[qtyInfo.key] = qtyInfo.compute(
+                        V.data
+                    )  # TODO Add safeguard for computed shape
 
-        if "mass" in V.data:
+        else:
             V.data["PART_X1"] = tools.get_Position(V, self.context.geometry, 0)
             V.data["PART_X2"] = tools.get_Position(V, self.context.geometry, 1)
             V.data["PART_X3"] = tools.get_Position(V, self.context.geometry, 2)
 
-        for movie_dict in [self.movies1D, self.movies2D]:
-            for key, qtyInfo in movie_dict.items():
+            for qtyInfo in [*self.partQuantities]:
                 if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
-                    # Execute the user function.
-                    # Pass the whole V.data so they can use multiple variables
-                    # (e.g. Mach Number = velocity / sound_speed)
-                    V.data[key] = qtyInfo.compute(V.data)
+                    # Currently the computed shape must be (len(V.data["uid"]))
+                    computed_data = qtyInfo.compute(
+                        V
+                    )  # TODO Add safeguard for computed shape
+                    if len(computed_data) != len(V.data["uid"]):
+                        raise ValueError(
+                            f"The computed data has shape {np.shape(computed_data)} but should have the same shape as V.data['uid']"
+                        )
+                    V.data[qtyInfo.key] = computed_data
 
     def get_quantities(self, vtkPath, quantities):
         """
@@ -101,13 +116,13 @@ class PhysicsProcessor:
         self.process(V)
         PostSpaceTimeHeatmaps = [None] * (1 + len(quantities))
         PostSpaceTimeHeatmaps[0] = V.t[0]
-        for key, field in quantities.items():
+        for field in quantities:
+            key = field.key
             if isinstance(field, PartQuantity):
                 PostSpaceTimeHeatmaps[field.index] = np.full(
                     self.context.particles_nb, np.nan
                 )
-                for ii in range(len(V.data[key])):
-                    uid = V.data["uid"][ii]
+                for ii, uid in enumerate(V.data["uid"]):
                     PostSpaceTimeHeatmaps[field.index][uid] = V.data[key][ii]
 
             else:

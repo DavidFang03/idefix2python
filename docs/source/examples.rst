@@ -34,6 +34,7 @@ Here are three most basic examples to use the Pipeline, depending on the nature 
    examples/run_2D
    examples/run_particles
    examples/run_particles_over
+   examples/run_multipart_2D
 
 Here are more complex examples
 
@@ -46,3 +47,10 @@ Here are more complex examples
       :img-top: ../../examples/data_test/frames/particles_over_test/particles_over_test_spacetimeheatmap.png
 
       Superimpose a particle trajectory over a :math:`(x,t)` heatmap
+
+   .. grid-item-card:: Multi particles
+      :link: examples/run_multipart_2D
+      :link-type: doc
+      :img-top: ../../examples/data_test/frames/multipart_2D/slice1/config_data.0020.png
+
+      Many particles in :math:`(x,z)` simulation

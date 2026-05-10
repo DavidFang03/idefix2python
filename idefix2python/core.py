@@ -198,23 +198,28 @@ class RunContext:
 
         ## Everything is deduced from the global vtk
         vtkInfo = self.outputTypes_info["vtk"]
-        if not vtkInfo.status and len(self.active_directions) < 1:
-            raise Exception("at least one data.vtk is required to detect the geometry")
+        partInfo = self.outputTypes_info["particles"]
+        if vtkInfo.status:
+            geometry = vtkInfo.geometry
+        elif partInfo.status:
+            geometry = partInfo.geometry
+        else:
+            raise Exception("No vtk files were found?")
 
-        if vtkInfo.status and not len(self.active_directions) >= 1:
-            self.geometry = vtkInfo.geometry
-            self.dimensions = vtkInfo.dimensions
+        if len(self.active_directions) == 0:
+            if not vtkInfo.status:
+                raise Exception(
+                    "No data*.vtk detected. Please provide active_directions."
+                )
+            dimensions = vtkInfo.dimensions
             vtk = vtkInfo.vtk
             for direction, ncell in enumerate([vtk.nx, vtk.ny, vtk.nz]):
                 if ncell > 1:
                     self.active_directions.append(direction)
-
-        elif len(self.active_directions) >= 1:
-            self.geometry = self.outputTypes_info["particles"].geometry
-            self.dimensions = len(self.active_directions)
-
         else:
-            raise Exception("hmm")  # TODO More robust geometry detection and safeguard
+            dimensions = len(self.active_directions)
+        self.geometry = geometry
+        self.dimensions = dimensions
 
         self.active_directions_labels = [
             tools.get_Position_name(self.geometry, dir)

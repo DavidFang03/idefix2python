@@ -211,13 +211,12 @@ class RunContext:
                 raise Exception(
                     "No data*.vtk detected. Please provide active_directions."
                 )
-            dimensions = vtkInfo.dimensions
             vtk = vtkInfo.vtk
             for direction, ncell in enumerate([vtk.nx, vtk.ny, vtk.nz]):
                 if ncell > 1:
                     self.active_directions.append(direction)
-        else:
-            dimensions = len(self.active_directions)
+
+        dimensions = len(self.active_directions)
         self.geometry = geometry
         self.dimensions = dimensions
 

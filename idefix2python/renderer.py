@@ -68,7 +68,10 @@ class SliceRenderer:
         fig_width = max(8, 5 * columns)  # minimum width of 8
         fig_height = max(10, 5 * rows)  # minimum height of 10
         fig, axs = plt.subplots(
-            rows, columns, figsize=(fig_width, fig_height), squeeze=False
+            rows,
+            columns,
+            figsize=(fig_width, fig_height),
+            squeeze=False,
         )
         padding_top = 0.1
         if custom_suptitle is None:
@@ -118,13 +121,18 @@ class SliceRenderer:
             vmax = vmax if vmax > 0 else 1e-7
             norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
 
+        if qtyInfo is not None:
+            alpha = 0.20
+        else:
+            alpha = 1
+
         cmesh = ax.pcolormesh(
             grid1,
             grid2,
             data,
             cmap=qtyInfo.cmap,
             norm=norm,
-            alpha=0.20,  # TODO more customization
+            alpha=alpha,  # TODO more customization
             antialiased=True,  # to remove artefacts
         )
 
@@ -195,7 +203,6 @@ class SliceRenderer:
         cbar.add_lines(levels)
 
     def _save_and_close(self, fig, path):
-        fig.tight_layout()
         fig.savefig(path, dpi=DPI)
         plt.close(fig)
         LOG(f"[OK] {path}")
@@ -209,7 +216,6 @@ class SliceRenderer:
                     axs[i, j].remove()
 
     def render_2D(self, V, frame_nb, vtkPath):
-
         time = V.t[0]
         fig, axs = self._setup_figure(
             self.movies2D,
@@ -223,7 +229,6 @@ class SliceRenderer:
 
             grid1 = self.processor.grid1
             grid2 = self.processor.grid2
-
             cbar = self._plot_pcolormesh(fig, ax, grid1, grid2, data, qtyInfo)
 
             ax.set_aspect("equal", adjustable="box")

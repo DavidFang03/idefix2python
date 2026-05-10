@@ -87,7 +87,9 @@ class PhysicsProcessor:
 
             for qtyInfo in [*self.movies1D, *self.movies2D]:
                 if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
-                    V.data[qtyInfo.key] = qtyInfo.compute(V.data)
+                    V.data[qtyInfo.key] = qtyInfo.compute(
+                        V.data
+                    )  # TODO Add safeguard for computed shape
 
         else:
             V.data["PART_X1"] = tools.get_Position(V, self.context.geometry, 0)
@@ -97,7 +99,9 @@ class PhysicsProcessor:
             for qtyInfo in [*self.partQuantities]:
                 if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
                     # Currently the computed shape must be (len(V.data["uid"]))
-                    computed_data = qtyInfo.compute(V)
+                    computed_data = qtyInfo.compute(
+                        V
+                    )  # TODO Add safeguard for computed shape
                     if len(computed_data) != len(V.data["uid"]):
                         raise ValueError(
                             f"The computed data has shape {np.shape(computed_data)} but should have the same shape as V.data['uid']"

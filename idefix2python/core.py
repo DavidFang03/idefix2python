@@ -214,7 +214,7 @@ class RunContext:
             self.dimensions = len(self.active_directions)
 
         else:
-            raise Exception("hmm")
+            raise Exception("hmm")  # TODO More robust geometry detection and safeguard
 
         self.active_directions_labels = [
             tools.get_Position_name(self.geometry, dir)

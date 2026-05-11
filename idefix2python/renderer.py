@@ -465,6 +465,9 @@ class SliceRenderer:
             for qtyInfo in notglobal_partquantities:
                 ax = axs[*qtyInfo.plot_coords]
                 self._plot_particles_on_ax(ax, qtyInfo)
+                ax.set_ylim(*qtyInfo.bounds)
+                if qtyInfo.scale == "log":
+                    ax.set_yscale("log")
 
                 ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
                 ax.set_ylabel(qtyInfo.symbol)

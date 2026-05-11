@@ -1,4 +1,4 @@
-from idefix2python import RunContext, Pipeline, PartQuantity
+from idefix2python import RunContext, Pipeline, Fig, PartQuantity
 import utilities
 from pathlib import Path
 
@@ -14,21 +14,20 @@ def analytical_drift(t_array):
     return utilities.integrate(fluid.vrDrift, r0, t_array)
 
 
-custom_partQuantities = [
-    PartQuantity(
-        "PART_X1",
-        r"$r$",
-        plot_coords=[0, 0],
-        ref_function=analytical_drift,
-    )
-]
-PartQuantity.suptitle = "A particle radial evolution, with an analytical trajectory"
+px1 = PartQuantity(
+    "PART_X1",
+    r"$r$",
+    plot_coords=[0, 0],
+    ref_function=analytical_drift,
+)
+
+fig0 = Fig([px1], suptitle="A particle radial evolution, with an analytical trajectory")
 
 runContext = RunContext(
     task,
     projectPath,
-    active_directions=[0],  # currently necessary for lagrangian particles.)
+    active_directions=[0],  # necessary when there are only part*.vtk
 )
-pipeline = Pipeline(runContext, partQuantities=custom_partQuantities)
+pipeline = Pipeline(runContext, [fig0])
 
 pipeline.run()

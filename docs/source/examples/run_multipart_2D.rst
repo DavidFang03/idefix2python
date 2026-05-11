@@ -15,9 +15,9 @@ Particle quantities over heatmap
           :muted:
           :caption: config_multipart_2D.mp4
 
-     - .. figure:: ../../../examples/data_test/frames/multipart_2D/multipart_2D_timeseries.png
+     - .. figure:: ../../../examples/data_test/frames/multipart_2D/fig1_multipart_2D.png
           :width: 100%
           :align: center
           
-          multipart_2D_timeseries.png
+          fig1_multipart_2D.png
 

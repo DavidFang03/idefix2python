@@ -1,4 +1,4 @@
-from idefix2python import RunContext, Pipeline, MapMovie2D
+from idefix2python import RunContext, Pipeline, Fig, MapMovie2D
 import numpy as np
 from pathlib import Path
 
@@ -11,7 +11,7 @@ def compute_mach_p(data):
     return np.sqrt(data["VX1"] ** 2 + data["VX2"] ** 2) / cs2
 
 
-custom_fields2D = [
+quantities = [
     MapMovie2D(
         "RHO",
         r"$\rho$",
@@ -30,7 +30,7 @@ custom_fields2D = [
         contour_color="green",
     ),
 ]
-MapMovie2D.suptitle = "Density and Mach number on a heatmap"
+fig0 = Fig(quantities, suptitle="Density and Mach number on a heatmap")
 runContext = RunContext(task, projectPath)
-pipeline = Pipeline(runContext, movies2D=custom_fields2D)
+pipeline = Pipeline(runContext, [fig0])
 pipeline.run()

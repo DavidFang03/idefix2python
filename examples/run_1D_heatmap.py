@@ -1,11 +1,11 @@
-from idefix2python import RunContext, Pipeline, SpaceTimeHeatmap
+from idefix2python import RunContext, Pipeline, Fig, SpaceTimeHeatmap
 from pathlib import Path
 
 projectPath = Path(__file__).parent / "data_test"
 task = "1D_test"
 # By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
 
-custom_spaceTimeHeatmaps = [
+quantities = [
     SpaceTimeHeatmap(
         "Dust0_RHO",
         r"$\rho^\mathrm{dust}$",
@@ -14,8 +14,8 @@ custom_spaceTimeHeatmaps = [
     )
 ]
 
-SpaceTimeHeatmap.suptitle = "Dust density on a heatmap"
+fig0 = Fig(quantities, suptitle="Dust density on a heatmap")
 
 runContext = RunContext(task, projectPath)
-pipeline = Pipeline(runContext, spaceTimeHeatmaps=custom_spaceTimeHeatmaps)
+pipeline = Pipeline(runContext, [fig0])
 pipeline.run()

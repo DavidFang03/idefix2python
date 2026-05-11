@@ -1,4 +1,4 @@
-from idefix2python import RunContext, Pipeline, PartQuantity, MapMovie2D
+from idefix2python import RunContext, Pipeline, Fig, PartQuantity, MapMovie2D
 from pathlib import Path
 import numpy as np
 
@@ -8,7 +8,7 @@ configPath = projectPath / "config.json"
 # By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
 
 
-custom_fields2D = [
+fields2D = [
     MapMovie2D(
         "RHO",
         r"$\rho$",
@@ -25,6 +25,7 @@ custom_fields2D = [
         uids=[10, 15],
     ),
 ]
+fig0 = Fig(fields2D)
 
 
 def z(partvtk):
@@ -33,7 +34,7 @@ def z(partvtk):
     return r * np.cos(theta)
 
 
-pqs = [
+parts_quantities = [
     PartQuantity(
         "PART_X1",
         "PART_X1",
@@ -48,11 +49,12 @@ pqs = [
     ),
     PartQuantity("z", "z", uids="all", plot_coords=[0, 2], compute=z),
 ]
+fig1 = Fig(parts_quantities)
 
 
 # Initialize context
 runContext = RunContext(task, projectPath, configPath=configPath)
 
-pipeline = Pipeline(runContext, partQuantities=pqs, movies2D=custom_fields2D)
+pipeline = Pipeline(runContext, [fig0, fig1])
 
 pipeline.run()

@@ -39,10 +39,10 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :caption: config.json
          :linenos:
       
-      .. video:: ../../../examples/data_test/videos/config_2D_test.mp4
+      .. video:: ../../../examples/data_test/videos/2D_test_config.mp4
          :width: 100%
          :autoplay:
          :loop:
          :muted:
-         :caption: config_2D_test.mp4
+         :caption: 2D_test_config.mp4
 

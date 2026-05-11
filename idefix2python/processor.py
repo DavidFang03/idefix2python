@@ -1,7 +1,7 @@
 from .vtk_io import readVTK
 from . import tools
 import numpy as np
-from .quantities import PartQuantity
+from .quantities import PartQuantity, LineMovie1D, MapMovie2D
 
 
 class PhysicsProcessor:
@@ -59,9 +59,11 @@ class PhysicsProcessor:
             pass
             # TODO: support for particles
 
-    def set_fields(self, movies1D, movies2D, partQuantities):
-        self.movies1D = movies1D
-        self.movies2D = movies2D
+    def set_figs(self, figsMovie, figsTimeline):
+        self.figsMovie = figsMovie
+        self.figsTimeline = figsTimeline
+
+    def set_partQuantities(self, partQuantities):
         self.partQuantities = partQuantities
 
     def set_vtktimes(self, vtktimes):
@@ -85,11 +87,15 @@ class PhysicsProcessor:
                 elif self.context.dimensions == 1 and len(np.shape(V.data[qt])) == 3:
                     V.data[qt] = np.squeeze(V.data[qt])
 
-            for qtyInfo in [*self.movies1D, *self.movies2D]:
-                if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
-                    V.data[qtyInfo.key] = qtyInfo.compute(
-                        V.data
-                    )  # TODO Add safeguard for computed shape
+            for figMovie in self.figsMovie:
+                for qtyInfo in figMovie.quantities:
+                    if isinstance(qtyInfo, MapMovie2D) or isinstance(
+                        qtyInfo, LineMovie1D
+                    ):
+                        if qtyInfo.compute is not None:
+                            V.data[qtyInfo.key] = qtyInfo.compute(
+                                V.data
+                            )  # TODO Add safeguard for computed shape
 
         else:
             V.data["PART_X1"] = tools.get_Position(V, self.context.geometry, 0)

@@ -24,6 +24,7 @@ class Data:
         * **id** (str): Unique ID to distinguish instances of the same field nature.
         * **scale** (str): Scaling type, e.g., 'linear' or 'log'.
         * **ref_function** (callable): Analytical function for comparison.
+        * **compute** (callable): Custom function to calculate new fields on the fly.
     """
 
     def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
@@ -47,6 +48,8 @@ class Data:
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
+
+        self.compute = kwargs.get("compute", None)
 
     def set_bounds(self, bounds):
         self.bounds = bounds
@@ -104,7 +107,6 @@ class MapMovie2D(Data):
         :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
-            :keyword compute (callable): Custom function to calculate new fields on the fly.
             :keyword contours (str): Field key used to draw contour lines over the pcolormesh.
             :keyword contour_color (str): Color of the contour lines. Defaults to "green".
         """
@@ -116,7 +118,6 @@ class MapMovie2D(Data):
         self.set_norm(norm)
         self.streamlines = streamlines
         self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
-        self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
@@ -215,7 +216,6 @@ class PartQuantity(Data):
         vmin=None,
         vmax=None,
         uids="all",
-        compute=None,
         **kwargs,
     ):
         if key not in PartQuantity._key_index_map:
@@ -224,5 +224,3 @@ class PartQuantity(Data):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.is_global = False  # default
-        self.compute = compute
-        # self.is_for2D = False  # default

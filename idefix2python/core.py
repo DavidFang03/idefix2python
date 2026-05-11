@@ -10,7 +10,7 @@ from . import tools
 from .vtk_io import readVTK
 from .renderer import SliceRenderer
 from .processor import PhysicsProcessor
-from .quantities import PartQuantity
+from .quantities import PartQuantity, SpaceTimeHeatmap, MapMovie2D, LineMovie1D
 
 
 class OutputTypeInfo:
@@ -297,28 +297,20 @@ class FramesPaths:
         elif context.configPath is not None:
             filenameinfos += ["config"]
 
-        slice1_png_pattern = "_".join(filenameinfos + ["*.png"])
-        slice1Movie_path = "_".join(filenameinfos + [context.runName]) + ".mp4"
+        slice1_png_pattern = "_".join(["*"] + filenameinfos) + ".png"
+        slice1Movie_path = "_".join([context.runName] + filenameinfos) + ".mp4"
 
         self.slice1_png_pattern = context.slice1Folder / slice1_png_pattern
         self.slice1_video_path = context.videosFolder / slice1Movie_path
 
-        self.spacetimeheatmap_frame_path = (
-            context.frameRootFolder / f"{context.runName}_spacetimeheatmap.png"
-        )
-        self.timeSeries_frame_path = (
-            context.frameRootFolder / f"{context.runName}_timeseries.png"
-        )
+        self.timeline_frame_path = context.frameRootFolder / f"{context.runName}.png"
 
 
 class Pipeline:
     def __init__(
         self,
         Context,
-        spaceTimeHeatmaps=[],
-        movies1D=[],
-        movies2D=[],
-        partQuantities=[],
+        figs,
         zoom=0,
         streamLines=None,
     ):
@@ -351,24 +343,43 @@ class Pipeline:
 
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)
 
-        self.spaceTimeHeatmaps = spaceTimeHeatmaps
-        self.movies1D = movies1D
-        self.movies2D = movies2D
+        self.figs = figs
+        self.spaceTimeHeatmaps = []
+        self.partQuantities = []
+        self.movies1D = []
+        self.movies2D = []
+        self.figsMovie = []
+        self.figsTimeline = []
+        self.particles_requested = False
+        for fig in figs:
+            if fig.movie:
+                self.figsMovie.append(fig)
+            else:
+                self.figsTimeline.append(fig)
+
+            for qtyInfo in fig.quantities:
+                if isinstance(qtyInfo, PartQuantity):
+                    self.partQuantities.append(qtyInfo)
+                elif isinstance(qtyInfo, SpaceTimeHeatmap):
+                    self.spaceTimeHeatmaps.append(qtyInfo)
+                elif isinstance(qtyInfo, LineMovie1D):
+                    self.movies1D.append(qtyInfo)
+                elif isinstance(qtyInfo, MapMovie2D):
+                    self.movies2D.append(qtyInfo)
+
+                if qtyInfo.uids is not None:
+                    self.particles_requested = True
 
         self.processor.parts_X1 = None
         self.processor.parts_X2 = None
         # self.processor.parts_X = None
         self.processor.parts_Z = None
 
-        self.particles_requested = True in [
-            qty.uids is not None
-            for qty in [*self.movies2D, *self.spaceTimeHeatmaps, *self.movies1D]
-        ]
         if self.particles_requested:
             X_index = self.context.active_directions[0]
             self.processor.parts_X1 = PartQuantity(f"PART_X{X_index + 1}", uids="all")
             self.processor.parts_X1.is_global = True
-            partQuantities.append(self.processor.parts_X1)
+            self.partQuantities.append(self.processor.parts_X1)
 
             if len(self.context.active_directions) >= 2:
                 Y_index = self.context.active_directions[1]
@@ -377,24 +388,15 @@ class Pipeline:
                 )
 
                 self.processor.parts_X2.is_global = True
-                partQuantities.append(self.processor.parts_X2)
+                self.partQuantities.append(self.processor.parts_X2)
 
-        self.partQuantities = partQuantities
-
-        self.processor.set_fields(
-            [*self.movies1D, *self.spaceTimeHeatmaps],
-            self.movies2D,
-            self.partQuantities,
+        self.processor.set_figs(
+            figsMovie=self.figsMovie, figsTimeline=self.figsTimeline
         )
+        self.processor.set_partQuantities(self.partQuantities)
 
         self._name_frames()
         self._apply_config()
-
-        if len(self.partQuantities) > 0:
-            if not self.context.outputTypes_info["particles"].status:
-                raise Exception(
-                    "Particle quantities were requested, but no particle files were found."
-                )
 
     def _check_everything_alright(self):
         # Check whether the particles requested exist
@@ -412,20 +414,48 @@ class Pipeline:
                         f"One or more requested particle uids do not exist: {sorted(missing_uids)}"
                     )
 
+        partInfo = self.context.outputTypes_info["particles"]
+        globalInfo = self.context.outputTypes_info["vtk"]
+        if len(self.partQuantities) > 0 or self.particles_requested:
+            if not partInfo.status:
+                raise Exception(
+                    f"Particle quantities were requested, but no part*.vtk files were found at {partInfo.test_file}"
+                )
+
+        if (
+            len(self.spaceTimeHeatmaps) > 0
+            or len(self.movies1D)
+            or len(self.movies2D) > 0
+        ):
+            if not globalInfo.status:
+                raise Exception(
+                    f"Global quantities were requested, but no data*.vtk files were found at {globalInfo.test_file}"
+                )
+
+        LOG("Quantities to compute:")
+        LOG(f"{'LineMovie1D':>20}: {len(self.movies1D)}")
+        LOG(f"{'MapMovie2D':>20}: {len(self.movies2D)}")
+        LOG(f"{'SpaceTimeHeatmap':>20}: {len(self.spaceTimeHeatmaps)}")
+        LOG(f"{'PartQuantity':>20}: {len(self.partQuantities)}")
+
     def run(self):
         """
         Pray.
         """
         self._check_everything_alright()
+
+        # -om -> Only renders Movie
         if self.userArgs.onlyMovie:
             if self.doMovie:
                 tools.movie(
                     pattern_png=self.framesPaths.slice1_png_pattern,
                     movie_path=self.framesPaths.slice1_video_path,
                 )
-            return  # Exit early
+            return
 
         vtktimes = None
+
+        # Gather particles data
         if len(self.partQuantities) > 0:
             with Pool(self.userArgs.jobs) as pool:
                 particles_result = pool.starmap(
@@ -466,8 +496,8 @@ class Pipeline:
                     )
                 )
 
-        vtkInfo = self.context.outputTypes_info["vtk"]
-        if len(self.spaceTimeHeatmaps) > 0 and vtkInfo.status:
+        # gather spacetime data
+        if len(self.spaceTimeHeatmaps) > 0:
             with Pool(self.userArgs.jobs) as pool:
                 spat_results = pool.starmap(
                     self.processor.get_quantities,
@@ -489,9 +519,8 @@ class Pipeline:
                         t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
                         qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
         if vtktimes is not None:
-            self.processor.set_vtktimes(
-                vtktimes
-            )  # TODO add safeguard if keys from data*.vtk requested but no data*.vtk found
+            self.processor.set_vtktimes(vtktimes)
+
         self.renderer = SliceRenderer(
             self.context,
             self.processor,
@@ -503,13 +532,12 @@ class Pipeline:
             self.framesPaths,
         )
 
-        if len(self.partQuantities) > 0:
-            self.renderer.render_timeSeries()
+        # First render Timelines
+        if len(self.figsTimeline) > 0:
+            self.renderer.render_TimelineFrame()
 
-        if len(self.spaceTimeHeatmaps) > 0:
-            self.renderer.render_SpaceTimeHeatmap()
-
-        if len(self.movies2D) > 0 or len(self.movies1D) > 0:
+        # Then render Movies frame by frame
+        if len(self.figsMovie) > 0:
             # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
             render_list = (
                 self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
@@ -518,24 +546,13 @@ class Pipeline:
             if self.userArgs.doOnlyFrames:
                 render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
             with Pool(self.userArgs.jobs) as pool:
-                pool.starmap(self._process_and_render_frame, enumerate(render_list))
+                pool.starmap(self.renderer.render_MovieFrame, enumerate(render_list))
 
             if self.doMovie:
                 tools.movie(
                     pattern_png=self.framesPaths.slice1_png_pattern,
                     movie_path=self.framesPaths.slice1_video_path,
                 )
-
-    def _process_and_render_frame(self, frame_nb, vtkPath):
-        """1. Read VTK Data, 2. Process Physics Math, 3. Render Requested Frame"""
-        V = readVTK(vtkPath)
-        self.processor.process(V)
-
-        if len(self.movies2D) > 0:
-            self.renderer.render_2D(V, frame_nb, vtkPath)
-
-        if len(self.movies1D) > 0:
-            self.renderer.render_1D(V, frame_nb, vtkPath)
 
     def _name_frames(self):
         context = self.context
@@ -551,7 +568,7 @@ class Pipeline:
 
         all_fields = [v.key for v in self.movies2D]
         config = self.context.config
-        LOG(config)
+        LOG(f"config.json file requested: {config}")
         all_bounds = {}
 
         if self.userArgs.noBounds:
@@ -571,14 +588,13 @@ class Pipeline:
                 bound_list[min(len(bound_list), 5) :],
                 fields_tobound,
             )
-            LOG(fields_tobound)
+            LOG("Fields to bound: ", fields_tobound)
             [LOG(f"{key}: {all_bounds[key]}") for key in all_bounds]
             LOG("Bounds computed")
 
         else:
             LOG("All fields are already bounded in config")
 
-        LOG(all_fields)
         all_movies = [*self.movies1D, *self.movies2D]
         for qtyInfo in all_movies:
             key = qtyInfo.key

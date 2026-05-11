@@ -2,11 +2,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import shutil
-from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
-from matplotlib.ticker import FuncFormatter
 from pathlib import Path
 from .quantities import MapMovie2D, LineMovie1D, SpaceTimeHeatmap, PartQuantity
-from vtk_io import readVTK
+from .vtk_io import readVTK
 
 from . import tools
 from .tools import LOG

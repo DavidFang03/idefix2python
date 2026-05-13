@@ -9,7 +9,7 @@ from .tools import LOG
 from . import tools
 from .vtk_io import readVTK
 from .renderer import SliceRenderer
-from .processor import PhysicsProcessor
+from .processor import PhysicsProcessor, PartsInfo
 from .quantities import PartQuantity, SpaceTimeHeatmap, MapMovie2D, LineMovie1D
 
 
@@ -285,27 +285,6 @@ class RunContext:
         return filelist[:: self.args.every]
 
 
-class FramesPaths:
-    def __init__(self, context, userArgs):
-
-        filenameinfos = []
-        if userArgs.zoom:
-            filenameinfos += [f"zoom{userArgs.zoom}"]
-
-        if userArgs.noBounds:
-            filenameinfos += ["unbounded"]
-        elif context.configPath is not None:
-            filenameinfos += ["config"]
-
-        slice1_png_pattern = "_".join(["*"] + filenameinfos) + ".png"
-        slice1Movie_path = "_".join([context.runName] + filenameinfos) + ".mp4"
-
-        self.slice1_png_pattern = context.slice1Folder / slice1_png_pattern
-        self.slice1_video_path = context.videosFolder / slice1Movie_path
-
-        self.timeline_frame_path = context.frameRootFolder / f"{context.runName}.png"
-
-
 class Pipeline:
     def __init__(
         self,
@@ -350,6 +329,7 @@ class Pipeline:
         self.movies2D = []
         self.figsMovie = []
         self.figsTimeline = []
+        qty_tocompute = []
         self.particles_requested = False
         for fig in figs:
             if fig.movie:
@@ -367,33 +347,31 @@ class Pipeline:
                 elif isinstance(qtyInfo, MapMovie2D):
                     self.movies2D.append(qtyInfo)
 
+                if qtyInfo.compute is not None:
+                    qty_tocompute.append(qtyInfo)
+
                 if qtyInfo.uids is not None:
                     self.particles_requested = True
+                    if qtyInfo.uids == "all":
+                        qtyInfo.uids = self.context.all_particles_uids
 
-        self.processor.parts_X1 = None
-        self.processor.parts_X2 = None
-        # self.processor.parts_X = None
-        self.processor.parts_Z = None
+        self.processor.partsInfo = PartsInfo(
+            self.context.active_directions
+        )  # pipeline bro helping clueless processor
 
         if self.particles_requested:
-            X_index = self.context.active_directions[0]
-            self.processor.parts_X1 = PartQuantity(f"PART_X{X_index + 1}", uids="all")
-            self.processor.parts_X1.is_global = True
-            self.partQuantities.append(self.processor.parts_X1)
+            self.partQuantities += self.processor.partsInfo.partsqty_togather
 
-            if len(self.context.active_directions) >= 2:
-                Y_index = self.context.active_directions[1]
-                self.processor.parts_X2 = PartQuantity(
-                    f"PART_X{Y_index + 1}", uids="all"
-                )
-
-                self.processor.parts_X2.is_global = True
-                self.partQuantities.append(self.processor.parts_X2)
-
-        self.processor.set_figs(
-            figsMovie=self.figsMovie, figsTimeline=self.figsTimeline
-        )
+        self.processor.set_qty_tocompute(qty_tocompute)
         self.processor.set_partQuantities(self.partQuantities)
+
+        self.renderer = SliceRenderer(
+            self.context,
+            self.processor,
+            self.figsMovie,
+            self.figsTimeline,
+            self.userArgs,
+        )
 
         self._name_frames()
         self._apply_config()
@@ -446,11 +424,7 @@ class Pipeline:
 
         # -om -> Only renders Movie
         if self.userArgs.onlyMovie:
-            if self.doMovie:
-                tools.movie(
-                    pattern_png=self.framesPaths.slice1_png_pattern,
-                    movie_path=self.framesPaths.slice1_video_path,
-                )
+            self.renderer.render_movie()
             return
 
         vtktimes = None
@@ -486,12 +460,10 @@ class Pipeline:
                         )
             if self.particles_requested and len(self.context.active_directions) >= 2:
                 # cartesian for pcolormesh
-                self.processor.parts_Z = PartQuantity("PART_Z")
-                self.processor.parts_Z.is_global = True
-                self.processor.parts_Z.set_data(
+                self.processor.partsInfo.parts_Z.set_data(
                     *tools.convertGrid_toXZ(
-                        self.processor.parts_X1.values,
-                        self.processor.parts_X2.values,
+                        self.processor.partsInfo.parts_X1.values,
+                        self.processor.partsInfo.parts_X2.values,
                         self.context.geometry,
                     )
                 )
@@ -511,7 +483,7 @@ class Pipeline:
                 values = np.array(
                     [spat_results[i][qty.index] for i in range(nb_vtktimes)]
                 )
-                qty.set_data(points=self.processor.X1Line, values=values)
+                qty.set_data(points=self.processor.gridInfo.X1Line, values=values)
 
                 if qty.ref_function is not None:
                     t_array = np.array(vtktimes)
@@ -521,42 +493,12 @@ class Pipeline:
         if vtktimes is not None:
             self.processor.set_vtktimes(vtktimes)
 
-        self.renderer = SliceRenderer(
-            self.context,
-            self.processor,
-            self.spaceTimeHeatmaps,
-            self.movies1D,
-            self.movies2D,
-            self.partQuantities,
-            self.userArgs,
-            self.framesPaths,
-        )
-
-        # First render Timelines
-        if len(self.figsTimeline) > 0:
-            self.renderer.render_TimelineFrame()
-
-        # Then render Movies frame by frame
-        if len(self.figsMovie) > 0:
-            # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
-            render_list = (
-                self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
-            )
-
-            if self.userArgs.doOnlyFrames:
-                render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
-            with Pool(self.userArgs.jobs) as pool:
-                pool.starmap(self.renderer.render_MovieFrame, enumerate(render_list))
-
-            if self.doMovie:
-                tools.movie(
-                    pattern_png=self.framesPaths.slice1_png_pattern,
-                    movie_path=self.framesPaths.slice1_video_path,
-                )
+        # delegate the render of all this stuff to the Renderer
+        self.renderer.set_infos(self.processor.gridInfo, self.processor.partsInfo)
+        self.renderer.render()
 
     def _name_frames(self):
         context = self.context
-        self.framesPaths = FramesPaths(context, self.userArgs)
 
         self.slice1_list = context.get_slice1_vtkFiles()
         self.vtkList = context.get_global_vtkFiles()

@@ -274,19 +274,6 @@ def get_Position_name(geometry, direction):
     return positions[direction]
 
 
-def get_Position_name_cartesian_equivalent(geometry, direction):
-    match geometry:
-        case "cartesian":
-            positions = [r"$x$", r"$y$", r"$z$"]
-        case "polar":
-            positions = [r"$x$", r"$y$", r"$z$"]
-        case "cylindrical":
-            positions = [r"$x$", r"$z$", None]
-        case "spherical":
-            positions = [r"$x$", r"$z$", r"$y$"]
-    return positions[direction]
-
-
 def get_streamline_name(u_key1):
     """
     Determines a nice LaTeX name for the streamline based on the field key.

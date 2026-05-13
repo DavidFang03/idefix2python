@@ -76,12 +76,14 @@ The module is built around 5 components:
 +  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
 +  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
 
-## TODOs
+## Roadmap
 
-* **Lagrangian Dust**: Plot particles positions on the 2D heatmaps.
-* Better colorbar and dynamic layout
-* More flexibility on plot parameters (linestyle, color, etc...)
+* Better colorbar and dynamic layout (ongoing)
+* More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
+* Automatic labeling
 * Reintroduce `timevol.dat` (timevol) for global quantities.
+* twinx
+* Better zoom API
 
 ### Not a priority
 * Support multiple pipelines

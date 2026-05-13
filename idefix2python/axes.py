@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 from .quantities import MapMovie2D, LineMovie1D, PartQuantity, SpaceTimeHeatmap
 from .tools import LOG
 import numpy as np
-from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
-from matplotlib.ticker import FuncFormatter
+
 from . import tools
+
+# No data should appear in Fig, Ax: they are sent by Renderer.
 
 
 class Fig:
@@ -14,6 +15,7 @@ class Fig:
         Fig.counter += 1
         self.name = f"fig{Fig.counter}"
         self.quantities = quantities
+
         self.suptitle = suptitle
 
         self.axesMovie = []
@@ -42,7 +44,10 @@ class Fig:
             for j in range(self.columns):
                 self.axes[i, j] = Ax()
 
-    def setup_figure(self, custom_suptitle=None):
+        for qtyInfo in self.quantities:
+            self.axes[*qtyInfo.plot_coords].add_quantity(qtyInfo)
+
+    def generate_figure(self, custom_suptitle=None):
         fig_width = max(8, 5 * self.columns)  # minimum width of 8
         fig_height = max(10, 5 * self.rows)  # minimum height of 10
         fig, axs = plt.subplots(
@@ -50,6 +55,7 @@ class Fig:
             self.columns,
             figsize=(fig_width, fig_height),
             squeeze=False,
+            tight_layout=True,
         )
         self.fig = fig
         padding_top = 0.1
@@ -63,120 +69,108 @@ class Fig:
                     continue
         else:
             fig.suptitle(self.suptitle)
-        # if self.userArgs.zoom:
+        # if self.zoom:
         #     fig.patch.set_linewidth(10)
         #     fig.patch.set_edgecolor("cornflowerblue")
-        fig.subplots_adjust(
-            left=0.1,
-            right=1 - 0.05,
-            bottom=0.1,
-            top=0.8,
-            wspace=0.5,
-            hspace=0.3,
-        )
+        # fig.subplots_adjust(
+        #     # left=0.1,
+        #     # right=1 - 0.15,
+        #     bottom=0.1,
+        #     top=0.8,
+        #     wspace=0.3,
+        #     hspace=0.3,
+        # )
 
         # TODO move to renderer?
         # if len(self.context.format_inputs_text) > 0:
         #     tools.annotateInputs(
         #         fig, self.context.format_inputs_text, padding_top=padding_top
         #     )
+        self.used_coords = [list(qtyInfo.plot_coords) for qtyInfo in self.quantities]
 
-        for qtyInfo in self.quantities:
-            self.axes[*qtyInfo.plot_coords].set_figax(
-                self.fig, axs[*qtyInfo.plot_coords]
-            )
-
-    def _clean_unused_axes(self):
-        rows, columns = self.axes.shape
-        used_coords = [list(qtyInfo.plot_coords) for qtyInfo in self.quantities]
         for i in range(self.rows):
             for j in range(self.columns):
-                if [i, j] not in used_coords:
-                    self.axes[i, j].remove()
+                self.axes[i, j].generate_ax(self.fig, axs[i, j])
 
     def save_and_close(self, path):
-        self._clean_unused_axes()
+        # self._clean_unused_axes()
         DPI = 350
         self.fig.savefig(path, dpi=DPI)
         plt.close(self.fig)
         LOG(f"[OK] {path}")
 
-    def plot_pcolormesh(self, grid1, grid2, data, qtyInfo, zoom):
-
-        ax = self.axes[*qtyInfo.plot_coords].ax
-        vmin, vmax = qtyInfo.bounds
-        if vmin is None:
-            # if vmin is None or self.userArgs.noBounds: # TODO
-            vmin = np.nanmin(data)
-        if vmax is None:
-            # if vmax is None or self.userArgs.noBounds: # TODO
-            vmax = np.nanmax(data)
-
-        cbar_format = FuncFormatter(tools.fmt)
-        norm = Normalize(vmin=vmin, vmax=vmax)
-
-        if qtyInfo.norm == "log":
-            vmin = vmin if vmin > 0 else 1e-9
-            vmax = vmax if vmax > 0 else 1e-8
-            norm = LogNorm(vmin=vmin, vmax=vmax)
-            cbar_format = None
-        elif qtyInfo.norm == "TwoSlopeNorm":
-            # elif qtyInfo.norm == "TwoSlopeNorm" and not self.userArgs.noBounds: # TODO
-            vmin = vmin if vmin < 0 else -1e-7
-            vmax = vmax if vmax > 0 else 1e-7
-            norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
-
-        if qtyInfo is not None:
-            alpha = 0.20
-        else:
-            alpha = 1
-
-        cmesh = ax.pcolormesh(
-            grid1,
-            grid2,
-            data,
-            cmap=qtyInfo.cmap,
-            norm=norm,
-            alpha=alpha,  # TODO more customization
-            antialiased=True,  # to remove artefacts
-        )
-
-        cbar = self.fig.colorbar(cmesh, ax=ax, format=cbar_format)
-        cbar.ax.set_title(qtyInfo.symbol)
-
-        if zoom and isinstance(qtyInfo, MapMovie2D):
-            ax.contourf(
-                grid1,
-                grid2,
-                np.logical_not(self.processor.mask),
-                levels=[0.5, 1],
-                hatches=["////"],
-                colors="none",
-            )
-
-        return cbar
-
 
 class Ax:
-    def __init__(self, vmin=None, vmax=None, norm="linear", title=None):
-        self.vmin = vmin
-        self.vmax = vmax
-        self.norm = norm
+    def __init__(
+        self,
+        xlabel=None,
+        ylabel=None,
+        xmin=None,
+        xmax=None,
+        ymin=None,
+        ymax=None,
+        title=None,
+    ):
+        self.xlabel = xlabel
+        self.ylabel = ylabel
+        self.xmin = xmin
+        self.xmax = xmax
+        self.ymin = ymin
+        self.ymax = ymax
+        self.vmin = None
+        self.vmax = None
+        self.norm = "linear"  # for heatmap only
+        self.xscale = "linear"
+        self.yscale = "linear"
         self.title = title
+        self.qtytitles_list = []  # discarded if title is not None
+        self.quantities = []
+        self.is_pmesh = False
 
-    def set_figax(self, fig, ax):
+    def add_quantity(self, qtyInfo):
+        self.quantities.append(qtyInfo)
+
+        # looking for the smallest domain
+        xmin, xmax = qtyInfo.xmin, qtyInfo.xmax
+        vmin, vmax = qtyInfo.bounds
+        if xmin is not None:
+            if self.xmin is None or xmin > self.xmin:
+                self.xmin = xmin
+        if xmax is not None:
+            if self.xmax is None or xmax < self.xmax:
+                self.xmax = xmax
+        if vmin is not None:
+            if self.vmin is None or vmin > self.vmin:
+                self.vmin = vmin
+        if vmax is not None:
+            if self.vmax is None or vmax < self.vmax:
+                self.vmax = vmax
+
+        # title
+        title = qtyInfo.title
+        if getattr(qtyInfo, "streamlines", None):
+            stream_name = tools.get_streamline_name(qtyInfo.streamlines[0])
+            title = rf"{title} | {stream_name} $\nearrow$"
+        self.qtytitles_list.append(title)
+
+        if isinstance(qtyInfo, MapMovie2D):
+            self.is_pmesh = True
+
+    def generate_ax(self, fig, ax):
         self.fig = fig
         self.ax = ax
 
-    def remove(self):
-        self.ax.remove()
+        if len(self.quantities) == 0:
+            self.ax.remove()
+            return
 
+        if self.is_pmesh:
+            self.ax.set_aspect("equal", adjustable="box")
 
-# class AxMovie(Ax):
-#     def __init__(self, fig, vmin=None, vmax=None, norm="linear", title=None):
-#         super().__init__(fig, vmin, vmax, norm, title)
-
-
-# class AxTimeline(Ax):
-#     def __init__(self, fig, vmin=None, vmax=None, norm="linear", title=None):
-#         super().__init__(fig, vmin, vmax, norm, title)
+        self.ax.set_xlim(self.xmin, self.xmax)
+        self.ax.set_ylim(self.vmin, self.vmax)
+        if self.title is not None:
+            title = ", ".join(self.qtytitles_list)
+        else:
+            title = self.title
+        self.ax.set_title(title)

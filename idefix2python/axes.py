@@ -103,16 +103,14 @@ class Fig:
 class Ax:
     def __init__(
         self,
-        xlabel=None,
-        ylabel=None,
         xmin=None,
         xmax=None,
         ymin=None,
         ymax=None,
         title=None,
     ):
-        self.xlabel = xlabel
-        self.ylabel = ylabel
+        self.xlabel = ""
+        self.ylabel = ""
         self.xmin = xmin
         self.xmax = xmax
         self.ymin = ymin
@@ -150,6 +148,10 @@ class Ax:
             self.xscale = qtyInfo.xscale
         if qtyInfo.yscale is not None:
             self.yscale = qtyInfo.yscale
+
+        # if isinstance(qtyInfo, PartQuantity):
+        #     xlabel=r"$t$"
+        # elif isinstance(qtyInfo, MapMovie2D)
 
         # title
         title = qtyInfo.title

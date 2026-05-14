@@ -87,7 +87,7 @@ class SliceRenderer:
 
     def render(self):
         # First render Timelines
-        self.render_TimelineFrame()
+        self.render_Frame()
 
         # Then render Movies frame by frame
         slice1_list = self.context.get_slice1_vtkFiles()
@@ -99,7 +99,7 @@ class SliceRenderer:
             if self.userArgs.doOnlyFrames:
                 render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
             with Pool(self.userArgs.jobs) as pool:
-                pool.starmap(self.render_MovieFrame, enumerate(render_list))
+                pool.starmap(self.render_Frame, enumerate(render_list))
 
             if len(self.figsMovie) > 0:
                 self.render_movie()
@@ -110,15 +110,20 @@ class SliceRenderer:
             movie_path=self.framesPaths.slice1_video_path,
         )
 
-    def render_MovieFrame(self, frame_nb, vtkPath):
-        VTK = readVTK(vtkPath)
-        self.processor.process(VTK)
+    def render_Frame(self, frame_nb=None, vtkPath=None):
 
-        for figure in self.figsMovie:
-            time = VTK.t[0]
-            figure.generate_figure(
-                custom_suptitle=f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$"
-            )
+        if vtkPath is not None:  # that means it's a movie
+            figures_to_render = self.figsMovie
+            VTK = readVTK(vtkPath)
+            self.processor.process(VTK)
+            custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
+
+        else:
+            figures_to_render = self.figsTimeline
+            frame_nb = -1
+
+        for figure in figures_to_render:
+            figure.generate_figure(custom_suptitle=custom_suptitle)
             for qtyInfo in figure.quantities:
                 if isinstance(qtyInfo, MapMovie2D):
                     self._render_2D(figure, qtyInfo, VTK.data, frame_nb)
@@ -129,27 +134,16 @@ class SliceRenderer:
                 elif isinstance(qtyInfo, PartQuantity):
                     self._render_TimeSeries(figure, qtyInfo)
 
-            slice1_name = vtkPath.name
-            slice1_png_path = str(self.framesPaths.slice1_png_pattern).replace(
-                "*", f"{figure.name}_{slice1_name[:-4]}"
-            )
-            figure.save_and_close(slice1_png_path)
-
-    def render_TimelineFrame(self):
-        for figure in self.figsTimeline:
-            figure.generate_figure()
-            for qtyInfo in figure.quantities:
-                if isinstance(qtyInfo, SpaceTimeHeatmap):
-                    self._render_SpaceTimeHeatmap(figure, qtyInfo)
-                if isinstance(qtyInfo, PartQuantity):
-                    self._render_TimeSeries(figure, qtyInfo)
-                # TODO support movies by showing final frame?
-
-            timeseriespath = (
-                self.framesPaths.timeline_frame_path.parent
-                / f"{figure.name}_{self.framesPaths.timeline_frame_path.name}"
-            )
-            figure.save_and_close(timeseriespath)
+            if vtkPath is not None:  # that means it's a movie
+                png_path = str(self.framesPaths.slice1_png_pattern).replace(
+                    "*", f"{figure.name}_{vtkPath.name[:-4]}"
+                )
+            else:
+                png_path = (
+                    self.framesPaths.timeline_frame_path.parent
+                    / f"{figure.name}_{self.framesPaths.timeline_frame_path.name}"
+                )
+            figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
         lw_streamline = 0.2

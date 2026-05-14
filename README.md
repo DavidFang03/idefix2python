@@ -80,6 +80,7 @@ The module is built around 5 components:
 
 * Better colorbar and dynamic layout (ongoing)
 * More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
+* `compute` should take both globalvtk and partvtk argument to compute mixed quantities.
 * Automatic labeling
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 * twinx

@@ -1,13 +1,16 @@
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
-from matplotlib.ticker import FuncFormatter
+
+# from matplotlib.ticker as ticker
 import numpy as np
 from multiprocessing import Pool
 import shutil
 from pathlib import Path
 from .quantities import MapMovie2D, LineMovie1D, SpaceTimeHeatmap, PartQuantity
 from .vtk_io import readVTK
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 from . import tools
 from .tools import LOG
@@ -400,14 +403,18 @@ class SliceRenderer:
             # if vmax is None or self.userArgs.noBounds: # TODO
             vmax = np.nanmax(data_mesh)
 
-        cbar_format = FuncFormatter(tools.fmt)
+        cbformat = matplotlib.ticker.ScalarFormatter()
+        cbformat.set_scientific("%.2e")
+        cbformat.set_powerlimits((-2, 12))
+        cbformat.set_useMathText(True)
+
         norm = Normalize(vmin=vmin, vmax=vmax)
 
         if qtyInfo.norm == "log":
             vmin = vmin if vmin > 0 else 1e-9
             vmax = vmax if vmax > 0 else 1e-8
             norm = LogNorm(vmin=vmin, vmax=vmax)
-            cbar_format = None
+            cbformat = None
         elif qtyInfo.norm == "TwoSlopeNorm":
             # elif qtyInfo.norm == "TwoSlopeNorm" and not self.userArgs.noBounds: # TODO
             vmin = vmin if vmin < 0 else -1e-7
@@ -431,7 +438,7 @@ class SliceRenderer:
             antialiased=True,  # to remove artefacts
         )
 
-        cbar = figure.fig.colorbar(cmesh, ax=ax, format=cbar_format, location="bottom")
+        cbar = colorbar(cmesh, cbformat)
         cbar.ax.set_title(qtyInfo.symbol)
 
         if isinstance(qtyInfo, MapMovie2D):
@@ -457,3 +464,15 @@ class SliceRenderer:
         ax.set_ylabel(ylabel)
 
         return cbar
+
+
+def colorbar(mappable, cbformat):
+    last_axes = plt.gca()
+    ax = mappable.axes
+    fig = ax.figure
+    loc = "bottom"
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes(loc, size="5%", pad=0.75)
+    cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
+    plt.sca(last_axes)
+    return cbar

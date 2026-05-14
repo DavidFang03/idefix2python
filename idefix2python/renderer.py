@@ -21,6 +21,7 @@ LABEL_FONTSIZE = 16
 DPI = 350
 parts_cmap = plt.get_cmap("Pastel1")
 
+timeindicator_kwargs = {"lw": 0.5, "ls": "--", "alpha": 0.5}
 
 plt.style.use("dark_background")
 
@@ -130,9 +131,9 @@ class SliceRenderer:
                 elif isinstance(qtyInfo, LineMovie1D):
                     self._render_1D(figure, qtyInfo, VTK.data, frame_nb)
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
-                    self._render_SpaceTimeHeatmap(figure, qtyInfo)
+                    self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
                 elif isinstance(qtyInfo, PartQuantity):
-                    self._render_TimeSeries(figure, qtyInfo)
+                    self._render_TimeSeries(figure, qtyInfo, frame_nb)
 
             if vtkPath is not None:  # that means it's a movie
                 png_path = str(self.framesPaths.slice1_png_pattern).replace(
@@ -240,7 +241,7 @@ class SliceRenderer:
             frame_nb=frame_nb,
         )
 
-    def _render_SpaceTimeHeatmap(self, figure, sptime):
+    def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
         ax = figure.axes[*sptime.plot_coords].ax
 
         self._draw_pcolormesh(figure, sptime)
@@ -250,6 +251,8 @@ class SliceRenderer:
             part_qty=self.partsInfo.parts_X1,
             back_qty=sptime,
         )
+        if frame_nb > 0:
+            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
 
         has_legend_items = False
         if len(sptime.pointsRef) > 0:
@@ -269,7 +272,8 @@ class SliceRenderer:
         if has_legend_items:
             ax.legend()
 
-    def _render_TimeSeries(self, figure, timeseries):
+    def _render_TimeSeries(self, figure, timeseries, frame_nb=-1):
+        ax = figure.axes[*timeseries.plot_coords].ax
         if isinstance(timeseries, PartQuantity) and timeseries.is_global:
             return
 
@@ -289,6 +293,8 @@ class SliceRenderer:
             # ax.set_ylabel(qtyInfo.symbol)
             # ax.set_title(qtyInfo.title)
             # ax.grid()
+        if frame_nb > 0:
+            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
 
     def draw_particles(self, figure, part_qty, back_qty=None, frame_nb=None):
         """

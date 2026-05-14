@@ -45,6 +45,9 @@ class Data:
         self.ymin = kwargs.get("ymin", None)
         self.ymax = kwargs.get("ymax", None)
 
+        self.xscale = kwargs.get("xscale", None)
+        self.yscale = kwargs.get("yscale", None)
+
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []

@@ -153,9 +153,6 @@ class SliceRenderer:
         density_streamline = [1, 2]
         arrowstyle_streamline = "->"
 
-        if not getattr(qtyInfo, "streamlines", None):
-            return
-
         if (
             isinstance(qtyInfo.streamlines, (list, tuple))
             and len(qtyInfo.streamlines) == 2
@@ -282,6 +279,7 @@ class SliceRenderer:
         if isinstance(timeseries, PartQuantity):
             self.draw_particles(figure, part_qty=timeseries)
         else:
+            raise NotImplementedError("only part here")
             return  # TODO some place for timevol.dat here
             # ax.set_ylim(*qtyInfo.bounds)
             # if qtyInfo.scale == "log":
@@ -344,6 +342,7 @@ class SliceRenderer:
                 lw = 2
             else:
                 raise NotImplementedError(f"{back_qty} doesn't support particles")
+
             ax.plot(
                 points,
                 values,
@@ -430,7 +429,8 @@ class SliceRenderer:
         cbar.ax.set_title(qtyInfo.title)
 
         if isinstance(qtyInfo, MapMovie2D):
-            self._draw_streamlines(figure, data, qtyInfo)
+            if getattr(qtyInfo, "streamlines", None):
+                self._draw_streamlines(figure, qtyInfo, data)
             self._draw_contours(
                 figure, qtyInfo, data_mesh, cbar
             )  # support for Spacetimeheatmap?

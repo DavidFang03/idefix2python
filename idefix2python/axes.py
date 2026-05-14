@@ -146,11 +146,18 @@ class Ax:
             if self.vmax is None or vmax < self.vmax:
                 self.vmax = vmax
 
+        if qtyInfo.xscale is not None:
+            self.xscale = qtyInfo.xscale
+        if qtyInfo.yscale is not None:
+            self.yscale = qtyInfo.yscale
+
         # title
         title = qtyInfo.title
         if getattr(qtyInfo, "streamlines", None):
             stream_name = tools.get_streamline_name(qtyInfo.streamlines[0])
             title = rf"{title} | {stream_name} $\nearrow$"
+        if title is None:
+            title = qtyInfo.symbol
         self.qtytitles_list.append(title)
 
         if isinstance(qtyInfo, MapMovie2D):
@@ -167,10 +174,12 @@ class Ax:
         if self.is_pmesh:
             self.ax.set_aspect("equal", adjustable="box")
 
-        self.ax.set_xlim(self.xmin, self.xmax)
-        self.ax.set_ylim(self.vmin, self.vmax)
-        if self.title is not None:
+        # self.ax.set_xlim(self.xmin, self.xmax)
+        # self.ax.set_ylim(self.vmin, self.vmax)
+        if self.title is None:
             title = ", ".join(self.qtytitles_list)
         else:
             title = self.title
+        self.ax.set_xscale(self.xscale)
+        self.ax.set_yscale(self.yscale)
         self.ax.set_title(title)

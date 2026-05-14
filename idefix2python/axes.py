@@ -99,6 +99,8 @@ class Fig:
 
     def save_and_close(self, path):
         # self._clean_unused_axes()
+        for ax in self.axes.flat:
+            ax.last_pimp()
         DPI = 350
         self.fig.savefig(path, dpi=DPI)
         plt.close(self.fig)
@@ -112,10 +114,10 @@ class Ax:
     ):
         self.xlabel = ""
         self.ylabel = ""
-        self.xmins = []
-        self.xmaxs = []
-        self.ymins = []
-        self.ymaxs = []
+        self.xmin = None
+        self.xmax = None
+        self.ymin = None
+        self.ymax = None
         self.norm = "linear"  # for heatmap only
         self.xscale = "linear"
         self.yscale = "linear"
@@ -123,6 +125,7 @@ class Ax:
         self.qtytitles_list = []  # discarded if title is not None
         self.quantities = []
         self.is_pmesh = False
+        self.active = True
 
     def add_quantity(self, qtyInfo):
         """
@@ -131,15 +134,26 @@ class Ax:
         self.quantities.append(qtyInfo)
 
         # looking for the smallest domain
-        self.xmins.append(qtyInfo.xmin)
-        self.xmaxs.append(qtyInfo.xmax)
-        self.ymins.append(qtyInfo.ymin)
-        self.ymaxs.append(qtyInfo.ymax)
+        for attr in ["xmin", "ymin", "xmax", "ymax"]:
+            if getattr(qtyInfo, attr) is not None:
+                if getattr(self, attr) is None:
+                    setattr(self, attr, getattr(qtyInfo, attr))
+                elif "min" in attr:
+                    setattr(
+                        self,
+                        attr,
+                        np.nanmax(getattr(qtyInfo, attr), getattr(self, attr)),
+                    )
+                elif "max" in attr:
+                    setattr(
+                        self,
+                        attr,
+                        np.nanmin(getattr(qtyInfo, attr), getattr(self, attr)),
+                    )
 
-        if qtyInfo.xscale is not None:
-            self.xscale = qtyInfo.xscale
-        if qtyInfo.yscale is not None:
-            self.yscale = qtyInfo.yscale
+        for attr in ["xscale", "yscale"]:
+            if getattr(qtyInfo, attr) is not None:
+                setattr(self, attr, getattr(qtyInfo, attr))
 
         # title
         title = qtyInfo.title
@@ -158,18 +172,25 @@ class Ax:
         self.ax = ax
 
         if len(self.quantities) == 0:
+            self.active = False
             self.ax.remove()
             return
 
         if self.is_pmesh:
             self.ax.set_aspect("equal", adjustable="box")
 
-        self.ax.set_xlim(np.min(self.xmins), np.max(self.xmaxs))
-        self.ax.set_ylim(np.min(self.ymins), np.max(self.ymaxs))
+    def last_pimp(self):
+        if not self.active:
+            return
+
+        self.ax.set_xscale(self.xscale)
+        self.ax.set_yscale(self.yscale)
+        print(self.ymin, self.ymax)
+        self.ax.set_xlim(self.xmin, self.xmax)
+        self.ax.set_ylim(self.ymin, self.ymax)
         if self.title is None:
             title = ", ".join(self.qtytitles_list)
         else:
             title = self.title
-        self.ax.set_xscale(self.xscale)
-        self.ax.set_yscale(self.yscale)
+
         self.ax.set_title(title)

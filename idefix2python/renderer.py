@@ -83,6 +83,9 @@ class SliceRenderer:
         self.userArgs = userArgs
         self.framesPaths = FramesPaths(context, self.userArgs)
 
+        if self.userArgs.doOnlyFrames and not self.userArgs.onlyMovie:
+            self.doMovie = False
+
     def set_infos(self, gridInfo, partsInfo):
         self.gridInfo = gridInfo
         self.partsInfo = partsInfo
@@ -111,12 +114,33 @@ class SliceRenderer:
                         self.gridInfo.grid_name_2,
                     )
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
-                    qtyInfo.xmin, qtyInfo.xmax = qtyInfo.xmin, qtyInfo.xmax
-                    qtyInfo.ymin, qtyInfo.ymax = (
-                        np.min(qtyInfo.points),
-                        np.max(qtyInfo.points),
+                    qtyInfo.xmin = (
+                        qtyInfo.xmin
+                        if qtyInfo.xmin is not None
+                        else np.min(self.processor.vtktimes)
                     )
+                    qtyInfo.xmax = (
+                        qtyInfo.xmax
+                        if qtyInfo.xmax is not None
+                        else np.max(self.processor.vtktimes)
+                    )
+                    qtyInfo.ymin = (
+                        qtyInfo.ymin
+                        if qtyInfo.ymin is not None
+                        else np.nanmin(qtyInfo.points)
+                    )
+                    qtyInfo.ymax = (
+                        qtyInfo.ymax
+                        if qtyInfo.ymax is not None
+                        else np.nanmax(qtyInfo.points)
+                    )
+
                     qtyInfo.xlabel, qtyInfo.ylabel = r"$t$", self.gridInfo.grid_name_1
+                elif isinstance(qtyInfo, PartQuantity):
+                    qtyInfo.xlabel, qtyInfo.ylabel = (
+                        r"$t$",
+                        qtyInfo.symbol,
+                    )  # TODO problems?
 
                 fig.init()
 
@@ -280,7 +304,6 @@ class SliceRenderer:
         ax = figure.axes[*timeline.plot_coords].ax
         if frame_nb > 0:
             ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
-        ax.set_xlabel(r"$t$")
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
         ax = figure.axes[*sptime.plot_coords].ax

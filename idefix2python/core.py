@@ -317,9 +317,6 @@ class Pipeline:
 
         self.streamLines = streamLines
 
-        if self.userArgs.doOnlyFrames:  # safety guard
-            self.doMovie = False
-
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)
 
         self.figs = figs

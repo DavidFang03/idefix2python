@@ -55,6 +55,6 @@ fig1 = Fig(parts_quantities)
 # Initialize context
 runContext = RunContext(task, projectPath, configPath=configPath)
 
-pipeline = Pipeline(runContext, [fig0, fig1])
-
-pipeline.run()
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0, fig1])
+    pipeline.run()

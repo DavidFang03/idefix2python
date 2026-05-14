@@ -39,6 +39,7 @@ runContext = RunContext(
     projectPath,
     active_directions=[2],  # necessary when there are only part*.vtk
 )
-pipeline = Pipeline(runContext, [fig0])
 
-pipeline.run()
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0])
+    pipeline.run()

@@ -34,5 +34,8 @@ quantities = [
 fig0 = Fig(quantities, suptitle="Density and Mach number on a beautiful heatmap")
 
 runContext = RunContext(task, projectPath, configPath=configPath)
-pipeline = Pipeline(runContext, [fig0])
-pipeline.run()
+
+
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0])
+    pipeline.run()

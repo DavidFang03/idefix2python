@@ -17,5 +17,7 @@ quantities = [
 fig0 = Fig(quantities, suptitle="Dust density on a heatmap")
 
 runContext = RunContext(task, projectPath)
-pipeline = Pipeline(runContext, [fig0])
-pipeline.run()
+
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0])
+    pipeline.run()

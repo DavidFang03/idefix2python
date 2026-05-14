@@ -32,6 +32,7 @@ runContext = RunContext(
     projectPath,
     frameFolder="1D_test_withref",
 )
-pipeline = Pipeline(runContext, [fig0])
 
-pipeline.run()
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0])
+    pipeline.run()

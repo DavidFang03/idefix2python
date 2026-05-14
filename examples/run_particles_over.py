@@ -31,7 +31,7 @@ dust0_rho = SpaceTimeHeatmap(
 
 fig0 = Fig(
     [z_part, dust0_rho],
-    suptitle="Dust density: presureless fluid, particles, and an analytical trajectory",
+    suptitle="Dust density: pressureless fluid, particles, and an analytical trajectory",
 )
 
 runContext = RunContext(

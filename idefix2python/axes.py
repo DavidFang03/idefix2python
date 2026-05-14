@@ -65,8 +65,6 @@ class Fig:
         self.fig = fig
         if self.suptitle is None and custom_suptitle is not None:
             suptitle = custom_suptitle
-        else:
-            suptitle = self.suptitle
         fig.suptitle(suptitle)
 
         # if self.zoom:
@@ -138,13 +136,13 @@ class Ax:
                     setattr(
                         self,
                         attr,
-                        np.nanmax(getattr(qtyInfo, attr), getattr(self, attr)),
+                        np.nanmax([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
                 elif "max" in attr:
                     setattr(
                         self,
                         attr,
-                        np.nanmin(getattr(qtyInfo, attr), getattr(self, attr)),
+                        np.nanmin([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
 
         for attr in ["xscale", "yscale"]:

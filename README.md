@@ -11,14 +11,16 @@ pip install .
 
 The minimal example below shows $\rho(x,y)$ in a movie, if your simulation output is 2D.
 ```python
-from idefix2python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
+from idefix2python import RunContext, Pipeline, Fig, MapMovie2D
 
 ctx = RunContext(runName="test_run")
 
-maps = [MapMovie2D("RHO", r"$\rho$")]
+quantities = MapMovie2D("RHO", r"$\rho$")
+fig = Fig([quantities])
 
-pipe = Pipeline(ctx, movies2D=maps)
-pipe.run()
+if __name__ == "__main__:
+    pipe = Pipeline(ctx, [fig])
+    pipe.run()
 ```
 Check the docs for more examples and explore the other features: https://davidfang03.github.io/idefix2python/
 

@@ -42,7 +42,7 @@ class PhysicsProcessor:
             for qtyInfo in self.qty_tocompute:
                 if isinstance(qtyInfo, MapMovie2D) or isinstance(
                     qtyInfo, LineMovie1D
-                ):  # partQuantities are not concerned by this
+                ):  # partQuantities and spacetimesheatmap are not concerned by this.
                     V.data[qtyInfo.key] = qtyInfo.compute(
                         V.data
                     )  # TODO Add safeguard for computed shape

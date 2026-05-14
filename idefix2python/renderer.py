@@ -335,7 +335,7 @@ class SliceRenderer:
         if has_legend_items:
             ax.legend()
 
-        ax.set_ylabel(self.gridInfo.grid_name_1)
+        ax.set_ylabel(self.gridInfo.native_grid_name_1)
         self.do_timeline_stuff(figure, sptime, frame_nb)
 
     def _render_TimeSeries(self, figure, timeseries, frame_nb=-1):
@@ -498,7 +498,7 @@ class SliceRenderer:
             ax.contourf(
                 grid1,
                 grid2,
-                np.logical_not(self.processor.mask),
+                np.logical_not(self.gridInfo.mask),
                 levels=[0.5, 1],
                 hatches=["////"],
                 colors="none",

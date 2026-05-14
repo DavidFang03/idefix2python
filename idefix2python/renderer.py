@@ -277,7 +277,10 @@ class SliceRenderer:
             return
 
         if isinstance(timeseries, PartQuantity):
-            self.draw_particles(figure, part_qty=timeseries)
+            self.draw_particles(
+                figure,
+                part_qty=timeseries,
+            )
         else:
             raise NotImplementedError("only part here")
             return  # TODO some place for timevol.dat here
@@ -298,7 +301,7 @@ class SliceRenderer:
             ax = figure.axes[*part_qty.plot_coords].ax
             uids = part_qty.uids
         else:
-            ax = figure.axes[*part_qty.plot_coords].ax
+            ax = figure.axes[*back_qty.plot_coords].ax
             uids = back_qty.uids
 
         # if uids == "all" or len(uids) == 0: # ???

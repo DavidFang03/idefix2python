@@ -316,7 +316,10 @@ class SliceRenderer:
             else:
                 label = uid
 
-            if hasattr(part_qty, "colors") and ii < len(part_qty.colors):
+            # TODO Make this part applicable to any kwargs, not just color/label
+            if back_qty is not None and "color" in back_qty.parts_kwargs:
+                color = back_qty.parts_kwargs["color"]
+            elif hasattr(part_qty, "colors") and ii < len(part_qty.colors):
                 color = part_qty.colors[ii]
             else:
                 color = parts_cmap(ii / max(1, len(uids) - 1))
@@ -428,8 +431,8 @@ class SliceRenderer:
             antialiased=True,  # to remove artefacts
         )
 
-        cbar = figure.fig.colorbar(cmesh, ax=ax, format=cbar_format)
-        cbar.ax.set_title(qtyInfo.title)
+        cbar = figure.fig.colorbar(cmesh, ax=ax, format=cbar_format, location="bottom")
+        cbar.ax.set_title(qtyInfo.symbol)
 
         if isinstance(qtyInfo, MapMovie2D):
             if getattr(qtyInfo, "streamlines", None):

@@ -48,6 +48,8 @@ class Data:
         self.xscale = kwargs.get("xscale", None)
         self.yscale = kwargs.get("yscale", None)
 
+        self.parts_kwargs = kwargs.get("parts_kwargs", {})
+
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []

@@ -63,17 +63,12 @@ class Fig:
             tight_layout=True,
         )
         self.fig = fig
-        padding_top = 0.1
-        if self.suptitle is None:
-            if custom_suptitle is not None:
-                fig.suptitle(custom_suptitle)
-            for qtyInfo in self.quantities:  # TODO remove?
-                if hasattr(qtyInfo, "suptitle"):
-                    fig.suptitle(rf"\bfseries {qtyInfo.suptitle}", weight="bold")
-                    padding_top = 0.0
-                    continue
+        if self.suptitle is None and custom_suptitle is not None:
+            suptitle = custom_suptitle
         else:
-            fig.suptitle(self.suptitle)
+            suptitle = self.suptitle
+        fig.suptitle(suptitle)
+
         # if self.zoom:
         #     fig.patch.set_linewidth(10)
         #     fig.patch.set_edgecolor("cornflowerblue")
@@ -88,6 +83,7 @@ class Fig:
 
         # TODO move to renderer?
         # if len(self.context.format_inputs_text) > 0:
+        # padding_top = 0.1
         #     tools.annotateInputs(
         #         fig, self.context.format_inputs_text, padding_top=padding_top
         #     )
@@ -185,7 +181,6 @@ class Ax:
 
         self.ax.set_xscale(self.xscale)
         self.ax.set_yscale(self.yscale)
-        print(self.ymin, self.ymax)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
         if self.title is None:

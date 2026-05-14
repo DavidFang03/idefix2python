@@ -179,6 +179,7 @@ class SliceRenderer:
             custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
 
         else:
+            custom_suptitle = None
             figures_to_render = self.figsTimeline
             frame_nb = -1
 

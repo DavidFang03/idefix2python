@@ -40,6 +40,11 @@ class Fig:
                 self.columns = qtyInfo.plot_coords[1] + 1
 
         self.axes = np.empty((self.rows, self.columns), dtype="object")
+
+    def init(self):
+        """
+        Only after Renderer._pre_render()
+        """
         for i in range(self.rows):
             for j in range(self.columns):
                 self.axes[i, j] = Ax()
@@ -103,20 +108,14 @@ class Fig:
 class Ax:
     def __init__(
         self,
-        xmin=None,
-        xmax=None,
-        ymin=None,
-        ymax=None,
         title=None,
     ):
         self.xlabel = ""
         self.ylabel = ""
-        self.xmin = xmin
-        self.xmax = xmax
-        self.ymin = ymin
-        self.ymax = ymax
-        self.vmin = None
-        self.vmax = None
+        self.xmins = []
+        self.xmaxs = []
+        self.ymins = []
+        self.ymaxs = []
         self.norm = "linear"  # for heatmap only
         self.xscale = "linear"
         self.yscale = "linear"
@@ -126,32 +125,21 @@ class Ax:
         self.is_pmesh = False
 
     def add_quantity(self, qtyInfo):
+        """
+        These procedures are universal for any kind of qty.
+        """
         self.quantities.append(qtyInfo)
 
         # looking for the smallest domain
-        xmin, xmax = qtyInfo.xmin, qtyInfo.xmax
-        vmin, vmax = qtyInfo.bounds
-        if xmin is not None:
-            if self.xmin is None or xmin > self.xmin:
-                self.xmin = xmin
-        if xmax is not None:
-            if self.xmax is None or xmax < self.xmax:
-                self.xmax = xmax
-        if vmin is not None:
-            if self.vmin is None or vmin > self.vmin:
-                self.vmin = vmin
-        if vmax is not None:
-            if self.vmax is None or vmax < self.vmax:
-                self.vmax = vmax
+        self.xmins.append(qtyInfo.xmin)
+        self.xmaxs.append(qtyInfo.xmax)
+        self.ymins.append(qtyInfo.ymin)
+        self.ymaxs.append(qtyInfo.ymax)
 
         if qtyInfo.xscale is not None:
             self.xscale = qtyInfo.xscale
         if qtyInfo.yscale is not None:
             self.yscale = qtyInfo.yscale
-
-        # if isinstance(qtyInfo, PartQuantity):
-        #     xlabel=r"$t$"
-        # elif isinstance(qtyInfo, MapMovie2D)
 
         # title
         title = qtyInfo.title
@@ -176,8 +164,8 @@ class Ax:
         if self.is_pmesh:
             self.ax.set_aspect("equal", adjustable="box")
 
-        # self.ax.set_xlim(self.xmin, self.xmax)
-        # self.ax.set_ylim(self.vmin, self.vmax)
+        self.ax.set_xlim(np.min(self.xmins), np.max(self.xmaxs))
+        self.ax.set_ylim(np.min(self.ymins), np.max(self.ymaxs))
         if self.title is None:
             title = ", ".join(self.qtytitles_list)
         else:

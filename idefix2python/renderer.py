@@ -21,7 +21,8 @@ LABEL_FONTSIZE = 16
 DPI = 350
 parts_cmap = plt.get_cmap("Pastel1")
 
-timeindicator_kwargs = {"lw": 0.5, "ls": "--", "alpha": 0.5}
+timeindicator_kwargs = {"lw": 1, "ls": "--", "alpha": 0.8}
+GRID_OPACITY = 0.1
 
 plt.style.use("dark_background")
 
@@ -71,14 +72,14 @@ class SliceRenderer:
         self,
         context,
         processor,
-        figsMovie,
-        figsTimeline,
+        figs,
         userArgs,
     ):
         self.context = context
         self.processor = processor
-        self.figsMovie = figsMovie
-        self.figsTimeline = figsTimeline
+        self.figs = figs
+        self.figsMovie = []
+        self.figsTimeline = []
         self.userArgs = userArgs
         self.framesPaths = FramesPaths(context, self.userArgs)
 
@@ -86,7 +87,41 @@ class SliceRenderer:
         self.gridInfo = gridInfo
         self.partsInfo = partsInfo
 
+    def _pre_render(self):
+        """
+        Before rendering, making sure every quantity has the seatbelt fastened
+        """
+        for fig in self.figs:
+            if fig.movie:
+                self.figsMovie.append(fig)
+            else:
+                self.figsTimeline.append(fig)
+
+            for qtyInfo in fig.quantities:
+                if isinstance(qtyInfo, MapMovie2D):
+                    for attr in ["xmin", "xmax", "ymin", "ymax"]:
+                        value = (
+                            getattr(qtyInfo, attr)
+                            if getattr(qtyInfo, attr) is not None
+                            else getattr(self.gridInfo, attr)
+                        )
+                        setattr(qtyInfo, attr, value)
+                    self.xlabel, self.ylabel = (
+                        self.gridInfo.grid_name_1,
+                        self.gridInfo.grid_name_2,
+                    )
+                elif isinstance(qtyInfo, SpaceTimeHeatmap):
+                    qtyInfo.xmin, qtyInfo.xmax = qtyInfo.xmin, qtyInfo.xmax
+                    qtyInfo.ymin, qtyInfo.ymax = (
+                        np.min(qtyInfo.points),
+                        np.max(qtyInfo.points),
+                    )
+                    qtyInfo.xlabel, qtyInfo.ylabel = r"$t$", self.gridInfo.grid_name_1
+
+                fig.init()
+
     def render(self):
+        self._pre_render()
         # First render Timelines
         self.render_Frame()
 
@@ -241,6 +276,12 @@ class SliceRenderer:
             frame_nb=frame_nb,
         )
 
+    def do_timeline_stuff(self, figure, timeline, frame_nb=-1):
+        ax = figure.axes[*timeline.plot_coords].ax
+        if frame_nb > 0:
+            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
+        ax.set_xlabel(r"$t$")
+
     def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
         ax = figure.axes[*sptime.plot_coords].ax
 
@@ -251,8 +292,6 @@ class SliceRenderer:
             part_qty=self.partsInfo.parts_X1,
             back_qty=sptime,
         )
-        if frame_nb > 0:
-            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
 
         has_legend_items = False
         if len(sptime.pointsRef) > 0:
@@ -272,6 +311,9 @@ class SliceRenderer:
         if has_legend_items:
             ax.legend()
 
+        ax.set_ylabel(self.gridInfo.grid_name_1)
+        self.do_timeline_stuff(figure, sptime, frame_nb)
+
     def _render_TimeSeries(self, figure, timeseries, frame_nb=-1):
         ax = figure.axes[*timeseries.plot_coords].ax
         if isinstance(timeseries, PartQuantity) and timeseries.is_global:
@@ -285,16 +327,10 @@ class SliceRenderer:
         else:
             raise NotImplementedError("only part here")
             return  # TODO some place for timevol.dat here
-            # ax.set_ylim(*qtyInfo.bounds)
-            # if qtyInfo.scale == "log":
-            #     ax.set_yscale("log")
 
-            # ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-            # ax.set_ylabel(qtyInfo.symbol)
-            # ax.set_title(qtyInfo.title)
-            # ax.grid()
-        if frame_nb > 0:
-            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
+        ax.grid(alpha=GRID_OPACITY)
+        ax.set_ylabel(timeseries.symbol)
+        self.do_timeline_stuff(figure, timeseries, frame_nb)
 
     def draw_particles(self, figure, part_qty, back_qty=None, frame_nb=None):
         """
@@ -376,14 +412,6 @@ class SliceRenderer:
         if isinstance(qtyInfo, MapMovie2D):
             grid1 = self.gridInfo.grid1
             grid2 = self.gridInfo.grid2
-            xmin, xmax = self.gridInfo.xmin, self.gridInfo.xmax
-            ymin = (
-                self.gridInfo.ymin if qtyInfo.ymin is None else qtyInfo.ymin
-            )  # TODO should be done beforehand ?
-            ymax = (
-                self.gridInfo.ymax if qtyInfo.ymax is None else qtyInfo.ymax
-            )  # TODO should be done beforehand ?
-            xlabel, ylabel = self.gridInfo.grid_name_1, self.gridInfo.grid_name_2
             data_mesh = data[qtyInfo.key]
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
@@ -391,16 +419,11 @@ class SliceRenderer:
                 np.asarray(self.processor.vtktimes),
                 np.asarray(self.gridInfo.X1Line),
             )
-            xmin, xmax = qtyInfo.xmin, qtyInfo.xmax
-            ymin, ymax = np.min(qtyInfo.points), np.max(qtyInfo.points)
-            xlabel, ylabel = r"$t$", self.gridInfo.grid_name_1
             data_mesh = np.transpose(qtyInfo.values)
         vmin, vmax = qtyInfo.bounds
-        if vmin is None:
-            # if vmin is None or self.userArgs.noBounds: # TODO
+        if vmin is None or self.userArgs.noBounds:
             vmin = np.nanmin(data_mesh)
-        if vmax is None:
-            # if vmax is None or self.userArgs.noBounds: # TODO
+        if vmax is None or self.userArgs.noBounds:
             vmax = np.nanmax(data_mesh)
 
         cbformat = matplotlib.ticker.ScalarFormatter()
@@ -415,8 +438,7 @@ class SliceRenderer:
             vmax = vmax if vmax > 0 else 1e-8
             norm = LogNorm(vmin=vmin, vmax=vmax)
             cbformat = None
-        elif qtyInfo.norm == "TwoSlopeNorm":
-            # elif qtyInfo.norm == "TwoSlopeNorm" and not self.userArgs.noBounds: # TODO
+        elif qtyInfo.norm == "TwoSlopeNorm" and not self.userArgs.noBounds:
             vmin = vmin if vmin < 0 else -1e-7
             vmax = vmax if vmax > 0 else 1e-7
             norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
@@ -446,7 +468,7 @@ class SliceRenderer:
                 self._draw_streamlines(figure, qtyInfo, data)
             self._draw_contours(
                 figure, qtyInfo, data_mesh, cbar
-            )  # support for Spacetimeheatmap?
+            )  # support for Spacetimeheatmap? later PR.
 
         if self.userArgs.zoom and isinstance(qtyInfo, MapMovie2D):
             ax.contourf(
@@ -457,11 +479,6 @@ class SliceRenderer:
                 hatches=["////"],
                 colors="none",
             )
-
-        ax.set_xlim(xmin, xmax)
-        ax.set_ylim(ymin, ymax)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
 
         return cbar
 

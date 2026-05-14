@@ -327,16 +327,10 @@ class Pipeline:
         self.partQuantities = []
         self.movies1D = []
         self.movies2D = []
-        self.figsMovie = []
-        self.figsTimeline = []
+
         qty_tocompute = []
         self.particles_requested = False
         for fig in figs:
-            if fig.movie:
-                self.figsMovie.append(fig)
-            else:
-                self.figsTimeline.append(fig)
-
             for qtyInfo in fig.quantities:
                 if isinstance(qtyInfo, PartQuantity):
                     self.partQuantities.append(qtyInfo)
@@ -368,8 +362,7 @@ class Pipeline:
         self.renderer = SliceRenderer(
             self.context,
             self.processor,
-            self.figsMovie,
-            self.figsTimeline,
+            self.figs,
             self.userArgs,
         )
 

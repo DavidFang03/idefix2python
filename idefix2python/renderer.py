@@ -114,7 +114,7 @@ class SliceRenderer:
 
                 elif isinstance(qtyInfo, LineMovie1D):
                     self.ylabel = qtyInfo.symbol
-                    self.ylabel = self.gridInfo.native_grid_name_1
+                    self.ylabel = self.gridInfo.axis_name_1
 
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     qtyInfo.xmin = (
@@ -138,7 +138,7 @@ class SliceRenderer:
                         else np.nanmax(qtyInfo.points)
                     )
                     qtyInfo.xlabel = r"$t$"
-                    qtyInfo.ylabel = self.gridInfo.native_grid_name_1
+                    qtyInfo.ylabel = self.gridInfo.axis_name_1
 
                 elif isinstance(qtyInfo, PartQuantity):
                     qtyInfo.xlabel = r"$t$"

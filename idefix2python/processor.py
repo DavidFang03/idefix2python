@@ -3,6 +3,20 @@ from . import tools
 import numpy as np
 from .quantities import PartQuantity, LineMovie1D, MapMovie2D
 
+CARTESIAN_DIMENSION_NAMES = {
+    "cartesian": [r"$x$", r"$y$", r"$z$"],
+    "polar": [r"$x$", r"$y$", r"$z$"],
+    "cylindrical": [r"$x$", r"$z$", None],
+    "spherical": [r"$x$", r"$z$", r"$y$"],
+}
+
+DIMENSION_NAMES = {
+    "cartesian": [r"$x$", r"$y$", r"$z$"],
+    "polar": [r"$r$", r"$\phi$", r"$z$"],
+    "cylindrical": [r"$r$", r"$z$", None],
+    "spherical": [r"$r$", r"$\theta$", r"$\phi$"],
+}
+
 
 class PhysicsProcessor:
     def __init__(self, context, userArgs, streamLines=None):
@@ -125,20 +139,10 @@ class GridInfo:
     def get_cartesian_grid_labels(self):
         # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.
         names = [None, None]
-
-        match self.context.geometry:
-            case "cartesian":
-                positions = [r"$x$", r"$y$", r"$z$"]
-            case "polar":
-                positions = [r"$x$", r"$y$", r"$z$"]
-            case "cylindrical":
-                positions = [r"$x$", r"$z$", None]
-            case "spherical":
-                positions = [r"$x$", r"$z$", r"$y$"]
         for i, dir in enumerate(self.context.active_directions):
             if i < 2:
                 # max 2 dimensions is supported
-                names[i] = positions[dir]
+                names[i] = CARTESIAN_DIMENSION_NAMES[self.context.geometry][dir]
 
         return names
 
@@ -147,7 +151,7 @@ class GridInfo:
         for i, dir in enumerate(self.context.active_directions):
             if i < 2:
                 # max 2 dimensions is supported
-                names[i] = dir
+                names[i] = DIMENSION_NAMES[self.context.geometry][dir]
         return names
 
     def get_grid_line_points(self):

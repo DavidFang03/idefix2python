@@ -9,7 +9,7 @@ from .tools import LOG
 from . import tools
 from .vtk_io import readVTK
 from .renderer import SliceRenderer
-from .processor import PhysicsProcessor, PartsInfo
+from .processor import PhysicsProcessor, PartsInfo, DIMENSION_NAMES
 from .quantities import PartQuantity, SpaceTimeHeatmap, MapMovie2D, LineMovie1D
 
 
@@ -221,8 +221,7 @@ class RunContext:
         self.dimensions = dimensions
 
         self.active_directions_labels = [
-            tools.get_Position_name(self.geometry, dir)
-            for dir in self.active_directions
+            DIMENSION_NAMES[self.geometry][dir] for dir in self.active_directions
         ]
         LOG("Dimensions detected: ", self.dimensions)
         LOG("Active axes", self.active_directions_labels)

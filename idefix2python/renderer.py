@@ -486,6 +486,8 @@ class SliceRenderer:
             norm=norm,
             **qtyInfo.style_kwargs,
             antialiased=True,  # to remove artefacts
+            edgecolors="none",
+            rasterized=True,
         )
 
         cbar = colorbar(cmesh, cbformat)

@@ -93,7 +93,6 @@ class Fig:
 class Ax:
     def __init__(
         self,
-        title=None,
     ):
         self.xlabel = ""
         self.ylabel = ""
@@ -104,7 +103,7 @@ class Ax:
         self.norm = "linear"  # for heatmap only
         self.xscale = "linear"
         self.yscale = "linear"
-        self.title = title
+        self.title = None
         self.qtytitles_list = []  # discarded if title is not None
         self.quantities = []
         self.is_pmesh_grid = False
@@ -140,12 +139,13 @@ class Ax:
 
         # title
         title = qtyInfo.title
-        if getattr(qtyInfo, "streamlines", None):
-            stream_name = tools.get_streamline_name(qtyInfo.streamlines[0])
-            title = rf"{title} | {stream_name} $\nearrow$"
         if title is None:
             title = qtyInfo.symbol
-        self.qtytitles_list.append(title)
+        if getattr(qtyInfo, "streamlines", None):
+            stream_name = tools.get_streamline_name(qtyInfo.streamlines[0])
+            title = f"{title} \\textbar{{}} {stream_name} $\\nearrow$"
+        if title is not None:
+            self.qtytitles_list.append(title)
 
         if isinstance(qtyInfo, MapMovie2D):
             self.is_pmesh_grid = True
@@ -172,9 +172,6 @@ class Ax:
         self.ax.set_ylim(self.ymin, self.ymax)
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
-        if self.title is None:
-            title = ", ".join(self.qtytitles_list)
-        else:
-            title = self.title
+        title = ", ".join(self.qtytitles_list)
 
         self.ax.set_title(title)

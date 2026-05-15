@@ -547,7 +547,6 @@ class Pipeline:
             if qtyInfo.key in computed_bounds and not self.userArgs.noBounds:
                 qtyInfo.set_bounds(computed_bounds[qtyInfo.key])
             elif self.userArgs.noBounds:
-                print(self.userArgs.noBounds, "AHAHAHAH")
                 qtyInfo.set_bounds([None, None])
 
         LOG("Final Bounds:")

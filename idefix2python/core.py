@@ -312,8 +312,6 @@ class Pipeline:
         self.context = Context
         self.userArgs = self.context.args
 
-        self.doMovie = True
-
         self.streamLines = streamLines
 
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)

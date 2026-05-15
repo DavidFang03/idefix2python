@@ -85,6 +85,8 @@ class SliceRenderer:
 
         if self.userArgs.doOnlyFrames and not self.userArgs.onlyMovie:
             self.doMovie = False
+        else:
+            self.doMovie = True
 
     def set_infos(self, gridInfo, partsInfo):
         self.gridInfo = gridInfo

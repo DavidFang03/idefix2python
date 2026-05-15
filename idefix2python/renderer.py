@@ -1,11 +1,16 @@
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
-import shutil
 from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
-from matplotlib.ticker import FuncFormatter
+
+# from matplotlib.ticker as ticker
+import numpy as np
+from multiprocessing import Pool
+import shutil
 from pathlib import Path
-from .quantities import MapMovie2D, LineMovie1D
+from .quantities import MapMovie2D, LineMovie1D, SpaceTimeHeatmap, PartQuantity
+from .vtk_io import readVTK
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 from . import tools
 from .tools import LOG
@@ -14,10 +19,10 @@ matplotlib.use("Agg")
 
 LABEL_FONTSIZE = 16
 DPI = 350
+parts_cmap = plt.get_cmap("Pastel1")
 
-lw_streamline = 0.2
-density_streamline = [1, 2]
-arrowstyle_streamline = "->"
+timeindicator_kwargs = {"lw": 1, "ls": "--", "alpha": 0.8}
+GRID_OPACITY = 0.1
 
 plt.style.use("dark_background")
 
@@ -41,118 +46,186 @@ plt.rcParams["hatch.linewidth"] = 0.5
 plt.rcParams["font.size"] = 12
 
 
+class FramesPaths:
+    def __init__(self, context, userArgs):
+
+        filenameinfos = []
+        if userArgs.zoom:
+            filenameinfos += [f"zoom{userArgs.zoom}"]
+
+        if userArgs.noBounds:
+            filenameinfos += ["unbounded"]
+        elif context.configPath is not None:
+            filenameinfos += ["config"]
+
+        slice1_png_pattern = "_".join(["*"] + filenameinfos) + ".png"
+        slice1Movie_path = "_".join([context.runName] + filenameinfos) + ".mp4"
+
+        self.slice1_png_pattern = context.slice1Folder / slice1_png_pattern
+        self.slice1_video_path = context.videosFolder / slice1Movie_path
+
+        self.timeline_frame_path = context.frameRootFolder / f"{context.runName}.png"
+
+
 class SliceRenderer:
     def __init__(
         self,
         context,
         processor,
-        spaceTimeHeatmaps,
-        movies1D,
-        movies2D,
-        partQuantities,
+        figs,
         userArgs,
-        framesPaths,
     ):
         self.context = context
         self.processor = processor
-        self.spaceTimeHeatmaps = spaceTimeHeatmaps
-        self.movies2D = movies2D
-        self.movies1D = movies1D
-        self.partQuantities = partQuantities
+        self.figs = figs
+        self.figsMovie = []
+        self.figsTimeline = []
         self.userArgs = userArgs
-        self.framesPaths = framesPaths
+        self.framesPaths = FramesPaths(context, self.userArgs)
 
-    def _setup_figure(self, quantities_list, custom_suptitle=None):
-        rows = max([qtyInfo.plot_coords[0] for qtyInfo in quantities_list]) + 1
-        columns = max([qtyInfo.plot_coords[1] for qtyInfo in quantities_list]) + 1
-        fig_width = max(8, 5 * columns)  # minimum width of 8
-        fig_height = max(10, 5 * rows)  # minimum height of 10
-        fig, axs = plt.subplots(
-            rows,
-            columns,
-            figsize=(fig_width, fig_height),
-            squeeze=False,
-        )
-        padding_top = 0.1
-        if custom_suptitle is None:
-            for qtyInfo in quantities_list:
-                if hasattr(qtyInfo, "suptitle"):
-                    fig.suptitle(rf"\bfseries {qtyInfo.suptitle}", weight="bold")
-                    padding_top = 0.0
-                    continue
+        if self.userArgs.doOnlyFrames and not self.userArgs.onlyMovie:
+            self.doMovie = False
         else:
-            fig.suptitle(custom_suptitle)
-        if self.userArgs.zoom:
-            fig.patch.set_linewidth(10)
-            fig.patch.set_edgecolor("cornflowerblue")
-        fig.subplots_adjust(
-            left=0.1,
-            right=1 - 0.05,
-            bottom=0.1,
-            top=0.8,
-            wspace=0.5,
-            hspace=0.3,
-        )
-        if len(self.context.format_inputs_text) > 0:
-            tools.annotateInputs(
-                fig, self.context.format_inputs_text, padding_top=padding_top
+            self.doMovie = True
+
+    def set_infos(self, gridInfo, partsInfo):
+        self.gridInfo = gridInfo
+        self.partsInfo = partsInfo
+
+    def _pre_render(self):
+        """
+        Before rendering, making sure every quantity has the seatbelt fastened
+        """
+        for fig in self.figs:
+            if fig.movie:
+                self.figsMovie.append(fig)
+            else:
+                self.figsTimeline.append(fig)
+
+            for qtyInfo in fig.quantities:
+                if isinstance(qtyInfo, MapMovie2D):
+                    for attr in ["xmin", "xmax", "ymin", "ymax"]:
+                        value = (
+                            getattr(qtyInfo, attr)
+                            if getattr(qtyInfo, attr) is not None
+                            else getattr(self.gridInfo, attr)
+                        )
+                        setattr(qtyInfo, attr, value)
+                    self.xlabel = self.gridInfo.grid_name_1
+                    self.ylabel = self.gridInfo.grid_name_2
+
+                elif isinstance(qtyInfo, LineMovie1D):
+                    self.ylabel = qtyInfo.symbol
+                    self.ylabel = self.gridInfo.axis_name_1
+
+                elif isinstance(qtyInfo, SpaceTimeHeatmap):
+                    qtyInfo.xmin = (
+                        qtyInfo.xmin
+                        if qtyInfo.xmin is not None
+                        else np.min(self.processor.vtktimes)
+                    )
+                    qtyInfo.xmax = (
+                        qtyInfo.xmax
+                        if qtyInfo.xmax is not None
+                        else np.max(self.processor.vtktimes)
+                    )
+                    qtyInfo.ymin = (
+                        qtyInfo.ymin
+                        if qtyInfo.ymin is not None
+                        else np.nanmin(qtyInfo.points)
+                    )
+                    qtyInfo.ymax = (
+                        qtyInfo.ymax
+                        if qtyInfo.ymax is not None
+                        else np.nanmax(qtyInfo.points)
+                    )
+                    qtyInfo.xlabel = r"$t$"
+                    qtyInfo.ylabel = self.gridInfo.axis_name_1
+
+                elif isinstance(qtyInfo, PartQuantity):
+                    qtyInfo.xlabel = r"$t$"
+                    qtyInfo.ylabel = qtyInfo.symbol
+
+                if isinstance(qtyInfo, MapMovie2D) or isinstance(
+                    qtyInfo, SpaceTimeHeatmap
+                ):
+                    if qtyInfo.uids is not None and "alpha" not in qtyInfo.style_kwargs:
+                        qtyInfo.style_kwargs["alpha"] = 0.20
+
+                fig.init()
+
+    def render(self):
+        self._pre_render()
+        # First render Timelines
+        self.render_Frame()
+
+        # Then render Movies frame by frame
+        slice1_list = self.context.get_slice1_vtkFiles()
+        self.vtkList = self.context.get_global_vtkFiles()
+        if len(self.figsMovie) > 0:
+            # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
+            render_list = slice1_list if len(slice1_list) > 0 else self.vtkList
+
+            if self.userArgs.doOnlyFrames:
+                render_list = [render_list[i] for i in self.userArgs.doOnlyFrames]
+            with Pool(self.userArgs.jobs) as pool:
+                pool.starmap(self.render_Frame, enumerate(render_list))
+
+            if len(self.figsMovie) > 0:
+                self.render_movie()
+
+    def render_movie(self):
+        if self.doMovie:
+            tools.movie(
+                pattern_png=self.framesPaths.slice1_png_pattern,  # TODO should be one pattern for every fig
+                movie_path=self.framesPaths.slice1_video_path,
             )
 
-        return fig, axs
+    def render_Frame(self, frame_nb=None, vtkPath=None):
 
-    def _plot_pcolormesh(self, fig, ax, grid1, grid2, data, qtyInfo):
+        if vtkPath is not None:  # that means it's a movie
+            figures_to_render = self.figsMovie
+            VTK = readVTK(vtkPath)
+            self.processor.process(VTK)
+            custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
 
-        vmin, vmax = qtyInfo.bounds
-        if vmin is None or self.userArgs.noBounds:
-            vmin = np.nanmin(data)
-        if vmax is None or self.userArgs.noBounds:
-            vmax = np.nanmax(data)
-
-        cbar_format = FuncFormatter(tools.fmt)
-        norm = Normalize(vmin=vmin, vmax=vmax)
-
-        if qtyInfo.norm == "log":
-            vmin = vmin if vmin > 0 else 1e-9
-            vmax = vmax if vmax > 0 else 1e-8
-            norm = LogNorm(vmin=vmin, vmax=vmax)
-            cbar_format = None
-        elif qtyInfo.norm == "TwoSlopeNorm" and not self.userArgs.noBounds:
-            vmin = vmin if vmin < 0 else -1e-7
-            vmax = vmax if vmax > 0 else 1e-7
-            norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
-
-        if qtyInfo is not None:
-            alpha = 0.20
         else:
-            alpha = 1
+            custom_suptitle = None
+            figures_to_render = self.figsTimeline
+            frame_nb = -1
 
-        cmesh = ax.pcolormesh(
-            grid1,
-            grid2,
-            data,
-            cmap=qtyInfo.cmap,
-            norm=norm,
-            alpha=alpha,  # TODO more customization
-            antialiased=True,  # to remove artefacts
-        )
+        for figure in figures_to_render:
+            figure.generate_figure(custom_suptitle=custom_suptitle)
+            for qtyInfo in figure.quantities:
+                if isinstance(qtyInfo, MapMovie2D):
+                    self._render_2D(figure, qtyInfo, VTK.data, frame_nb)
+                elif isinstance(qtyInfo, LineMovie1D):
+                    self._render_1D(figure, qtyInfo, VTK.data, frame_nb)
+                elif isinstance(qtyInfo, SpaceTimeHeatmap):
+                    self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
+                elif isinstance(qtyInfo, PartQuantity):
+                    self._render_TimeSeries(figure, qtyInfo, frame_nb)
 
-        cbar = fig.colorbar(cmesh, ax=ax, format=cbar_format)
-        cbar.ax.set_title(qtyInfo.symbol)
+            if vtkPath is not None:  # that means it's a movie
+                png_path = str(self.framesPaths.slice1_png_pattern).replace(
+                    "*", f"{figure.name}_{vtkPath.name[:-4]}"
+                )
+            else:
+                png_path = (
+                    self.framesPaths.timeline_frame_path.parent
+                    / f"{figure.name}_{self.framesPaths.timeline_frame_path.name}"
+                )
 
-        if self.userArgs.zoom and isinstance(qtyInfo, MapMovie2D):
-            ax.contourf(
-                grid1,
-                grid2,
-                np.logical_not(self.processor.mask),
-                levels=[0.5, 1],
-                hatches=["////"],
-                colors="none",
-            )
+            if self.userArgs.zoom:
+                figure.fig.patch.set_linewidth(10)
+                figure.fig.patch.set_edgecolor("cornflowerblue")
+            figure.save_and_close(png_path)
 
-        return cbar
+    def _draw_streamlines(self, figure, qtyInfo, data):
+        lw_streamline = 0.2
+        density_streamline = [1, 2]
+        arrowstyle_streamline = "->"
 
-    def _plot_streamlines(self, ax, V, qtyInfo):
-        data = V.data
         if (
             isinstance(qtyInfo.streamlines, (list, tuple))
             and len(qtyInfo.streamlines) == 2
@@ -162,19 +235,19 @@ class SliceRenderer:
                 ux, uz = tools.convertVector_toXZ(
                     data[u_key1],
                     data[u_key2],
-                    self.processor.X1,
-                    self.processor.X2,
+                    self.gridInfo.X1,
+                    self.gridInfo.X2,
                     self.context.geometry,
                 )
                 x_coords, z_coords, Ux_uni, Uy_uni = tools.get_streamplot_data(
-                    self.processor.X1Line,
-                    self.processor.X2Line,
+                    self.gridInfo.X1Line,
+                    self.gridInfo.X2Line,
                     ux,
                     uz,
                     self.context.geometry,
-                    self.processor.xmax,
+                    self.gridInfo.xmax,
                 )
-                ax.streamplot(
+                figure.axes[*qtyInfo.plot_coords].ax.streamplot(
                     x_coords,
                     z_coords,
                     Ux_uni,
@@ -190,11 +263,14 @@ class SliceRenderer:
                 f"Invalid streamline configuration: {qtyInfo.streamlines}. Expected a list/tuple of length 2."
             )
 
-    def _plot_contours(self, ax, data, qtyInfo, cbar):
-        levels = ax.contour(
-            self.processor.grid1,
-            self.processor.grid2,
-            data,
+    def _draw_contours(self, figure, qtyInfo, data_mesh, cbar):
+        if not getattr(qtyInfo, "contours", None):
+            return
+
+        levels = figure.axes[*qtyInfo.plot_coords].ax.contour(
+            self.gridInfo.grid1,
+            self.gridInfo.grid2,
+            data_mesh,
             qtyInfo.contours,
             alpha=0.5,
             colors=[qtyInfo.contour_color],
@@ -202,197 +278,109 @@ class SliceRenderer:
         )
         cbar.add_lines(levels)
 
-    def _save_and_close(self, fig, path):
-        fig.savefig(path, dpi=DPI)
-        plt.close(fig)
-        LOG(f"[OK] {path}")
+    def _render_1D(self, figure, qty1DInfo, data, frame_nb):
 
-    def _clean_unused_axes(self, axs, fields):
-        rows, columns = axs.shape
-        used_coords = [list(f.plot_coords) for f in fields]
-        for i in range(rows):
-            for j in range(columns):
-                if [i, j] not in used_coords:
-                    axs[i, j].remove()
+        ax = figure.axes[*qty1DInfo.plot_coords].ax
 
-    def render_2D(self, V, frame_nb, vtkPath):
-        time = V.t[0]
-        fig, axs = self._setup_figure(
-            self.movies2D,
-            custom_suptitle=f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={time:.1e}$",
+        ax.plot(self.gridInfo.X1Line, data[qty1DInfo.key])
+
+        self.draw_particles(
+            figure,
+            part_qty=self.partsInfo.parts_X1,
+            back_qty=qty1DInfo,
+            frame_nb=frame_nb,
         )
 
-        for qtyInfo in self.movies2D:
-            qty = qtyInfo.key
-            ax = axs[*qtyInfo.plot_coords]
-            data = V.data[qty]
+        # To remove?
+        if len(qty1DInfo.pointsRef) > 0:
+            ax.plot(
+                qty1DInfo.points,
+                qty1DInfo.values,
+                ls="--",
+                label="Analytical",
+            )
+            ax.legend()
+        ax.set_ylim(
+            *qty1DInfo.bounds
+        )  # TODO bounds will be more properly handled in later PR
 
-            grid1 = self.processor.grid1
-            grid2 = self.processor.grid2
-            cbar = self._plot_pcolormesh(fig, ax, grid1, grid2, data, qtyInfo)
-
-            ax.set_aspect("equal", adjustable="box")
-            ax.set_xlim(self.processor.xmin, self.processor.xmax)
-            ax.set_ylim(self.processor.ymin, self.processor.ymax)
-
-            ax.set_xlabel(self.processor.grid_name_1)
-            if qtyInfo.plot_coords[1] == 0:
-                ax.set_ylabel(self.processor.grid_name_2)
-
-            title = qtyInfo.title
-            color = None
-
-            if getattr(qtyInfo, "streamlines", None):
-                color = qtyInfo.streamline_color
-                stream_name = tools.get_streamline_name(qtyInfo.streamlines[0])
-                title = rf"{title} | {stream_name} $\nearrow$"
-                self._plot_streamlines(ax, V, qtyInfo)
-            if getattr(qtyInfo, "contours", None) is not None:
-                self._plot_contours(ax, data, qtyInfo, cbar)
-            if qtyInfo.uids is not None:
-                self._plot_particles_on_ax(
-                    ax,
-                    self.processor.parts_Z,
-                    qty=qtyInfo,
-                    frame_nb=frame_nb,
-                    uids=qtyInfo.uids,
-                )
-
-            if color is not None:
-                ax.set_title(title, color=color)
-            else:
-                ax.set_title(title)
-
-        self._clean_unused_axes(axs, self.movies2D)
-
-        slice1_name = vtkPath.name
-        slice1_png_path = str(self.framesPaths.slice1_png_pattern).replace(
-            "*", f"{slice1_name[:-4]}"
+    def _render_2D(self, figure, qtyInfo, data, frame_nb):
+        self._draw_pcolormesh(figure, qtyInfo, data)
+        self.draw_particles(
+            figure,
+            part_qty=self.partsInfo.parts_Z,
+            back_qty=qtyInfo,
+            frame_nb=frame_nb,
         )
-        self._save_and_close(fig, slice1_png_path)
 
-    def render_1D(self, V, frame_nb, vtkPath):
-        if not self.movies1D:
-            return
+    def do_timeline_stuff(self, figure, timeline, frame_nb=-1):
+        ax = figure.axes[*timeline.plot_coords].ax
+        if frame_nb > 0:
+            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
 
-        t = V.t[0]
-        fig, axs = self._setup_figure(self.movies1D, custom_suptitle=rf"$t={t:.1e}$")
+    def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
+        ax = figure.axes[*sptime.plot_coords].ax
 
-        points = self.processor.X1Line
+        self._draw_pcolormesh(figure, sptime)
 
-        for field1D in self.movies1D:
-            key = field1D.key
-            ax = axs[*field1D.plot_coords]
-
-            ax.plot(points, V.data[key])
-
-            if field1D.uids is not None:
-                self._plot_particles_on_ax(
-                    ax,
-                    self.processor.parts_X1,
-                    qty=field1D,
-                    uids=field1D.uids,
-                    frame_nb=frame_nb,
-                )
-
-            # To remove?
-            if len(field1D.pointsRef) > 0:
-                ax.plot(
-                    field1D.points,
-                    field1D.values,
-                    ls="--",
-                    label="Analytical",
-                )
-                ax.legend()
-            # ax.set_xlim(self.processor.xmin, self.processor.xmax)
-            ax.set_xlabel(self.processor.axis_name_1)
-            ax.set_ylim(*field1D.bounds)
-            ax.set_ylabel(field1D.symbol)
-            ax.set_title(field1D.title)
-            ax.grid()
-
-        self._clean_unused_axes(axs, self.movies1D)
-
-        slice1_name = vtkPath.name
-
-        slice1_png_path = Path(
-            str(self.framesPaths.slice1_png_pattern).replace(
-                "*", f"1D_{slice1_name[:-4]}"
-            )
+        self.draw_particles(
+            figure,
+            part_qty=self.partsInfo.parts_X1,
+            back_qty=sptime,
         )
-        self._save_and_close(fig, slice1_png_path)
 
-    def render_SpaceTimeHeatmap(self):
-        if not self.spaceTimeHeatmaps:
-            return
-        fig, axs = self._setup_figure(self.spaceTimeHeatmaps)
-
-        for sptime in self.spaceTimeHeatmaps:
-            ax = axs[*sptime.plot_coords]
-            T, Points = np.meshgrid(
-                np.asarray(self.processor.vtktimes),
-                np.asarray(sptime.points),
-            )
-
-            cbar = self._plot_pcolormesh(
-                fig, ax, T, Points, np.transpose(sptime.values), sptime
-            )
-
-            if sptime.uids is not None:
-                self._plot_particles_on_ax(
-                    ax, self.processor.parts_X1, uids=sptime.uids
-                )
-                has_legend_items = False
-
-            has_legend_items = False
-            if len(sptime.pointsRef) > 0:
-                plot_kwargs = {}
-                if hasattr(sptime.ref_function, "plot_kwargs"):
-                    plot_kwargs = sptime.ref_function.plot_kwargs
-                    if "zorder" not in plot_kwargs:
-                        plot_kwargs["zorder"] = 3
-                    if "label" in plot_kwargs:
-                        has_legend_items = True
-                ax.plot(
-                    sptime.pointsRef,
-                    sptime.valuesRef,
-                    **plot_kwargs,
-                )
-
-            if has_legend_items:
-                ax.legend()
-
-            ymin = np.min(sptime.points)
-            ymax = np.max(sptime.points)
-            xmin = sptime.xmin
-            xmax = sptime.xmax
-            if sptime.ymin is not None:
-                ymin = sptime.ymin
-            if sptime.ymax is not None:
-                ymax = sptime.ymax
-            ax.set_xlim(xmin, xmax)
-            ax.set_ylim(ymin, ymax)
-
-            cbar.ax.set_title(sptime.symbol)
-            ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-            ax.set_ylabel(self.processor.axis_name_1)
-            ax.set_title(sptime.title)
-            ax.grid()
-
-        self._clean_unused_axes(axs, self.spaceTimeHeatmaps)
-        self._save_and_close(fig, self.framesPaths.spacetimeheatmap_frame_path)
-
-    def _plot_particles_on_ax(self, ax, part_qty, qty=None, frame_nb=None, uids=None):
         has_legend_items = False
-        cmap = plt.get_cmap("Pastel1")
+        if len(sptime.pointsRef) > 0:
+            plot_kwargs = {}
+            if hasattr(sptime.ref_function, "plot_kwargs"):
+                plot_kwargs = sptime.ref_function.plot_kwargs
+                if "zorder" not in plot_kwargs:
+                    plot_kwargs["zorder"] = 3
+                if "label" in plot_kwargs:
+                    has_legend_items = True
+            ax.plot(
+                sptime.pointsRef,
+                sptime.valuesRef,
+                **plot_kwargs,
+            )
 
-        if uids is None:
+        if has_legend_items:
+            ax.legend()
+
+        self.do_timeline_stuff(figure, sptime, frame_nb)
+
+    def _render_TimeSeries(self, figure, timeseries, frame_nb=-1):
+        ax = figure.axes[*timeseries.plot_coords].ax
+        if isinstance(timeseries, PartQuantity) and timeseries.is_global:
+            return
+
+        if isinstance(timeseries, PartQuantity):
+            self.draw_particles(
+                figure,
+                part_qty=timeseries,
+            )
+        else:
+            raise NotImplementedError("only part here")
+            return  # TODO some room for timevol.dat here
+
+        ax.grid(alpha=GRID_OPACITY)
+        self.do_timeline_stuff(figure, timeseries, frame_nb)
+
+    def draw_particles(self, figure, part_qty, back_qty=None, frame_nb=None):
+        """
+        back_qty is the background. If back_qty.uids are accounted if back_qty is not None. Otherwise, part_qty.uids
+        """
+        if back_qty is None:
+            ax = figure.axes[*part_qty.plot_coords].ax
             uids = part_qty.uids
-        uids = (
-            self.context.all_particles_uids
-            if (uids == "all" or len(uids) == 0)
-            else uids
-        )
+        else:
+            ax = figure.axes[*back_qty.plot_coords].ax
+            uids = back_qty.uids
+
+        # if uids == "all" or len(uids) == 0: # ???
+        if uids is None:
+            return
+
         for ii, uid in enumerate(uids):
             lw = 1
             alpha = 1
@@ -401,12 +389,15 @@ class SliceRenderer:
             else:
                 label = uid
 
-            if hasattr(part_qty, "colors") and ii < len(part_qty.colors):
+            # TODO Make this part applicable to any kwargs, not just color/label
+            if back_qty is not None and "color" in back_qty.parts_kwargs:
+                color = back_qty.parts_kwargs["color"]
+            elif hasattr(part_qty, "colors") and ii < len(part_qty.colors):
                 color = part_qty.colors[ii]
             else:
-                color = cmap(ii / max(1, len(uids) - 1))
+                color = parts_cmap(ii / max(1, len(uids) - 1))
 
-            if isinstance(qty, MapMovie2D):
+            if isinstance(back_qty, MapMovie2D):
                 points = part_qty.points[: frame_nb + 1, uid]
                 values = part_qty.values[: frame_nb + 1, uid]
                 alpha = 1
@@ -419,17 +410,18 @@ class SliceRenderer:
                     s=1,
                     linewidths=0.3,
                 )
-            elif isinstance(qty, LineMovie1D):
+            elif isinstance(back_qty, LineMovie1D):
                 points = part_qty.values[: frame_nb + 1, uid]
                 values = 0 * points
                 ax.scatter(points[-1], 0, color=color, marker="x")
-            elif qty is None:
+            elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
                 points = part_qty.points
                 values = part_qty.values[:, uid]
                 alpha = 1
                 lw = 2
             else:
-                raise NotImplementedError(f"{qty} doesn't support particles")
+                raise NotImplementedError(f"{back_qty} doesn't support particles")
+
             ax.plot(
                 points,
                 values,
@@ -440,35 +432,92 @@ class SliceRenderer:
                 marker="8",
                 markersize=0.2,
             )
-            has_legend_items = True
 
         if len(part_qty.pointsRef) > 0:
             ax.plot(
                 part_qty.pointsRef, part_qty.valuesRef, ls="--", lw=2, label="Predicted"
             )
-            has_legend_items = True
 
-        if has_legend_items and not part_qty.is_global:
-            ax.legend()
-        # if has_legend_items:
-        #     loc = "best"
-        #     if qty.is_for2D:
-        #         loc = "lower right"
-        #     ax.legend(loc=loc)
+    def _draw_pcolormesh(self, figure, qtyInfo, data=None):
+        """
+        For MapMovie2D, passing the entire data is necessary for streamlines.
+        """
 
-    def render_timeSeries(self):
-        if not self.partQuantities:
-            return
-        notglobal_partquantities = [v for v in self.partQuantities if not v.is_global]
-        if len(notglobal_partquantities) > 0:
-            fig, axs = self._setup_figure(notglobal_partquantities)
-            for qtyInfo in notglobal_partquantities:
-                ax = axs[*qtyInfo.plot_coords]
-                self._plot_particles_on_ax(ax, qtyInfo)
+        if isinstance(qtyInfo, MapMovie2D):
+            grid1 = self.gridInfo.grid1
+            grid2 = self.gridInfo.grid2
+            data_mesh = data[qtyInfo.key]
 
-                ax.set_xlabel(r"$t$", fontsize=LABEL_FONTSIZE)
-                ax.set_ylabel(qtyInfo.symbol)
-                ax.set_title(qtyInfo.title)
-                ax.grid()
-            self._clean_unused_axes(axs, notglobal_partquantities)
-            self._save_and_close(fig, self.framesPaths.timeSeries_frame_path)
+        elif isinstance(qtyInfo, SpaceTimeHeatmap):
+            grid1, grid2 = np.meshgrid(
+                np.asarray(self.processor.vtktimes),
+                np.asarray(self.gridInfo.X1Line),
+            )
+            data_mesh = np.transpose(qtyInfo.values)
+        vmin, vmax = qtyInfo.bounds
+        if vmin is None or self.userArgs.noBounds:
+            vmin = np.nanmin(data_mesh)
+        if vmax is None or self.userArgs.noBounds:
+            vmax = np.nanmax(data_mesh)
+
+        cbformat = matplotlib.ticker.ScalarFormatter()
+        cbformat.set_scientific("%.2e")
+        cbformat.set_powerlimits((-2, 12))
+        cbformat.set_useMathText(True)
+
+        norm = Normalize(vmin=vmin, vmax=vmax)
+
+        if qtyInfo.norm == "log":
+            vmin = vmin if vmin > 0 else 1e-9
+            vmax = vmax if vmax > 0 else 1e-8
+            norm = LogNorm(vmin=vmin, vmax=vmax)
+            cbformat = None
+        elif qtyInfo.norm == "TwoSlopeNorm" and not self.userArgs.noBounds:
+            vmin = vmin if vmin < 0 else -1e-7
+            vmax = vmax if vmax > 0 else 1e-7
+            norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
+
+        ax = figure.axes[*qtyInfo.plot_coords].ax
+
+        cmesh = ax.pcolormesh(
+            grid1,
+            grid2,
+            data_mesh,
+            norm=norm,
+            **qtyInfo.style_kwargs,
+            antialiased=True,  # to remove artefacts
+        )
+
+        cbar = colorbar(cmesh, cbformat)
+        cbar.ax.set_title(qtyInfo.symbol)
+
+        if isinstance(qtyInfo, MapMovie2D):
+            if getattr(qtyInfo, "streamlines", None):
+                self._draw_streamlines(figure, qtyInfo, data)
+            self._draw_contours(
+                figure, qtyInfo, data_mesh, cbar
+            )  # support for Spacetimeheatmap? later PR.
+
+        if self.userArgs.zoom and isinstance(qtyInfo, MapMovie2D):
+            ax.contourf(
+                grid1,
+                grid2,
+                np.logical_not(self.gridInfo.mask),
+                levels=[0.5, 1],
+                hatches=["////"],
+                colors="none",
+            )
+
+        return cbar
+
+
+def colorbar(mappable, cbformat):
+    last_axes = plt.gca()
+    ax = mappable.axes
+    fig = ax.figure
+    loc = "bottom"
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes(loc, size="5%", pad=0.75)
+    cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
+    plt.sca(last_axes)
+    return cbar

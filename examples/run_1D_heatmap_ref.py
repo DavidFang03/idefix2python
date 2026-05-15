@@ -1,4 +1,4 @@
-from idefix2python import RunContext, Pipeline, SpaceTimeHeatmap
+from idefix2python import RunContext, Pipeline, Fig, SpaceTimeHeatmap
 import utilities
 from pathlib import Path
 
@@ -14,7 +14,7 @@ def analytical_trajectory(t):
     return utilities.integrate(fluid.vrDrift, r0, t)
 
 
-custom_spaceTimeHeatmaps = [
+quantities = [
     SpaceTimeHeatmap(
         "Dust0_RHO",
         r"$\rho^\mathrm{dust}$",
@@ -23,17 +23,16 @@ custom_spaceTimeHeatmaps = [
         ref_function=analytical_trajectory,
     )
 ]
-
-SpaceTimeHeatmap.suptitle = "Dust density on heatmap, with an analytical trajectory"
+fig0 = Fig(
+    quantities, suptitle="Dust density on heatmap, with an analytical trajectory"
+)
 
 runContext = RunContext(
     task,
     projectPath,
     frameFolder="1D_test_withref",
 )
-pipeline = Pipeline(
-    runContext,
-    spaceTimeHeatmaps=custom_spaceTimeHeatmaps,
-)
 
-pipeline.run()
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0])
+    pipeline.run()

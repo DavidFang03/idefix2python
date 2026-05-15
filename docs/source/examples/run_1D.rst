@@ -28,7 +28,7 @@ For 1 space dimension fields :math:`f(x,t)` there are 2 ways to render:
          :language: python
          :linenos:
 
-      .. image:: ../../../examples/data_test/frames/1D_test/1D_test_spacetimeheatmap.png
+      .. image:: ../../../examples/data_test/frames/1D_test/fig0_1D_test.png
          :width: 80%
          :align: center
 
@@ -41,8 +41,8 @@ On the heatmap, one can add a reference line (e.g., an analytical trajectory) by
    :language: python
    :linenos:
 
-.. figure:: ../../../examples/data_test/frames/1D_test_withref/1D_test_spacetimeheatmap.png
+.. figure:: ../../../examples/data_test/frames/1D_test_withref/fig0_1D_test.png
    :width: 80%
    :align: center
 
-   1D_test_spacetimeheatmap.png
+   fig0_1D_test.png

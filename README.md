@@ -11,14 +11,16 @@ pip install .
 
 The minimal example below shows $\rho(x,y)$ in a movie, if your simulation output is 2D.
 ```python
-from idefix2python import RunContext, Pipeline, SpaceTimeHeatmap, MapMovie2D
+from idefix2python import RunContext, Pipeline, Fig, MapMovie2D
 
 ctx = RunContext(runName="test_run")
 
-maps = [MapMovie2D("RHO", r"$\rho$")]
+quantities = MapMovie2D("RHO", r"$\rho$")
+fig = Fig([quantities])
 
-pipe = Pipeline(ctx, movies2D=maps)
-pipe.run()
+if __name__ == "__main__:
+    pipe = Pipeline(ctx, [fig])
+    pipe.run()
 ```
 Check the docs for more examples and explore the other features: https://davidfang03.github.io/idefix2python/
 
@@ -66,22 +68,26 @@ To ensure constant colorbars across the movies, the user can define fixed bounds
 }
 ```
 
-## Architecture
+## Development
 
-The module is built around 5 components:
-
+The module is built around 6 components:
+Three of them are accessible to the user:
++  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
 +  **`RunContext`**: Handles data location and directory creation. Detects simulation geometry, dimensions, and available fields.
 +  **`Quantities`**: Defines all the different types of data and ways to visualize them.
+The three others are not accessible to the user:
 +  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
 +  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
-+  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
++  **`Axes`**: Defines `Fig` and `Ax` that are basic containers for plotting graphs.
 
-## TODOs
+## Roadmap
 
-* **Lagrangian Dust**: Plot particles positions on the 2D heatmaps.
-* Better colorbar and dynamic layout
-* More flexibility on plot parameters (linestyle, color, etc...)
+* More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
+* `compute` should take both globalvtk and partvtk argument to compute mixed quantities.
+* Automatic labeling (already partially supported through `config.json` file.)
 * Reintroduce `timevol.dat` (timevol) for global quantities.
+* twinx
+* Better zoom API
 
 ### Not a priority
 * Support multiple pipelines

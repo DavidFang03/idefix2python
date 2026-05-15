@@ -1,4 +1,4 @@
-from idefix2python import RunContext, Pipeline, PartQuantity, SpaceTimeHeatmap
+from idefix2python import RunContext, Pipeline, Fig, PartQuantity, SpaceTimeHeatmap
 import utilities
 from pathlib import Path
 
@@ -21,31 +21,25 @@ z_part = PartQuantity(
     r"$z^\mathrm{part}$",
     plot_coords=[0, 0],
 )
+dust0_rho = SpaceTimeHeatmap(
+    "Dust0_RHO",
+    r"$\rho^\mathrm{dust}$",
+    plot_coords=[0, 0],
+    uids="all",
+    ref_function=analytical_trajectory,
+)
 
-custom_partQuantities = [z_part]
-SpaceTimeHeatmaps = [
-    SpaceTimeHeatmap(
-        "Dust0_RHO",
-        r"$\rho^\mathrm{dust}$",
-        plot_coords=[0, 0],
-        uids="all",
-        ref_function=analytical_trajectory,
-    )
-]
-
-SpaceTimeHeatmap.suptitle = (
-    "Dust density: presureless fluid, particles, and an analytical trajectory"
+fig0 = Fig(
+    [z_part, dust0_rho],
+    suptitle="Dust density: pressureless fluid, particles, and an analytical trajectory",
 )
 
 runContext = RunContext(
     task,
     projectPath,
-    active_directions=[2],  # currently necessary for lagrangian particles.)
-)
-pipeline = Pipeline(
-    runContext,
-    partQuantities=custom_partQuantities,
-    spaceTimeHeatmaps=SpaceTimeHeatmaps,
+    active_directions=[2],  # necessary when there are only part*.vtk
 )
 
-pipeline.run()
+if __name__ == "__main__":
+    pipeline = Pipeline(runContext, [fig0])
+    pipeline.run()

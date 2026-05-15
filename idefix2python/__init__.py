@@ -3,6 +3,8 @@ from .core import (
     RunContext,
 )
 
+from .axes import Fig
+
 from .vtk_io import readVTK
 
 from .quantities import (
@@ -21,4 +23,5 @@ __all__ = [
     "LineMovie1D",
     "PartQuantity",
     "readVTK",
+    "Fig",
 ]

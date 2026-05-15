@@ -387,7 +387,7 @@ class Pipeline:
         if len(self.partQuantities) > 0 or self.particles_requested:
             if not partInfo.status:
                 raise Exception(
-                    f"Particle quantities were requested, but no part*.vtk files were found at {partInfo.test_file}"
+                    f"Particle quantities were requested, but no part*.vtk files were found at {partInfo.files}"
                 )
 
         if (
@@ -397,7 +397,7 @@ class Pipeline:
         ):
             if not globalInfo.status:
                 raise Exception(
-                    f"Global quantities were requested, but no data*.vtk files were found at {globalInfo.test_file}"
+                    f"Global quantities were requested, but no data*.vtk files were found at {globalInfo.files}"
                 )
 
         LOG("Quantities to compute:")
@@ -516,12 +516,12 @@ class Pipeline:
 
         if len(fields_tobound) > 0:
             bound_list = self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
-            all_bounds = self._get_bounds(
+            computed_bounds = self._get_bounds(
                 bound_list[min(len(bound_list), 5) :],
                 fields_tobound,
             )
             LOG("Fields to bound: ", fields_tobound)
-            [LOG(f"{key}: {all_bounds[key]}") for key in all_bounds]
+            [LOG(f"{key}: {computed_bounds[key]}") for key in computed_bounds]
             LOG("Bounds computed")
 
         else:
@@ -529,21 +529,33 @@ class Pipeline:
 
         all_movies = [*self.movies1D, *self.movies2D]
         for qtyInfo in all_movies:
-            key = qtyInfo.key
-            if key in config and "bounds" in config[key]:
-                qtyInfo.set_bounds(config[key]["bounds"])
-            elif key in all_bounds and not self.userArgs.noBounds:
-                qtyInfo.set_bounds(all_bounds[key])
+            qty_key = qtyInfo.key
+            AVAILABLE_KWARGS = [
+                "bounds",
+                "symbol",
+                "title",
+                "style_kwargs",
+                "xmin",
+                "xmax",
+                "ymin",
+                "ymax",
+                "xscale",
+                "yscale",
+                "norm",
+            ]
+            if qty_key in config:
+                for key in config[qty_key]:
+                    if key in AVAILABLE_KWARGS:
+                        setattr(qtyInfo, key, config[qty_key][key])
 
-            if key in config:
-                if "cmap" in config[key] and hasattr(qtyInfo, "set_cmap"):
-                    qtyInfo.set_cmap(config[key]["cmap"])
-                if "norm" in config[key]:
-                    qtyInfo.set_norm(config[key]["norm"])
+            if qty_key in all_bounds and not self.userArgs.noBounds:
+                qtyInfo.set_bounds(all_bounds[qty_key])
+            elif self.userArgs.noBounds:
+                qtyInfo.set_bounds([None, None])
 
         LOG("Final Bounds:")
         for qtyInfo in all_movies:
-            LOG(qtyInfo.key, qtyInfo.bounds)
+            LOG(f"{qtyInfo.key:>10} {qtyInfo.bounds}")
 
     def _get_bounds(self, vtkList, fields_keys):
         """
@@ -560,19 +572,19 @@ class Pipeline:
             fieldskeys_indexes[key] = i
 
         with Pool(self.userArgs.jobs) as pool:
-            all_bounds = pool.map(
+            computed_bounds = pool.map(
                 self._get_bounds_indiv,
                 [[vtk, fieldskeys_indexes] for vtk in vtkList],
             )
-        all_bounds = np.array(all_bounds)
+        computed_bounds = np.array(computed_bounds)
         bounds = {}
-        if len(all_bounds) == 0:
+        if len(computed_bounds) == 0:
             return bounds
         for key in fields_keys:
             i = fieldskeys_indexes[key]
             bounds[key] = (
-                np.nanmin(all_bounds[:, i, 0]),
-                np.nanmax(all_bounds[:, i, 1]),
+                np.nanmin(computed_bounds[:, i, 0]),
+                np.nanmax(computed_bounds[:, i, 1]),
             )
         return bounds
 

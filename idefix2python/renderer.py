@@ -109,10 +109,13 @@ class SliceRenderer:
                             else getattr(self.gridInfo, attr)
                         )
                         setattr(qtyInfo, attr, value)
-                    self.xlabel, self.ylabel = (
-                        self.gridInfo.grid_name_1,
-                        self.gridInfo.grid_name_2,
-                    )
+                    self.xlabel = self.gridInfo.grid_name_1
+                    self.ylabel = self.gridInfo.grid_name_2
+
+                elif isinstance(qtyInfo, LineMovie1D):
+                    self.ylabel = qtyInfo.symbol
+                    self.ylabel = self.gridInfo.native_grid_name_1
+
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     qtyInfo.xmin = (
                         qtyInfo.xmin
@@ -134,13 +137,18 @@ class SliceRenderer:
                         if qtyInfo.ymax is not None
                         else np.nanmax(qtyInfo.points)
                     )
+                    qtyInfo.xlabel = r"$t$"
+                    qtyInfo.ylabel = self.gridInfo.native_grid_name_1
 
-                    qtyInfo.xlabel, qtyInfo.ylabel = r"$t$", self.gridInfo.grid_name_1
                 elif isinstance(qtyInfo, PartQuantity):
-                    qtyInfo.xlabel, qtyInfo.ylabel = (
-                        r"$t$",
-                        qtyInfo.symbol,
-                    )  # TODO problems?
+                    qtyInfo.xlabel = r"$t$"
+                    qtyInfo.ylabel = qtyInfo.symbol
+
+                if isinstance(qtyInfo, MapMovie2D) or isinstance(
+                    qtyInfo, SpaceTimeHeatmap
+                ):
+                    if qtyInfo.uids is not None and "alpha" not in qtyInfo.style_kwargs:
+                        qtyInfo.style_kwargs["alpha"] = 0.20
 
                 fig.init()
 
@@ -165,10 +173,11 @@ class SliceRenderer:
                 self.render_movie()
 
     def render_movie(self):
-        tools.movie(
-            pattern_png=self.framesPaths.slice1_png_pattern,  # TODO should be one pattern for every fig
-            movie_path=self.framesPaths.slice1_video_path,
-        )
+        if self.doMovie:
+            tools.movie(
+                pattern_png=self.framesPaths.slice1_png_pattern,  # TODO should be one pattern for every fig
+                movie_path=self.framesPaths.slice1_video_path,
+            )
 
     def render_Frame(self, frame_nb=None, vtkPath=None):
 
@@ -204,6 +213,10 @@ class SliceRenderer:
                     self.framesPaths.timeline_frame_path.parent
                     / f"{figure.name}_{self.framesPaths.timeline_frame_path.name}"
                 )
+
+            if self.userArgs.zoom:
+                figure.fig.patch.set_linewidth(10)
+                figure.fig.patch.set_edgecolor("cornflowerblue")
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
@@ -285,12 +298,9 @@ class SliceRenderer:
                 label="Analytical",
             )
             ax.legend()
-        # ax.set_xlim(self.processor.xmin, self.processor.xmax)
-        # ax.set_xlabel(self.processor.axis_name_1)
-        # ax.set_ylim(*qty1DInfo.bounds)
-        # ax.set_ylabel(qty1DInfo.symbol)
-        # ax.set_title(qty1DInfo.title)
-        # ax.grid()
+        ax.set_ylim(
+            *qty1DInfo.bounds
+        )  # TODO bounds will be more properly handled in later PR
 
     def _render_2D(self, figure, qtyInfo, data, frame_nb):
         self._draw_pcolormesh(figure, qtyInfo, data)
@@ -335,7 +345,6 @@ class SliceRenderer:
         if has_legend_items:
             ax.legend()
 
-        ax.set_ylabel(self.gridInfo.native_grid_name_1)
         self.do_timeline_stuff(figure, sptime, frame_nb)
 
     def _render_TimeSeries(self, figure, timeseries, frame_nb=-1):
@@ -350,10 +359,9 @@ class SliceRenderer:
             )
         else:
             raise NotImplementedError("only part here")
-            return  # TODO some place for timevol.dat here
+            return  # TODO some room for timevol.dat here
 
         ax.grid(alpha=GRID_OPACITY)
-        ax.set_ylabel(timeseries.symbol)
         self.do_timeline_stuff(figure, timeseries, frame_nb)
 
     def draw_particles(self, figure, part_qty, back_qty=None, frame_nb=None):
@@ -467,20 +475,14 @@ class SliceRenderer:
             vmax = vmax if vmax > 0 else 1e-7
             norm = TwoSlopeNorm(vcenter=0, vmin=vmin, vmax=vmax)
 
-        if qtyInfo is not None:
-            alpha = 0.20
-        else:
-            alpha = 1
-
         ax = figure.axes[*qtyInfo.plot_coords].ax
 
         cmesh = ax.pcolormesh(
             grid1,
             grid2,
             data_mesh,
-            cmap=qtyInfo.cmap,
             norm=norm,
-            alpha=alpha,  # TODO more customization
+            **qtyInfo.style_kwargs,
             antialiased=True,  # to remove artefacts
         )
 

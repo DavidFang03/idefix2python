@@ -32,22 +32,22 @@ class Data:
         self.symbol = symbol
         self.plot_coords = plot_coords
         self.bounds = [vmin, vmax]
-        LOG(self.bounds)
 
         self.title = kwargs.get("title", symbol)
         self.id = kwargs.get(
             "id", None
         )  # some custom id, to distinguish different instances of the same field nature (for example tau)
-        self.scale = kwargs.get("scale", "linear")
 
         self.xmin = kwargs.get("xmin", None)
         self.xmax = kwargs.get("xmax", None)
         self.ymin = kwargs.get("ymin", None)
         self.ymax = kwargs.get("ymax", None)
 
-        self.xscale = kwargs.get("xscale", None)
-        self.yscale = kwargs.get("yscale", None)
+        self.xscale = kwargs.get("xscale", "linear")
+        self.yscale = kwargs.get("yscale", "linear")
+        # heatmaps have a `norm` attribute
 
+        self.style_kwargs = kwargs.get("style_kwargs", {})
         self.parts_kwargs = kwargs.get("parts_kwargs", {})
 
         self.ref_function = kwargs.get("ref_function", None)
@@ -119,16 +119,12 @@ class MapMovie2D(Data):
         # streamlines should be a list like ["VX1", "VX2"]
 
         super().__init__(key, symbol, plot_coords, **kwargs)
-        self.cmap = cmap
         self.set_norm(norm)
         self.streamlines = streamlines
         self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
-
-    def set_cmap(self, cmap):
-        self.cmap = cmap
 
     def set_XYgrid(self, X, Y):
         """
@@ -197,7 +193,6 @@ class SpaceTimeHeatmap(Field1D):
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
-        self.cmap = cmap
         self.set_norm(norm)
         self.uids = uids
         self.index = next(SpaceTimeHeatmap.instances)

@@ -67,19 +67,7 @@ class Fig:
             suptitle = custom_suptitle
         fig.suptitle(suptitle)
 
-        # if self.zoom:
-        #     fig.patch.set_linewidth(10)
-        #     fig.patch.set_edgecolor("cornflowerblue")
-        # fig.subplots_adjust(
-        #     # left=0.1,
-        #     # right=1 - 0.15,
-        #     bottom=0.1,
-        #     top=0.8,
-        #     wspace=0.3,
-        #     hspace=0.3,
-        # )
-
-        # TODO move to renderer?
+        # TODO move to renderer? Later PR
         # if len(self.context.format_inputs_text) > 0:
         # padding_top = 0.1
         #     tools.annotateInputs(
@@ -92,7 +80,6 @@ class Fig:
                 self.axes[i, j].generate_ax(self.fig, axs[i, j])
 
     def save_and_close(self, path):
-        # self._clean_unused_axes()
         for ax in self.axes.flat:
             ax.last_pimp()
         DPI = 350
@@ -118,7 +105,7 @@ class Ax:
         self.title = title
         self.qtytitles_list = []  # discarded if title is not None
         self.quantities = []
-        self.is_pmesh = False
+        self.is_pmesh_grid = False
         self.active = True
 
     def add_quantity(self, qtyInfo):
@@ -159,7 +146,7 @@ class Ax:
         self.qtytitles_list.append(title)
 
         if isinstance(qtyInfo, MapMovie2D):
-            self.is_pmesh = True
+            self.is_pmesh_grid = True
 
     def generate_ax(self, fig, ax):
         self.fig = fig
@@ -170,7 +157,7 @@ class Ax:
             self.ax.remove()
             return
 
-        if self.is_pmesh:
+        if self.is_pmesh_grid:
             self.ax.set_aspect("equal", adjustable="box")
 
     def last_pimp(self):
@@ -181,6 +168,8 @@ class Ax:
         self.ax.set_yscale(self.yscale)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
         if self.title is None:
             title = ", ".join(self.qtytitles_list)
         else:

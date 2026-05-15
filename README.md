@@ -68,22 +68,23 @@ To ensure constant colorbars across the movies, the user can define fixed bounds
 }
 ```
 
-## Architecture
+## Development
 
-The module is built around 5 components:
-
+The module is built around 6 components:
+Three of them are accessible to the user:
++  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
 +  **`RunContext`**: Handles data location and directory creation. Detects simulation geometry, dimensions, and available fields.
 +  **`Quantities`**: Defines all the different types of data and ways to visualize them.
+The three others are not accessible to the user:
 +  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
 +  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
-+  **`Pipeline`**: Coordinates the detection, processing, and rendering of the simulation data. Computes the bounds and distributes with `multiprocessing`.
++  **`Axes`**: Defines `Fig` and `Ax` that are basic containers for plotting graphs.
 
 ## Roadmap
 
-* Better colorbar and dynamic layout (ongoing)
 * More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
 * `compute` should take both globalvtk and partvtk argument to compute mixed quantities.
-* Automatic labeling
+* Automatic labeling (already partially supported through `config.json` file.)
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 * twinx
 * Better zoom API

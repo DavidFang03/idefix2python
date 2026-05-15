@@ -80,7 +80,7 @@ The three others are not accessible to the user:
 +  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
 +  **`Axes`**: Defines `Fig` and `Ax` that are basic containers for plotting graphs.
 
-## Roadmap
+## Roadmap to v1.0 (!!)
 
 * More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
 * `compute` should take both globalvtk and partvtk argument to compute mixed quantities.
@@ -88,6 +88,9 @@ The three others are not accessible to the user:
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 * twinx
 * Better zoom API
+
+### Known issues
+* `-f -1` doesn't show particles trajectories
 
 ### Not a priority
 * Support multiple pipelines

@@ -296,14 +296,8 @@ class Pipeline:
         Coordinates the detection, processing, and rendering of the simulation data.
         :param Context: The RunContext object containing simulation metadata.
         :type Context: RunContext
-        :param spaceTimeHeatmaps: Objects defining (x, t) heatmap plots.
-        :type spaceTimeHeatmaps: list[SpaceTimeHeatmap], optional
-        :param movies1D: Objects defining 1D line plot animations.
-        :type movies1D: list[LineMovie1D], optional
-        :param movies2D: Objects defining 2D heatmaps animations.
-        :type movies2D: list[MapMovie2D], optional
-        :param partQuantities: Objects defining particles quantities.
-        :type partQuantities: list[PartQuantity], optional
+        :param figs: `Figure` instances.
+        :type figs: list[Figure]
         :param zoom: Zoom level for the rendering view (for 2D only currently).
         :type zoom: float, optional
         :param streamLines: Configuration for streamlines overlays.
@@ -319,8 +313,9 @@ class Pipeline:
         self.figs = figs
         self.spaceTimeHeatmaps = []
         self.partQuantities = []
-        self.movies1D = []
-        self.movies2D = []
+        self.linemovies1D = []
+        self.mapmovies2D = []
+        self.quantities = []
 
         qty_tocompute = []
         self.particles_requested = False
@@ -331,9 +326,10 @@ class Pipeline:
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     self.spaceTimeHeatmaps.append(qtyInfo)
                 elif isinstance(qtyInfo, LineMovie1D):
-                    self.movies1D.append(qtyInfo)
+                    self.linemovies1D.append(qtyInfo)
                 elif isinstance(qtyInfo, MapMovie2D):
-                    self.movies2D.append(qtyInfo)
+                    self.mapmovies2D.append(qtyInfo)
+                self.quantities.append(qtyInfo)
 
                 if qtyInfo.compute is not None:
                     qty_tocompute.append(qtyInfo)
@@ -353,6 +349,9 @@ class Pipeline:
         self.processor.set_qty_tocompute(qty_tocompute)
         self.processor.set_partQuantities(self.partQuantities)
 
+        self._name_frames()
+        self._apply_config()
+
         self.renderer = SliceRenderer(
             self.context,
             self.processor,
@@ -360,17 +359,14 @@ class Pipeline:
             self.userArgs,
         )
 
-        self._name_frames()
-        self._apply_config()
-
     def _check_everything_alright(self):
         # Check whether the particles requested exist
         available_uids = set(self.context.all_particles_uids)
         for qty in [
             *self.partQuantities,
             *self.spaceTimeHeatmaps,
-            *self.movies1D,
-            *self.movies2D,
+            *self.linemovies1D,
+            *self.mapmovies2D,
         ]:
             if isinstance(qty.uids, list) and len(qty.uids) > 0:
                 missing_uids = set(qty.uids) - available_uids
@@ -389,8 +385,8 @@ class Pipeline:
 
         if (
             len(self.spaceTimeHeatmaps) > 0
-            or len(self.movies1D)
-            or len(self.movies2D) > 0
+            or len(self.linemovies1D)
+            or len(self.mapmovies2D) > 0
         ):
             if not globalInfo.status:
                 raise Exception(
@@ -398,8 +394,8 @@ class Pipeline:
                 )
 
         LOG("Quantities to compute:")
-        LOG(f"{'LineMovie1D':>20}: {len(self.movies1D)}")
-        LOG(f"{'MapMovie2D':>20}: {len(self.movies2D)}")
+        LOG(f"{'LineMovie1D':>20}: {len(self.linemovies1D)}")
+        LOG(f"{'MapMovie2D':>20}: {len(self.mapmovies2D)}")
         LOG(f"{'SpaceTimeHeatmap':>20}: {len(self.spaceTimeHeatmaps)}")
         LOG(f"{'PartQuantity':>20}: {len(self.partQuantities)}")
 
@@ -495,38 +491,40 @@ class Pipeline:
         if self.userArgs.onlyMovie or self.userArgs.onlyAnalysis:
             return
 
-        all_fields = [v.key for v in self.movies2D]
+        # gathering bounds for movies
+        all_movies = [*self.linemovies1D, *self.mapmovies2D]
         config = self.context.config
+        computed_bounds = {}
+
         LOG(f"config.json file requested: {config}")
-        all_bounds = {}
 
-        if self.userArgs.noBounds:
-            LOG("Bounds computation discarded.")
-            return
+        if not self.userArgs.noBounds:
+            LOG("Computing bounds, please wait...")
+            fields_tobound = []
+            for movie in all_movies:
+                if movie.key not in config or "bounds" not in config[movie.key]:
+                    fields_tobound.append(movie.key)
+            if len(fields_tobound) > 0:
+                LOG("Fields to bound: ", fields_tobound)
+                bound_list = (
+                    self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
+                )
+                computed_bounds = self._get_bounds(
+                    bound_list[min(len(bound_list), 5) :],
+                    fields_tobound,
+                )
+                LOG("Bounds computed:")
+                for key in computed_bounds:
+                    LOG(
+                        f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
+                    )
 
-        LOG("Computing bounds, please wait...")
-        fields_tobound = [
-            key
-            for key in all_fields
-            if key not in config or "bounds" not in config[key]
-        ]
-
-        if len(fields_tobound) > 0:
-            bound_list = self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
-            computed_bounds = self._get_bounds(
-                bound_list[min(len(bound_list), 5) :],
-                fields_tobound,
-            )
-            LOG("Fields to bound: ", fields_tobound)
-            [LOG(f"{key}: {computed_bounds[key]}") for key in computed_bounds]
-            LOG("Bounds computed")
-
+            else:
+                LOG("All fields are already bounded in config")
         else:
-            LOG("All fields are already bounded in config")
+            LOG("Bounds computation discarded.")
 
-        all_movies = [*self.movies1D, *self.movies2D]
-        for qtyInfo in all_movies:
-            qty_key = qtyInfo.key
+        for qtyInfo in self.quantities:
             AVAILABLE_KWARGS = [
                 "bounds",
                 "symbol",
@@ -540,19 +538,23 @@ class Pipeline:
                 "yscale",
                 "norm",
             ]
-            if qty_key in config:
-                for key in config[qty_key]:
+            if qtyInfo.key in config:
+                for key in config[qtyInfo.key]:
                     if key in AVAILABLE_KWARGS:
-                        setattr(qtyInfo, key, config[qty_key][key])
+                        setattr(qtyInfo, key, config[qtyInfo.key][key])
 
-            if qty_key in all_bounds and not self.userArgs.noBounds:
-                qtyInfo.set_bounds(all_bounds[qty_key])
+        for qtyInfo in all_movies:  # only movies should be bounded
+            if qtyInfo.key in computed_bounds and not self.userArgs.noBounds:
+                qtyInfo.set_bounds(computed_bounds[qtyInfo.key])
             elif self.userArgs.noBounds:
+                print(self.userArgs.noBounds, "AHAHAHAH")
                 qtyInfo.set_bounds([None, None])
 
         LOG("Final Bounds:")
         for qtyInfo in all_movies:
-            LOG(f"{qtyInfo.key:>10} {qtyInfo.bounds}")
+            b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"
+            b2 = None if qtyInfo.bounds[1] is None else f"{qtyInfo.bounds[1]:.1e}"
+            LOG(f"{qtyInfo.key:>10} {b1} {b2}")
 
     def _get_bounds(self, vtkList, fields_keys):
         """

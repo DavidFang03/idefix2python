@@ -27,13 +27,17 @@ class Data:
         * **compute** (callable): Custom function to calculate new fields on the fly.
     """
 
-    def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
+    def __init__(
+        self, key, symbol="", plot_coords=[0, 0], vmin=None, vmax=None, **kwargs
+    ):
         self.key = key
         self.symbol = symbol
         self.plot_coords = plot_coords
         self.bounds = [vmin, vmax]
 
-        self.title = kwargs.get("title", symbol)
+        self.title = kwargs.get(
+            "title", None
+        )  # if None, will be replaced by symbol in ax
         self.id = kwargs.get(
             "id", None
         )  # some custom id, to distinguish different instances of the same field nature (for example tau)
@@ -87,7 +91,7 @@ class MapMovie2D(Data):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
         cmap=DEFAULT_CMAP,
         norm="linear",
@@ -159,7 +163,7 @@ class LineMovie1D(Field1D):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,
@@ -183,7 +187,7 @@ class SpaceTimeHeatmap(Field1D):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,

@@ -65,6 +65,8 @@ class Fig:
         self.fig = fig
         if self.suptitle is None and custom_suptitle is not None:
             suptitle = custom_suptitle
+        else:
+            suptitle = self.suptitle
         fig.suptitle(suptitle)
 
         # TODO move to renderer? Later PR

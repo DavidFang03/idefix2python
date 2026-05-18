@@ -128,14 +128,14 @@ data-aria-dark="Switch to auto color mode">
 <div class="sd-card-title sd-font-weight-bold docutils">
 Movie 1D</div>
 <p class="sd-card-text">Each frame shows the field at a specific time <span class="math notranslate nohighlight">\(f(x,t_i)\)</span>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">LineMovie1D</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">Fig</span><span class="p">,</span> <span class="n">LineMovie1D</span>
 </span><span data-line="2"><span class="linenos"> 2</span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 </span><span data-line="3"><span class="linenos"> 3</span>
 </span><span data-line="4"><span class="linenos"> 4</span><span class="n">projectPath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data_test&quot;</span>
 </span><span data-line="5"><span class="linenos"> 5</span><span class="n">task</span> <span class="o">=</span> <span class="s2">&quot;1D_test&quot;</span>
 </span><span data-line="6"><span class="linenos"> 6</span><span class="c1"># By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/</span>
 </span><span data-line="7"><span class="linenos"> 7</span>
-</span><span data-line="8"><span class="linenos"> 8</span><span class="n">custom_LineMovie1Ds</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="8"><span class="linenos"> 8</span><span class="n">quantities</span> <span class="o">=</span> <span class="p">[</span>
 </span><span data-line="9"><span class="linenos"> 9</span>    <span class="n">LineMovie1D</span><span class="p">(</span>
 </span><span data-line="10"><span class="linenos">10</span>        <span class="s2">&quot;Dust0_RHO&quot;</span><span class="p">,</span>
 </span><span data-line="11"><span class="linenos">11</span>        <span class="sa">r</span><span class="s2">&quot;$\rho^\mathrm</span><span class="si">{dust}</span><span class="s2">$&quot;</span><span class="p">,</span>
@@ -145,15 +145,16 @@ Movie 1D</div>
 </span><span data-line="15"><span class="linenos">15</span>        <span class="n">vmax</span><span class="o">=</span><span class="mf">1.5e-4</span><span class="p">,</span>
 </span><span data-line="16"><span class="linenos">16</span>    <span class="p">)</span>
 </span><span data-line="17"><span class="linenos">17</span><span class="p">]</span>
-</span><span data-line="18"><span class="linenos">18</span>
-</span><span data-line="19"><span class="linenos">19</span><span class="n">LineMovie1D</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Evolution of the density profile&quot;</span>
+</span><span data-line="18"><span class="linenos">18</span><span class="n">fig0</span> <span class="o">=</span> <span class="n">Fig</span><span class="p">(</span><span class="n">quantities</span><span class="p">,</span> <span class="n">suptitle</span><span class="o">=</span><span class="s2">&quot;Evolution of the density profile&quot;</span><span class="p">)</span>
+</span><span data-line="19"><span class="linenos">19</span>
 </span><span data-line="20"><span class="linenos">20</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
-</span><span data-line="21"><span class="linenos">21</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">movies1D</span><span class="o">=</span><span class="n">custom_LineMovie1Ds</span><span class="p">)</span>
-</span><span data-line="22"><span class="linenos">22</span>
-</span><span data-line="23"><span class="linenos">23</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="21"><span class="linenos">21</span>
+</span><span data-line="22"><span class="linenos">22</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span data-line="23"><span class="linenos">23</span>    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="p">[</span><span class="n">fig0</span><span class="p">])</span>
+</span><span data-line="24"><span class="linenos">24</span>    <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
-<div  class="sphinx-contrib-video-container align-left"><video autoplay="True" controls="True" loop="True" muted="True" preload="auto" width="600"><source src="../_images/1D_test.mp4" type="video/mp4"></video></div></div>
+<div  class="sphinx-contrib-video-container align-left"><video autoplay="True" controls="True" loop="True" muted="True" preload="auto" width="600"><source src="../_images/1D_test_fig0.mp4" type="video/mp4"></video></div></div>
 </div>
 </div>
 <div class="sd-col sd-d-flex-row docutils">
@@ -162,14 +163,14 @@ Movie 1D</div>
 <div class="sd-card-title sd-font-weight-bold docutils">
 Space-Time Heatmap</div>
 <p class="sd-card-text">A single figure showing the entire evolution of the field <span class="math notranslate nohighlight">\(f(x,t)\)</span>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">Fig</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span>
 </span><span data-line="2"><span class="linenos"> 2</span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 </span><span data-line="3"><span class="linenos"> 3</span>
 </span><span data-line="4"><span class="linenos"> 4</span><span class="n">projectPath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data_test&quot;</span>
 </span><span data-line="5"><span class="linenos"> 5</span><span class="n">task</span> <span class="o">=</span> <span class="s2">&quot;1D_test&quot;</span>
 </span><span data-line="6"><span class="linenos"> 6</span><span class="c1"># By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/</span>
 </span><span data-line="7"><span class="linenos"> 7</span>
-</span><span data-line="8"><span class="linenos"> 8</span><span class="n">custom_spaceTimeHeatmaps</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="8"><span class="linenos"> 8</span><span class="n">quantities</span> <span class="o">=</span> <span class="p">[</span>
 </span><span data-line="9"><span class="linenos"> 9</span>    <span class="n">SpaceTimeHeatmap</span><span class="p">(</span>
 </span><span data-line="10"><span class="linenos">10</span>        <span class="s2">&quot;Dust0_RHO&quot;</span><span class="p">,</span>
 </span><span data-line="11"><span class="linenos">11</span>        <span class="sa">r</span><span class="s2">&quot;$\rho^\mathrm</span><span class="si">{dust}</span><span class="s2">$&quot;</span><span class="p">,</span>
@@ -178,15 +179,22 @@ Space-Time Heatmap</div>
 </span><span data-line="14"><span class="linenos">14</span>    <span class="p">)</span>
 </span><span data-line="15"><span class="linenos">15</span><span class="p">]</span>
 </span><span data-line="16"><span class="linenos">16</span>
-</span><span data-line="17"><span class="linenos">17</span><span class="n">SpaceTimeHeatmap</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Dust density on a heatmap&quot;</span>
+</span><span data-line="17"><span class="linenos">17</span><span class="n">fig0</span> <span class="o">=</span> <span class="n">Fig</span><span class="p">(</span><span class="n">quantities</span><span class="p">,</span> <span class="n">suptitle</span><span class="o">=</span><span class="s2">&quot;Dust density on a heatmap&quot;</span><span class="p">)</span>
 </span><span data-line="18"><span class="linenos">18</span>
 </span><span data-line="19"><span class="linenos">19</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">)</span>
-</span><span data-line="20"><span class="linenos">20</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="n">spaceTimeHeatmaps</span><span class="o">=</span><span class="n">custom_spaceTimeHeatmaps</span><span class="p">)</span>
-</span><span data-line="21"><span class="linenos">21</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="20"><span class="linenos">20</span>
+</span><span data-line="21"><span class="linenos">21</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span data-line="22"><span class="linenos">22</span>    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="p">[</span><span class="n">fig0</span><span class="p">])</span>
+</span><span data-line="23"><span class="linenos">23</span>    <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
-<a class="reference internal image-reference" href="../_images/1D_test_spacetimeheatmap1.png"><img alt="../_images/1D_test_spacetimeheatmap1.png" class="align-center" src="../_images/1D_test_spacetimeheatmap1.png" style="width: 80%;" />
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../_images/1D_test_fig01.png"><img alt="../_images/1D_test_fig01.png" src="../_images/1D_test_fig01.png" style="width: 80%;" />
 </a>
+<figcaption>
+<p><span class="caption-text">1D_test_fig0.png</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
 </div>
 </div>
 </div>
@@ -195,7 +203,7 @@ Space-Time Heatmap</div>
 <section id="adding-a-reference-line">
 <h2>Adding a reference line<a class="headerlink" href="#adding-a-reference-line" title="Link to this heading">¶</a></h2>
 <p>On the heatmap, one can add a reference line (e.g., an analytical trajectory) by passing a <code class="docutils literal notranslate"><span class="pre">ref_function</span></code> to the <code class="docutils literal notranslate"><span class="pre">SpaceTimeHeatmap</span></code> object.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">Fig</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span>
 </span><span data-line="2"><span class="linenos"> 2</span><span class="kn">import</span><span class="w"> </span><span class="nn">utilities</span>
 </span><span data-line="3"><span class="linenos"> 3</span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 </span><span data-line="4"><span class="linenos"> 4</span>
@@ -211,7 +219,7 @@ Space-Time Heatmap</div>
 </span><span data-line="14"><span class="linenos">14</span>    <span class="k">return</span> <span class="n">utilities</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">fluid</span><span class="o">.</span><span class="n">vrDrift</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 </span><span data-line="15"><span class="linenos">15</span>
 </span><span data-line="16"><span class="linenos">16</span>
-</span><span data-line="17"><span class="linenos">17</span><span class="n">custom_spaceTimeHeatmaps</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="17"><span class="linenos">17</span><span class="n">quantities</span> <span class="o">=</span> <span class="p">[</span>
 </span><span data-line="18"><span class="linenos">18</span>    <span class="n">SpaceTimeHeatmap</span><span class="p">(</span>
 </span><span data-line="19"><span class="linenos">19</span>        <span class="s2">&quot;Dust0_RHO&quot;</span><span class="p">,</span>
 </span><span data-line="20"><span class="linenos">20</span>        <span class="sa">r</span><span class="s2">&quot;$\rho^\mathrm</span><span class="si">{dust}</span><span class="s2">$&quot;</span><span class="p">,</span>
@@ -220,27 +228,26 @@ Space-Time Heatmap</div>
 </span><span data-line="23"><span class="linenos">23</span>        <span class="n">ref_function</span><span class="o">=</span><span class="n">analytical_trajectory</span><span class="p">,</span>
 </span><span data-line="24"><span class="linenos">24</span>    <span class="p">)</span>
 </span><span data-line="25"><span class="linenos">25</span><span class="p">]</span>
-</span><span data-line="26"><span class="linenos">26</span>
-</span><span data-line="27"><span class="linenos">27</span><span class="n">SpaceTimeHeatmap</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="s2">&quot;Dust density on heatmap, with an analytical trajectory&quot;</span>
-</span><span data-line="28"><span class="linenos">28</span>
-</span><span data-line="29"><span class="linenos">29</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span>
-</span><span data-line="30"><span class="linenos">30</span>    <span class="n">task</span><span class="p">,</span>
-</span><span data-line="31"><span class="linenos">31</span>    <span class="n">projectPath</span><span class="p">,</span>
-</span><span data-line="32"><span class="linenos">32</span>    <span class="n">frameFolder</span><span class="o">=</span><span class="s2">&quot;1D_test_withref&quot;</span><span class="p">,</span>
-</span><span data-line="33"><span class="linenos">33</span><span class="p">)</span>
-</span><span data-line="34"><span class="linenos">34</span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
-</span><span data-line="35"><span class="linenos">35</span>    <span class="n">runContext</span><span class="p">,</span>
-</span><span data-line="36"><span class="linenos">36</span>    <span class="n">spaceTimeHeatmaps</span><span class="o">=</span><span class="n">custom_spaceTimeHeatmaps</span><span class="p">,</span>
-</span><span data-line="37"><span class="linenos">37</span><span class="p">)</span>
-</span><span data-line="38"><span class="linenos">38</span>
-</span><span data-line="39"><span class="linenos">39</span><span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="26"><span class="linenos">26</span><span class="n">fig0</span> <span class="o">=</span> <span class="n">Fig</span><span class="p">(</span>
+</span><span data-line="27"><span class="linenos">27</span>    <span class="n">quantities</span><span class="p">,</span> <span class="n">suptitle</span><span class="o">=</span><span class="s2">&quot;Dust density on heatmap, with an analytical trajectory&quot;</span>
+</span><span data-line="28"><span class="linenos">28</span><span class="p">)</span>
+</span><span data-line="29"><span class="linenos">29</span>
+</span><span data-line="30"><span class="linenos">30</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span>
+</span><span data-line="31"><span class="linenos">31</span>    <span class="n">task</span><span class="p">,</span>
+</span><span data-line="32"><span class="linenos">32</span>    <span class="n">projectPath</span><span class="p">,</span>
+</span><span data-line="33"><span class="linenos">33</span>    <span class="n">frameFolder</span><span class="o">=</span><span class="s2">&quot;1D_test_withref&quot;</span><span class="p">,</span>
+</span><span data-line="34"><span class="linenos">34</span><span class="p">)</span>
+</span><span data-line="35"><span class="linenos">35</span>
+</span><span data-line="36"><span class="linenos">36</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span data-line="37"><span class="linenos">37</span>    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="p">[</span><span class="n">fig0</span><span class="p">])</span>
+</span><span data-line="38"><span class="linenos">38</span>    <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
-<figure class="align-center" id="id1">
-<a class="reference internal image-reference" href="../_images/1D_test_spacetimeheatmap.png"><img alt="../_images/1D_test_spacetimeheatmap.png" src="../_images/1D_test_spacetimeheatmap.png" style="width: 80%;" />
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="../_images/1D_test_fig0.png"><img alt="../_images/1D_test_fig0.png" src="../_images/1D_test_fig0.png" style="width: 80%;" />
 </a>
 <figcaption>
-<p><span class="caption-text">1D_test_spacetimeheatmap.png</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+<p><span class="caption-text">1D_test_fig0.png</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>

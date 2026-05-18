@@ -8,16 +8,16 @@ Particle quantities over heatmap
 .. list-table::
    :widths: 50 50
 
-   * - .. video:: ../../../examples/data_test/videos/config_multipart_2D.mp4
+   * - .. video:: ../../../examples/data_test/videos/multipart_2D_fig0_config.mp4
           :width: 100%
           :autoplay:
           :loop:
           :muted:
-          :caption: config_multipart_2D.mp4
+          :caption: multipart_2D_fig0_config.mp4
 
-     - .. figure:: ../../../examples/data_test/frames/multipart_2D/multipart_2D_timeseries.png
+     - .. figure:: ../../../examples/data_test/frames/multipart_2D/multipart_2D_fig1_config.png
           :width: 100%
           :align: center
           
-          multipart_2D_timeseries.png
+          multipart_2D_fig1_config.png
 

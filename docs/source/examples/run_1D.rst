@@ -43,8 +43,8 @@ On the heatmap, one can add a reference line (e.g., an analytical trajectory) by
    :language: python
    :linenos:
 
-.. figure:: ../../../examples/data_test/frames/1D_test_withref/1D_test_withref_fig0.png
+.. figure:: ../../../examples/data_test/frames/1D_test_withref/1D_test_fig0.png
    :width: 80%
    :align: center
 
-   1D_test_withref_fig0.png
+   1D_test_fig0.png

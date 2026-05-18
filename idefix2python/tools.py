@@ -142,8 +142,12 @@ def applyOperation_discardingNone(op, array):
 def movie(pattern_png, movie_path, fps=10):
     import ffmpeg
 
-    print(movie_path)
-    ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).output(
+    print(movie_path, "from", pattern_png)
+    ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).filter(
+        "scale",
+        3840,
+        "-2",  # TODO More flexible
+    ).output(
         str(movie_path),
         vcodec="libx264",
         crf=18,
@@ -258,32 +262,6 @@ def get_Position(file, geometry, direction):
             positions = [file.r, file.z, None]
         case "spherical":
             positions = [file.r, file.theta, file.phi]
-    return positions[direction]
-
-
-def get_Position_name(geometry, direction):
-    match geometry:
-        case "cartesian":
-            positions = [r"$x$", r"$y$", r"$z$"]
-        case "polar":
-            positions = [r"$r$", r"$\phi$", r"$z$"]
-        case "cylindrical":
-            positions = [r"$r$", r"$z$", None]
-        case "spherical":
-            positions = [r"$r$", r"$\theta$", r"$\phi$"]
-    return positions[direction]
-
-
-def get_Position_name_cartesian_equivalent(geometry, direction):
-    match geometry:
-        case "cartesian":
-            positions = [r"$x$", r"$y$", r"$z$"]
-        case "polar":
-            positions = [r"$x$", r"$y$", r"$z$"]
-        case "cylindrical":
-            positions = [r"$x$", r"$z$", None]
-        case "spherical":
-            positions = [r"$x$", r"$z$", r"$y$"]
     return positions[direction]
 
 

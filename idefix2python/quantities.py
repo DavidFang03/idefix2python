@@ -1,8 +1,4 @@
 from itertools import count
-from .tools import LOG
-
-DEFAULT_CMAP = "berlin"
-DPI = 300
 
 
 class Data:
@@ -22,31 +18,50 @@ class Data:
     :param kwargs:
         * **title** (str): Custom title for the plot. Defaults to `symbol`.
         * **id** (str): Unique ID to distinguish instances of the same field nature.
-        * **scale** (str): Scaling type, e.g., 'linear' or 'log'.
+        * **xmin** (float): Minimum x-axis bound.
+        * **xmax** (float): Maximum x-axis bound.
+        * **ymin** (float): Minimum y-axis bound.
+        * **ymax** (float): Maximum y-axis bound.
+        * **xscale** (str): X-axis scaling type, e.g., 'linear' or 'log'.
+        * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
+        * **style_kwargs** (dict): Style options forwarded to plotting calls.
+        * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
         * **ref_function** (callable): Analytical function for comparison.
+        * **compute** (callable): Custom function to calculate new fields on the fly.
     """
 
-    def __init__(self, key, symbol, plot_coords=[0, 0], vmin=None, vmax=None, **kwargs):
+    def __init__(
+        self, key, symbol="", plot_coords=[0, 0], vmin=None, vmax=None, **kwargs
+    ):
         self.key = key
         self.symbol = symbol
         self.plot_coords = plot_coords
         self.bounds = [vmin, vmax]
-        LOG(self.bounds)
 
-        self.title = kwargs.get("title", symbol)
+        self.title = kwargs.get(
+            "title", None
+        )  # if None, will be replaced by symbol in ax
         self.id = kwargs.get(
             "id", None
         )  # some custom id, to distinguish different instances of the same field nature (for example tau)
-        self.scale = kwargs.get("scale", "linear")
 
         self.xmin = kwargs.get("xmin", None)
         self.xmax = kwargs.get("xmax", None)
         self.ymin = kwargs.get("ymin", None)
         self.ymax = kwargs.get("ymax", None)
 
+        self.xscale = kwargs.get("xscale", "linear")
+        self.yscale = kwargs.get("yscale", "linear")
+        # heatmaps have a `norm` attribute
+
+        self.style_kwargs = kwargs.get("style_kwargs", {})
+        self.parts_kwargs = kwargs.get("parts_kwargs", {})
+
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
+
+        self.compute = kwargs.get("compute", None)
 
     def set_bounds(self, bounds):
         self.bounds = bounds
@@ -79,9 +94,8 @@ class MapMovie2D(Data):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
-        cmap=DEFAULT_CMAP,
         norm="linear",
         streamlines=None,
         uids=None,
@@ -91,8 +105,6 @@ class MapMovie2D(Data):
         Initializes a 2D movie field.
 
          (Refer to :class:`Data` for base parameters)
-        :param cmap: Matplotlib colormap name, defaults to DEFAULT_CMAP.
-        :type cmap: str, optional
         :param norm: Colorbar scaling. Options usually include 'linear', 'log', or 'TwoSlopeNorm'.
                      Defaults to "linear".
         :type norm: str, optional
@@ -104,25 +116,19 @@ class MapMovie2D(Data):
         :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
-            :keyword compute (callable): Custom function to calculate new fields on the fly.
-            :keyword contours (str): Field key used to draw contour lines over the pcolormesh.
+            :keyword contours (Sequence[float] | None): Contour levels used to draw contour lines over the pcolormesh for this field. Defaults to None.
             :keyword contour_color (str): Color of the contour lines. Defaults to "green".
         """
 
         # streamlines should be a list like ["VX1", "VX2"]
 
         super().__init__(key, symbol, plot_coords, **kwargs)
-        self.cmap = cmap
         self.set_norm(norm)
         self.streamlines = streamlines
         self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
-        self.compute = kwargs.get("compute", None)
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
-
-    def set_cmap(self, cmap):
-        self.cmap = cmap
 
     def set_XYgrid(self, X, Y):
         """
@@ -157,7 +163,7 @@ class LineMovie1D(Field1D):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,
@@ -181,17 +187,15 @@ class SpaceTimeHeatmap(Field1D):
     def __init__(
         self,
         key,
-        symbol,
+        symbol="",
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,
-        cmap=DEFAULT_CMAP,
         norm="linear",
         uids=None,
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
-        self.cmap = cmap
         self.set_norm(norm)
         self.uids = uids
         self.index = next(SpaceTimeHeatmap.instances)
@@ -215,7 +219,6 @@ class PartQuantity(Data):
         vmin=None,
         vmax=None,
         uids="all",
-        compute=None,
         **kwargs,
     ):
         if key not in PartQuantity._key_index_map:
@@ -224,5 +227,3 @@ class PartQuantity(Data):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.is_global = False  # default
-        self.compute = compute
-        # self.is_for2D = False  # default

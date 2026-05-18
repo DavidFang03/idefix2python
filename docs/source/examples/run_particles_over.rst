@@ -5,9 +5,9 @@ Particle quantities over heatmap
    :language: python
    :linenos:
 
-.. figure:: ../../../examples/data_test/frames/particles_over_test/fig0_particles_over_test.png
+.. figure:: ../../../examples/data_test/frames/particles_over_test/particles_over_test_fig0.png
     :width: 80%
     :align: center
     
-    particles_over_test_spacetimeheatmap.png
+    particles_over_test_fig0.png
 

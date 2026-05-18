@@ -13,12 +13,12 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :language: python
          :linenos:
       
-      .. video:: ../../../examples/data_test/videos/2D_test.mp4
+      .. video:: ../../../examples/data_test/videos/2D_test_fig0.mp4
          :width: 100%
          :autoplay:
          :loop:
          :muted:
-         :caption: 2D_test.mp4
+         :caption: 2D_test_fig0.mp4
 
       
       The result is not very good because the pipeline automatically computed the bounds of the colorbar by looking at the minimum/maximum values all over the simulation. Also, you might want a different colormap.
@@ -39,10 +39,10 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :caption: config.json
          :linenos:
       
-      .. video:: ../../../examples/data_test/videos/2D_test_config.mp4
+      .. video:: ../../../examples/data_test/videos/2D_test_fig0_config.mp4
          :width: 100%
          :autoplay:
          :loop:
          :muted:
-         :caption: 2D_test_config.mp4
+         :caption: 2D_test_fig0_config.mp4
 

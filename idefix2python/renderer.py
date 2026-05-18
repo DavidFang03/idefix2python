@@ -58,33 +58,24 @@ class FramesPaths:
     def __init__(self, context, userArgs):
         self.context = context
 
-        userargsinfos = []
+        self.userargsinfos = []
         if userArgs.zoom:
-            userargsinfos += [f"zoom{userArgs.zoom}"]
-
+            self.userargsinfos += [f"zoom{userArgs.zoom}"]
         if userArgs.noBounds:
-            userargsinfos += ["unbounded"]
+            self.userargsinfos += ["unbounded"]
         elif context.configPath is not None:
-            userargsinfos += ["config"]
-
-        self.userargsinfos = userargsinfos
-
-        slice1_png_pattern = "_".join(["*"] + userargsinfos) + ".png"
-        slice1Movie_path = "_".join([context.runName] + userargsinfos) + ".mp4"
-
-        self.slice1_png_pattern = context.slice1Folder / slice1_png_pattern
-        self.slice1_video_path = context.videosFolder / slice1Movie_path
+            self.userargsinfos += ["config"]
 
     def get_movieframe_pattern(self, figname):
         file_pattern = (
             "_".join([self.context.runName] + [figname] + ["*"] + self.userargsinfos)
             + ".png"
         )
-        return file_pattern
+        return str(self.context.slice1Folder / file_pattern)
 
     def get_movieframe_path(self, figname, frame_nb):
-        filename = self.get_movieframe_pattern(figname).replace("*", f"{frame_nb:04}")
-        return str(self.context.slice1Folder / filename)
+        filepath = self.get_movieframe_pattern(figname).replace("*", f"{frame_nb:04}")
+        return filepath
 
     def get_timeline_path(self, figname):
         filename = (

@@ -142,7 +142,7 @@ def applyOperation_discardingNone(op, array):
 def movie(pattern_png, movie_path, fps=10):
     import ffmpeg
 
-    print(movie_path)
+    print(movie_path, "from", pattern_png)
     ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).filter(
         "scale", 3840, "-2"
     ).output(

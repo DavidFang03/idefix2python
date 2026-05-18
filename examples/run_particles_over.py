@@ -37,7 +37,6 @@ fig0 = Fig(
 runContext = RunContext(
     task,
     projectPath,
-    active_directions=[2],  # necessary when there are only part*.vtk
 )
 
 if __name__ == "__main__":

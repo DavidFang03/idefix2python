@@ -9,7 +9,7 @@ Here are three most basic examples to use the Pipeline, depending on the nature 
    .. grid-item-card:: 1D Fields
       :link: examples/run_1D
       :link-type: doc
-      :img-top: ../../examples/data_test/frames/1D_test_withref/1D_test_withref_fig0.png
+      :img-top: ../../examples/data_test/frames/1D_test_withref/1D_test_fig0.png
 
       Explore radial profiles and space-time heatmaps.
 

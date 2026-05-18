@@ -502,7 +502,11 @@ class Pipeline:
             LOG("Computing bounds, please wait...")
             fields_tobound = []
             for movie in all_movies:
-                if movie.key not in config or "bounds" not in config[movie.key]:
+                if (
+                    movie.key not in config
+                    or "bounds" not in config[movie.key]
+                    and movie.key not in fields_tobound
+                ):
                     fields_tobound.append(movie.key)
             if len(fields_tobound) > 0:
                 LOG("Fields to bound: ", fields_tobound)

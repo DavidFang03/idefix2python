@@ -143,7 +143,9 @@ def movie(pattern_png, movie_path, fps=10):
     import ffmpeg
 
     print(movie_path)
-    ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).output(
+    ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).filter(
+        "scale", 3840, "-2"
+    ).output(
         str(movie_path),
         vcodec="libx264",
         crf=18,

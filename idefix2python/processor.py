@@ -123,8 +123,7 @@ class GridInfo:
 
                 if not zoom:
                     self.mask = np.full(self.grid1.shape, True, dtype=bool)
-                    # self.mask = (
-                    #     self.grid2 >= 0
+                    self.mask = self.grid2 > 0
                     # )  # TODO hard coded, will be removed in later PR
                 else:
                     self.mask = (

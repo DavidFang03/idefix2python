@@ -18,7 +18,7 @@ from .tools import LOG
 matplotlib.use("Agg")
 
 LABEL_FONTSIZE = 16
-DPI = 350
+DPI = 600
 parts_cmap = plt.get_cmap("Pastel1")
 
 timeindicator_kwargs = {"lw": 1, "ls": "--", "alpha": 0.8}
@@ -47,24 +47,56 @@ plt.rcParams["font.size"] = 12
 
 
 class FramesPaths:
-    def __init__(self, context, userArgs):
+    """
+    Every fig will have its own pattern
+    runName_fig0_0000.png
+    runName_fig0.mp4
+    With possible args:
+    [unbounded, config]
+    """
 
-        filenameinfos = []
+    def __init__(self, context, userArgs):
+        self.context = context
+
+        userargsinfos = []
         if userArgs.zoom:
-            filenameinfos += [f"zoom{userArgs.zoom}"]
+            userargsinfos += [f"zoom{userArgs.zoom}"]
 
         if userArgs.noBounds:
-            filenameinfos += ["unbounded"]
+            userargsinfos += ["unbounded"]
         elif context.configPath is not None:
-            filenameinfos += ["config"]
+            userargsinfos += ["config"]
 
-        slice1_png_pattern = "_".join(["*"] + filenameinfos) + ".png"
-        slice1Movie_path = "_".join([context.runName] + filenameinfos) + ".mp4"
+        self.userargsinfos = userargsinfos
+
+        slice1_png_pattern = "_".join(["*"] + userargsinfos) + ".png"
+        slice1Movie_path = "_".join([context.runName] + userargsinfos) + ".mp4"
 
         self.slice1_png_pattern = context.slice1Folder / slice1_png_pattern
         self.slice1_video_path = context.videosFolder / slice1Movie_path
 
-        self.timeline_frame_path = context.frameRootFolder / f"{context.runName}.png"
+    def get_movieframe_pattern(self, figname):
+        file_pattern = (
+            "_".join([self.context.runName] + [figname] + ["*"] + self.userargsinfos)
+            + ".png"
+        )
+        return file_pattern
+
+    def get_movieframe_path(self, figname, frame_nb):
+        filename = self.get_movieframe_pattern(figname).replace("*", f"{frame_nb:04}")
+        return str(self.context.slice1Folder / filename)
+
+    def get_timeline_path(self, figname):
+        filename = (
+            "_".join([self.context.runName] + [figname] + self.userargsinfos) + ".png"
+        )
+        return str(self.context.frameRootFolder / filename)
+
+    def get_movie_path(self, figname):
+        filename = (
+            "_".join([self.context.runName] + [figname] + self.userargsinfos) + ".mp4"
+        )
+        return str(self.context.videosFolder / filename)
 
 
 class SliceRenderer:
@@ -151,6 +183,8 @@ class SliceRenderer:
                 ):
                     if qtyInfo.uids is not None and "alpha" not in qtyInfo.style_kwargs:
                         qtyInfo.style_kwargs["alpha"] = 0.20
+                    elif "alpha" not in qtyInfo.style_kwargs:
+                        qtyInfo.style_kwargs["alpha"] = 1
 
                 fig.init()
 
@@ -171,14 +205,16 @@ class SliceRenderer:
             with Pool(self.userArgs.jobs) as pool:
                 pool.starmap(self.render_Frame, enumerate(render_list))
 
-            if len(self.figsMovie) > 0:
-                self.render_movie()
+            for figMovie in self.figsMovie:
+                self.render_movie(figMovie)
 
-    def render_movie(self):
+    def render_movie(self, figMovie):
         if self.doMovie:
             tools.movie(
-                pattern_png=self.framesPaths.slice1_png_pattern,  # TODO should be one pattern for every fig
-                movie_path=self.framesPaths.slice1_video_path,
+                pattern_png=self.framesPaths.get_movieframe_pattern(
+                    figMovie.name
+                ),  # TODO should take only the generated frames. Later PR.
+                movie_path=self.framesPaths.get_movie_path(figMovie.name),
             )
 
     def render_Frame(self, frame_nb=None, vtkPath=None):
@@ -207,14 +243,11 @@ class SliceRenderer:
                     self._render_TimeSeries(figure, qtyInfo, frame_nb)
 
             if vtkPath is not None:  # that means it's a movie
-                png_path = str(self.framesPaths.slice1_png_pattern).replace(
-                    "*", f"{figure.name}_{vtkPath.name[:-4]}"
+                png_path = self.framesPaths.get_movieframe_path(
+                    figure.name, vtkPath.name[-8:-4]
                 )
             else:
-                png_path = (
-                    self.framesPaths.timeline_frame_path.parent
-                    / f"{figure.name}_{self.framesPaths.timeline_frame_path.name}"
-                )
+                png_path = self.framesPaths.get_timeline_path(figure.name)
 
             if self.userArgs.zoom:
                 figure.fig.patch.set_linewidth(10)
@@ -418,7 +451,7 @@ class SliceRenderer:
                 points = part_qty.points
                 values = part_qty.values[:, uid]
                 alpha = 1
-                lw = 2
+                lw = 1
             else:
                 raise NotImplementedError(f"{back_qty} doesn't support particles")
 
@@ -485,9 +518,8 @@ class SliceRenderer:
             data_mesh,
             norm=norm,
             **qtyInfo.style_kwargs,
-            antialiased=True,  # to remove artefacts
-            edgecolors="none",
-            rasterized=True,
+            # shading="gouraud",
+            edgecolors="face",
         )
 
         cbar = colorbar(cmesh, cbformat)

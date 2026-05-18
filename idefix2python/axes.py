@@ -85,7 +85,7 @@ class Fig:
         for ax in self.axes.flat:
             ax.last_pimp()
         DPI = 350
-        self.fig.savefig(path, dpi=DPI)
+        self.fig.savefig(path, dpi=DPI, bbox_inches="tight")
         plt.close(self.fig)
         LOG(f"[OK] {path}")
 

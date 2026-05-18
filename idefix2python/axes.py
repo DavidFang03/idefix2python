@@ -6,6 +6,7 @@ import numpy as np
 from . import tools
 
 # No data should appear in Fig, Ax: they are sent by Renderer.
+DPI = 400
 
 
 class Fig:
@@ -63,11 +64,15 @@ class Fig:
             tight_layout=True,
         )
         self.fig = fig
-        if self.suptitle is None and custom_suptitle is not None:
-            suptitle = custom_suptitle
-        else:
+
+        if self.suptitle is not None and custom_suptitle is not None:
+            suptitle = f"{self.suptitle}\n{custom_suptitle}"
+        elif self.suptitle is not None:
             suptitle = self.suptitle
-        fig.suptitle(suptitle)
+        else:
+            suptitle = custom_suptitle
+        if suptitle is not None:
+            fig.suptitle(suptitle)
 
         # TODO move to renderer? Later PR
         # if len(self.context.format_inputs_text) > 0:
@@ -84,7 +89,6 @@ class Fig:
     def save_and_close(self, path):
         for ax in self.axes.flat:
             ax.last_pimp()
-        DPI = 350
         self.fig.savefig(path, dpi=DPI, bbox_inches="tight")
         plt.close(self.fig)
         LOG(f"[OK] {path}")
@@ -94,8 +98,6 @@ class Ax:
     def __init__(
         self,
     ):
-        self.xlabel = ""
-        self.ylabel = ""
         self.xmin = None
         self.xmax = None
         self.ymin = None
@@ -170,8 +172,6 @@ class Ax:
         self.ax.set_yscale(self.yscale)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
-        self.ax.set_xlabel(self.xlabel)
-        self.ax.set_ylabel(self.ylabel)
         title = ", ".join(self.qtytitles_list)
 
         self.ax.set_title(title)

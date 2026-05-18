@@ -62,8 +62,8 @@ To ensure constant colorbars across the movies, the user can define fixed bounds
 {
     "RHO": {
         "bounds": [1e-3, 10],
-        "cmap": "viridis",
-        "norm": "log"
+        "norm": "log",
+        "style_kwargs": {"cmap": "viridis"}
     }
 }
 ```

@@ -406,9 +406,10 @@ class Pipeline:
         self._check_everything_alright()
 
         # -om -> Only renders Movie
-        if self.userArgs.onlyMovie:
-            self.renderer.render_movie()
-            return
+
+        for fig in self.figs:
+            if isinstance(fig, (MapMovie2D, LineMovie1D)):
+                self.renderer.render_movie(fig)
 
         vtktimes = None
 
@@ -502,12 +503,9 @@ class Pipeline:
             LOG("Computing bounds, please wait...")
             fields_tobound = []
             for movie in all_movies:
-                if (
-                    movie.key not in config
-                    or "bounds" not in config[movie.key]
-                    and movie.key not in fields_tobound
-                ):
-                    fields_tobound.append(movie.key)
+                if movie.key not in config or "bounds" not in config[movie.key]:
+                    if movie.key not in fields_tobound:
+                        fields_tobound.append(movie.key)
             if len(fields_tobound) > 0:
                 LOG("Fields to bound: ", fields_tobound)
                 bound_list = (
@@ -545,7 +543,10 @@ class Pipeline:
             if qtyInfo.key in config:
                 for key in config[qtyInfo.key]:
                     if key in AVAILABLE_KWARGS:
-                        setattr(qtyInfo, key, config[qtyInfo.key][key])
+                        if key == "norm":
+                            qtyInfo.set_norm(config[qtyInfo.key][key])
+                        else:
+                            setattr(qtyInfo, key, config[qtyInfo.key][key])
 
         for qtyInfo in all_movies:  # only movies should be bounded
             if qtyInfo.key in computed_bounds and not self.userArgs.noBounds:

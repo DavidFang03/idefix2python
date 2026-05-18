@@ -18,7 +18,6 @@ from .tools import LOG
 matplotlib.use("Agg")
 
 LABEL_FONTSIZE = 16
-DPI = 600
 parts_cmap = plt.get_cmap("Pastel1")
 
 timeindicator_kwargs = {"lw": 1, "ls": "--", "alpha": 0.8}
@@ -134,12 +133,12 @@ class SliceRenderer:
                             else getattr(self.gridInfo, attr)
                         )
                         setattr(qtyInfo, attr, value)
-                    self.xlabel = self.gridInfo.grid_name_1
-                    self.ylabel = self.gridInfo.grid_name_2
+                    qtyInfo.xlabel = self.gridInfo.grid_name_1
+                    qtyInfo.ylabel = self.gridInfo.grid_name_2
 
                 elif isinstance(qtyInfo, LineMovie1D):
-                    self.ylabel = qtyInfo.symbol
-                    self.ylabel = self.gridInfo.axis_name_1
+                    qtyInfo.ylabel = qtyInfo.symbol
+                    qtyInfo.ylabel = self.gridInfo.axis_name_1
 
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     qtyInfo.xmin = (
@@ -288,7 +287,7 @@ class SliceRenderer:
             )
 
     def _draw_contours(self, figure, qtyInfo, data_mesh, cbar):
-        if not getattr(qtyInfo, "contours", None):
+        if getattr(qtyInfo, "contours", None) is None:
             return
 
         levels = figure.axes[*qtyInfo.plot_coords].ax.contour(
@@ -318,8 +317,8 @@ class SliceRenderer:
         # To remove?
         if len(qty1DInfo.pointsRef) > 0:
             ax.plot(
-                qty1DInfo.points,
-                qty1DInfo.values,
+                qty1DInfo.pointsRef,
+                qty1DInfo.valuesRef,
                 ls="--",
                 label="Analytical",
             )
@@ -401,8 +400,7 @@ class SliceRenderer:
             ax = figure.axes[*back_qty.plot_coords].ax
             uids = back_qty.uids
 
-        # if uids == "all" or len(uids) == 0: # ???
-        if uids is None:
+        if uids is None or len(uids) == 0:
             return
 
         for ii, uid in enumerate(uids):
@@ -449,7 +447,7 @@ class SliceRenderer:
             ax.plot(
                 points,
                 values,
-                label=label,
+                label=label,  # TODO Show this label. Later PR.
                 color=color,
                 lw=lw,
                 alpha=alpha,

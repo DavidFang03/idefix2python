@@ -28,7 +28,7 @@ For 1 space dimension fields :math:`f(x,t)` there are 2 ways to render:
          :language: python
          :linenos:
 
-      .. image:: ../../../examples/data_test/frames/1D_test/1D_test_fig0.png
+      .. figure:: ../../../examples/data_test/frames/1D_test/1D_test_fig0.png
          :width: 80%
          :align: center
 

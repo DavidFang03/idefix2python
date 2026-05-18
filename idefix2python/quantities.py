@@ -1,8 +1,4 @@
 from itertools import count
-from .tools import LOG
-
-DEFAULT_CMAP = "berlin"
-DPI = 300
 
 
 class Data:
@@ -22,7 +18,14 @@ class Data:
     :param kwargs:
         * **title** (str): Custom title for the plot. Defaults to `symbol`.
         * **id** (str): Unique ID to distinguish instances of the same field nature.
-        * **scale** (str): Scaling type, e.g., 'linear' or 'log'.
+        * **xmin** (float): Minimum x-axis bound.
+        * **xmax** (float): Maximum x-axis bound.
+        * **ymin** (float): Minimum y-axis bound.
+        * **ymax** (float): Maximum y-axis bound.
+        * **xscale** (str): X-axis scaling type, e.g., 'linear' or 'log'.
+        * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
+        * **style_kwargs** (dict): Style options forwarded to plotting calls.
+        * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
         * **ref_function** (callable): Analytical function for comparison.
         * **compute** (callable): Custom function to calculate new fields on the fly.
     """
@@ -93,7 +96,6 @@ class MapMovie2D(Data):
         key,
         symbol="",
         plot_coords=[0, 0],
-        cmap=DEFAULT_CMAP,
         norm="linear",
         streamlines=None,
         uids=None,
@@ -103,8 +105,6 @@ class MapMovie2D(Data):
         Initializes a 2D movie field.
 
          (Refer to :class:`Data` for base parameters)
-        :param cmap: Matplotlib colormap name, defaults to DEFAULT_CMAP.
-        :type cmap: str, optional
         :param norm: Colorbar scaling. Options usually include 'linear', 'log', or 'TwoSlopeNorm'.
                      Defaults to "linear".
         :type norm: str, optional
@@ -116,7 +116,7 @@ class MapMovie2D(Data):
         :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
             :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
-            :keyword contours (str): Field key used to draw contour lines over the pcolormesh.
+            :keyword contours (Sequence[float] | None): Contour levels used to draw contour lines over the pcolormesh for this field. Defaults to None.
             :keyword contour_color (str): Color of the contour lines. Defaults to "green".
         """
 
@@ -191,7 +191,6 @@ class SpaceTimeHeatmap(Field1D):
         plot_coords=[0, 0],
         vmin=None,
         vmax=None,
-        cmap=DEFAULT_CMAP,
         norm="linear",
         uids=None,
         **kwargs,

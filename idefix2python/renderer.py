@@ -230,9 +230,9 @@ class SliceRenderer:
             figure.generate_figure(custom_suptitle=custom_suptitle)
             for qtyInfo in figure.quantities:
                 if isinstance(qtyInfo, MapMovie2D):
-                    self._render_2D(figure, qtyInfo, commonvtk, frame_nb)
+                    self._render_2D(figure, qtyInfo, commonvtk.data, frame_nb)
                 elif isinstance(qtyInfo, LineMovie1D):
-                    self._render_1D(figure, qtyInfo, commonvtk, frame_nb)
+                    self._render_1D(figure, qtyInfo, commonvtk.data, frame_nb)
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
                 elif isinstance(qtyInfo, PartQuantity):

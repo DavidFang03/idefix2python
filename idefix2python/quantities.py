@@ -1,4 +1,5 @@
 from itertools import count
+import numpy as np
 
 
 class Data:
@@ -56,6 +57,9 @@ class Data:
 
         self.style_kwargs = kwargs.get("style_kwargs", {})
         self.parts_kwargs = kwargs.get("parts_kwargs", {})
+
+        self.points = []
+        self.values = []
 
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
@@ -130,6 +134,9 @@ class MapMovie2D(Data):
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
 
+        self.is_movie = True
+        self.is_timeline = False
+
     def set_XYgrid(self, X, Y):
         """
         Assign the spatial cartesian grid used for rendering the 2D pcolormesh.
@@ -153,6 +160,8 @@ class Field1D(Data):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.is_timeline = False
+        self.is_movie = True
 
 
 class LineMovie1D(Field1D):

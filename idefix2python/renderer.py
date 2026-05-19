@@ -147,6 +147,9 @@ class SliceRenderer:
                     qtyInfo.ylabel = self.gridInfo.axis_name_1
 
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
+                    qtyInfo.points = (
+                        self.gridInfo.X1Line
+                    )  # TODO to change if user wants custom xqty
                     qtyInfo.xmin = (
                         qtyInfo.xmin
                         if qtyInfo.xmin is not None
@@ -174,6 +177,23 @@ class SliceRenderer:
                     qtyInfo.xlabel = r"$t$"
                     qtyInfo.ylabel = qtyInfo.symbol
 
+                if qtyInfo.ref_function is not None:
+                    vtktimes = (
+                        self.processor.vtktimes
+                    )  # TODO recover only tstart and tend from context instead
+                    t_smooth = np.linspace(np.min(vtktimes), np.max(vtktimes), 10000)
+                    try:
+                        predicted_values = qtyInfo.ref_function(t_smooth)
+                        qtyInfo.set_ref_data(t_smooth, predicted_values)
+                    except Exception as e:
+                        LOG(
+                            f"Warning: Failed to compute ref_function for {qtyInfo.key}. Error: {e}"
+                        )
+
+                if qtyInfo.is_timeline:
+                    vtktimes = self.processor.vtktimes
+                    qtyInfo.points = vtktimes
+
                 if isinstance(qtyInfo, MapMovie2D) or isinstance(
                     qtyInfo, SpaceTimeHeatmap
                 ):
@@ -182,7 +202,11 @@ class SliceRenderer:
                     elif "alpha" not in qtyInfo.style_kwargs:
                         qtyInfo.style_kwargs["alpha"] = 1
 
-                fig.init()
+                if hasattr(qtyInfo, "points") and len(qtyInfo.points) > 0:
+                    qtyInfo.points = np.asarray(qtyInfo.points)
+                    qtyInfo.values = np.asarray(qtyInfo.values)
+
+            fig.init()
 
     def render(self):
         self._pre_render()

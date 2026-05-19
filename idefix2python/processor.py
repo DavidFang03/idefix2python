@@ -100,7 +100,9 @@ class PhysicsProcessor:
             #     expected_shape = None
         return commonvtk
 
-    def gather_1Cquantities(self, dataPath, partPath, quantities_togather):
+    def gather_1Cquantities(
+        self, dataPath, partPath, quantities_togather, keys_tobound
+    ):
         """
         quantities_togather must be single component particle. They can depend one variable, or one variable + time.
         """
@@ -122,13 +124,21 @@ class PhysicsProcessor:
                 gathered_1Cdata[gathering_index] = np.full(
                     self.context.particles_nb, np.nan
                 )
-                for ii, uid in enumerate(partvtk.data["uid"]):
-                    gathered_1Cdata[gathering_index][uid] = partvtk.data[key][ii]
+                for ii, uid in enumerate(commonvtk.data["uid"]):
+                    gathered_1Cdata[gathering_index][uid] = commonvtk.data[key][ii]
 
             else:
                 gathered_1Cdata[gathering_index] = commonvtk.data[key]
 
-        return gathered_1Cdata
+        # bounds
+        bounds = {}
+        for key in keys_tobound:
+            bounds[key] = [
+                np.nanmin(commonvtk.data[key]),
+                np.nanmax(commonvtk.data[key]),
+            ]
+
+        return gathered_1Cdata, bounds
 
 
 class GridInfo:

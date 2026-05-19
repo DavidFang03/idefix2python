@@ -10,7 +10,13 @@ from . import tools
 from .vtk_io import readVTK
 from .renderer import SliceRenderer
 from .processor import PhysicsProcessor, PartsInfo, DIMENSION_NAMES
-from .quantities import PartQuantity, SpaceTimeHeatmap, MapMovie2D, LineMovie1D
+from .quantities import (
+    PartQuantity,
+    SpaceTimeHeatmap,
+    MapMovie2D,
+    LineMovie1D,
+    OneComponentOneVariable,
+)
 
 
 class OutputTypeInfo:
@@ -311,10 +317,11 @@ class Pipeline:
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)
 
         self.figs = figs
-        self.spaceTimeHeatmaps = []
-        self.partQuantities = []
-        self.linemovies1D = []
         self.mapmovies2D = []
+        self.linemovies1D = []
+        self.spaceTimeHeatmaps = []
+        self.oneC_oneVs = []
+        self.partQuantities = []
         self.quantities = []
 
         qty_tocompute = []
@@ -329,9 +336,12 @@ class Pipeline:
                     self.linemovies1D.append(qtyInfo)
                 elif isinstance(qtyInfo, MapMovie2D):
                     self.mapmovies2D.append(qtyInfo)
+                elif isinstance(qtyInfo, OneComponentOneVariable):
+                    self.oneC_oneVs.append(qtyInfo)
                 self.quantities.append(qtyInfo)
 
                 if qtyInfo.compute is not None:
+                    # TODO add safeguard in case two identical keys with differents compute.
                     qty_tocompute.append(qtyInfo)
 
                 if qtyInfo.uids is not None:
@@ -413,28 +423,63 @@ class Pipeline:
 
         vtktimes = None
 
-        # Gather particles data
-        if len(self.partQuantities) > 0:
+        # Data to gather : 1C1V (including parts) and spheatmaps.
+        # Gather data will be stored in a huge table. Each column correspond to
+        # one given quantity.
+        # Thus we give every qty a unique index, starting from 1 (0 is time)
+        gathering_index = 1
+        quantities_togather = []
+        keys_togather = set()
+        for qty in self.oneC_oneVs:
+            if qty.xqty is not None and qty.xqty.key not in keys_togather:
+                quantities_togather.append(qty.xqty)
+                keys_togather[qty.xqty.key] = gathering_index
+                qty.xqty.gathering_index = gathering_index
+                gathering_index += 1
+
+        for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
+            if qty.key not in keys_togather:
+                quantities_togather.append(qty)
+                keys_togather[qty.key] = gathering_index
+                qty.gathering_index = gathering_index
+                gathering_index += 1
+
+        if len(quantities_togather) > 0:
             with Pool(self.userArgs.jobs) as pool:
-                particles_result = pool.starmap(
-                    self.processor.get_quantities,
-                    zip(self.partList, repeat(self.partQuantities)),
+                gathered_data = pool.starmap(
+                    self.processor.gather_1Cquantities,
+                    zip(self.vtkList, self.partList, repeat(quantities_togather)),
                 )
 
-            nb_vtktimes = len(particles_result)
-            vtktimes = [particles_result[i][0] for i in range(nb_vtktimes)]
-            if len(vtktimes) > 1:
-                t_smooth = np.linspace(min(vtktimes), max(vtktimes), 10000)
-            else:
-                t_smooth = np.array(vtktimes)
-
-            for qty in self.partQuantities:
+            nb_vtks = len(gathered_data)
+            vtktimes = [gathered_data[i][0] for i in range(nb_vtks)]
+            # Redistribute all the gathered data to all quantities.
+            for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
+                key = qty.key
+                gathering_index = keys_togather[key]
                 values = np.array(
-                    [particles_result[i][qty.index] for i in range(nb_vtktimes)]
+                    [gathered_data[i][gathering_index] for i in range(nb_vtks)]
                 )
-                qty.set_data(points=vtktimes, values=values)
+                if isinstance(
+                    qty, SpaceTimeHeatmap
+                ):  # SPECial treatment for SPACetimes
+                    points = self.processor.gridInfo.X1Line
+                elif qty.is_timeline:
+                    points = vtktimes
+                elif (
+                    qty.is_movie
+                ):  # only remaining possibility is 1C1V with a custom xqty
+                    xqty_key = qty.xqty.key
+                    xqty_gathering_index = keys_togather[xqty_key]
+                    points = np.array(
+                        [gathered_data[i][xqty_gathering_index] for i in range(nb_vtks)]
+                    )
+                else:
+                    raise Exception("shouldn't happen.")
+                qty.set_data(points, values)
 
                 if qty.ref_function is not None:
+                    t_smooth = np.linspace(np.min(vtktimes), np.max(vtktimes), 10000)
                     try:
                         predicted_values = qty.ref_function(t_smooth)
                         qty.set_ref_data(t_smooth, predicted_values)
@@ -599,11 +644,11 @@ class Pipeline:
         """
         vtk_path = args[0]
         fieldskeys_indexes = args[1]
-        V = readVTK(vtk_path)
-        self.processor.process(V)
+        datavtk = readVTK(vtk_path)
+        datavtk = self.processor.process(datavtk=datavtk)
         bounds = np.empty((len(fieldskeys_indexes), 2))
         for field in fieldskeys_indexes.keys():
-            data = V.data[field]
+            data = datavtk.data[field]
             index = fieldskeys_indexes[field]
             bounds[index, 0] = np.nanmin(data)
             bounds[index, 1] = np.nanmax(data)

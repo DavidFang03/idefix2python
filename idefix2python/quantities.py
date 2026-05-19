@@ -172,6 +172,8 @@ class LineMovie1D(Field1D):
     ):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
+        self.is_movie = True
+        self.is_timeline = False
 
 
 class SpaceTimeHeatmap(Field1D):
@@ -199,10 +201,48 @@ class SpaceTimeHeatmap(Field1D):
         self.set_norm(norm)
         self.uids = uids
         self.index = next(SpaceTimeHeatmap.instances)
+        self.is_timeline = True
+        self.is_movie = False
+
+
+class OneComponentOneVariable(Data):
+    """
+    A y(x) value where x can be any variable. If xqty is None, that means x is time and the quantity will be treated as a timeline.
+    Otherwise, it will be treated as a LineMovie1D.
+
+    """
+
+    _key_index_map = {}
+
+    def __init__(
+        self,
+        key,
+        symbol="",
+        plot_coords=[0, 0],
+        vmin=None,
+        vmax=None,
+        xqty=None,
+        **kwargs,
+    ):
+        if key not in OneComponentOneVariable._key_index_map:
+            OneComponentOneVariable._key_index_map[key] = (
+                len(OneComponentOneVariable._key_index_map) + 1
+            )
+        self.index = OneComponentOneVariable._key_index_map[key]
+        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        if kwargs.get("uids", None) is not None:
+            raise Exception(
+                "For uid specific 1C1V quantity, please use PartQuantity instead."
+            )
+
+        self.xqty = xqty  # if None, it will be time.
+        self.is_timeline = xqty is None
+        self.is_movie = xqty is not None
 
 
 class PartQuantity(Data):
     """
+    Particular case of OneComponentOneVariable when the variable is time and that there is one value per particle (so not really one component but rather Npart components...)
     Tracks Lagrangian particle properties over time.
 
     :keyword: uids (optional) the ids of the particles wanted.
@@ -227,3 +267,5 @@ class PartQuantity(Data):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.is_global = False  # default
+        self.is_timeline = True
+        self.is_movie = False

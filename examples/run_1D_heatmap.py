@@ -1,9 +1,21 @@
-from idefix2python import RunContext, Pipeline, Fig, SpaceTimeHeatmap
+from idefix2python import (
+    RunContext,
+    Pipeline,
+    Fig,
+    SpaceTimeHeatmap,
+    OneComponentOneVariable,
+)
 from pathlib import Path
+import numpy as np
 
 projectPath = Path(__file__).parent / "data_test"
 task = "1D_test"
 # By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
+
+
+def maxrho(v):
+    return v.r[*np.argmax(v.data["RHO"])]
+
 
 quantities = [
     SpaceTimeHeatmap(
@@ -11,7 +23,10 @@ quantities = [
         r"$\rho^\mathrm{dust}$",
         plot_coords=[0, 0],
         title="Dust0 Density",
-    )
+    ),
+    OneComponentOneVariable(
+        "max_rhodust", "max_rhodust", plot_coords=[0, 0], compute=maxrho
+    ),
 ]
 
 fig0 = Fig(quantities, suptitle="Dust density on a heatmap")

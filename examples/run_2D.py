@@ -6,7 +6,8 @@ projectPath = Path(__file__).parent / "data_test"
 task = "2D_test"
 
 
-def compute_mach_p(data):
+def compute_mach_p(v):
+    data = v.data
     cs2 = data["PRS"] / data["RHO"]
     return np.sqrt(data["VX1"] ** 2 + data["VX2"] ** 2) / cs2
 

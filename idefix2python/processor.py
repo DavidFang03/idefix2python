@@ -35,70 +35,100 @@ class PhysicsProcessor:
     def set_vtktimes(self, vtktimes):
         self.vtktimes = vtktimes
 
-    def process(self, V):
+    def process(self, datavtk=None, partvtk=None):
         """
-        Transposes the vtk datas and add some stuff:
-            - Soundspeed
-            - Mach number
-            - Positions of particles if there are
-        Also collect the SpaceTimeHeatmaps
+        Preprocessing data.
+        - Build a common data structure to hold both datavtk and partvtk
+        - Transposes and squeezes the vtk datas
         """
-        is_particle_vtk = "uid" in V.data
-        if not is_particle_vtk:
-            for qt in V.data:
+        if datavtk is not None:
+            commonvtk = datavtk
+            for qt in datavtk.data:
                 if self.context.dimensions == 2:
-                    V.data[qt] = np.transpose(np.squeeze(V.data[qt]))
-                    V.data[qt] = np.where(self.gridInfo.mask, V.data[qt], np.nan)
+                    datavtk.data[qt] = np.transpose(np.squeeze(datavtk.data[qt]))
+                    datavtk.data[qt] = np.where(
+                        self.gridInfo.mask, datavtk.data[qt], np.nan
+                    )
 
-                elif self.context.dimensions == 1 and len(np.shape(V.data[qt])) == 3:
-                    V.data[qt] = np.squeeze(V.data[qt])
-
-            for qtyInfo in self.qty_tocompute:
-                if isinstance(qtyInfo, MapMovie2D) or isinstance(
-                    qtyInfo, LineMovie1D
-                ):  # partQuantities and spacetimesheatmap are not concerned by this.
-                    V.data[qtyInfo.key] = qtyInfo.compute(
-                        V.data
-                    )  # TODO Add safeguard for computed shape
-
+                elif (
+                    self.context.dimensions == 1
+                    and len(np.shape(datavtk.data[qt])) == 3
+                ):
+                    datavtk.data[qt] = np.squeeze(datavtk.data[qt])
         else:
-            V.data["PART_X1"] = tools.get_Position(V, self.context.geometry, 0)
-            V.data["PART_X2"] = tools.get_Position(V, self.context.geometry, 1)
-            V.data["PART_X3"] = tools.get_Position(V, self.context.geometry, 2)
+            commonvtk = partvtk
 
-            for qtyInfo in [*self.partQuantities]:
-                if hasattr(qtyInfo, "compute") and qtyInfo.compute is not None:
-                    # Currently the computed shape must be (len(V.data["uid"]))
-                    computed_data = qtyInfo.compute(
-                        V
-                    )  # TODO Add safeguard for computed shape
-                    if len(computed_data) != len(V.data["uid"]):
-                        raise ValueError(
-                            f"The computed data has shape {np.shape(computed_data)} but should have the same shape as V.data['uid']"
-                        )
-                    V.data[qtyInfo.key] = computed_data
+        if partvtk is not None:
+            # the positions of the particles are in partvtk.x
+            # Let's instead write that in datavtk
+            commonvtk.data["PART_X1"] = tools.get_Position(
+                partvtk, self.context.geometry, 0
+            )
+            commonvtk.data["PART_X2"] = tools.get_Position(
+                partvtk, self.context.geometry, 1
+            )
+            commonvtk.data["PART_X3"] = tools.get_Position(
+                partvtk, self.context.geometry, 2
+            )
+            # Let's also rename VXn to PART_VXn
+            commonvtk.data["PART_VX1"] = partvtk.data.pop("VX1")
+            commonvtk.data["PART_VX2"] = partvtk.data.pop("VX2")
+            commonvtk.data["PART_VX3"] = partvtk.data.pop("VX3")
 
-    def get_quantities(self, vtkPath, quantities):
+            # Let's write everything else to datavtk
+            if datavtk is not None:
+                for key in partvtk.data:
+                    if key not in ["VX1", "VX2", "VX3"]:
+                        if key in commonvtk.data:  # commonvtk is necessarly datavtk
+                            raise Exception("processor is about to overwrite datavtk")
+                        commonvtk.data[key] = partvtk.data[key]
+
+        ## Custom computing. Now everything is stored in commonvtk
+        for qtyInfo in self.qty_tocompute:
+            commonvtk.data[qtyInfo.key] = np.squeeze(
+                qtyInfo.compute(commonvtk)
+            )  # is squeeze a good idea?
+
+            # TODO safeguard for computed shape. Turns out to be not very straightforward.
+            # computed_shape = np.shape(datavtk.data[qtyInfo.key])
+            # if isinstance(qtyInfo, MapMovie2D) or isinstance(qtyInfo, LineMovie1D):
+            #     expected_shape = self.gridInfo.shape
+            # elif isinstance(qtyInfo, PartQuantity):
+            #     expected_shape = np.shape(partvtk.data["uid"])
+            # elif isinstance(qtyInfo, SpaceTimeHeatmap)
+            # else:
+            #     expected_shape = None
+        return commonvtk
+
+    def gather_1Cquantities(self, dataPath, partPath, quantities_togather):
         """
-        quantities can be Quantities of Fields (can't find a better name...)
+        quantities_togather must be single component particle. They can depend one variable, or one variable + time.
         """
-        V = readVTK(vtkPath)
-        self.process(V)
-        PostSpaceTimeHeatmaps = [None] * (1 + len(quantities))
-        PostSpaceTimeHeatmaps[0] = V.t[0]
-        for field in quantities:
-            key = field.key
-            if isinstance(field, PartQuantity):
-                PostSpaceTimeHeatmaps[field.index] = np.full(
+        datavtk = None if dataPath is None else readVTK(dataPath)
+        partvtk = None if partPath is None else readVTK(partPath)
+        both_vtk_present = datavtk is not None and partvtk is not None
+
+        if both_vtk_present and (datavtk.t - partvtk.t) > 1e-9:
+            raise Exception(f"{dataPath} and {partPath} don't have the same time.")
+
+        self.process(datavtk, partvtk)  # everything is now in datavtk
+        gathered_1Cdata = [None] * (1 + len(quantities_togather))
+        gathered_1Cdata[0] = datavtk.t[0]
+
+        for qtyInfo in quantities_togather:
+            key = qtyInfo.key
+            gathering_index = qtyInfo.gathering_index
+            if isinstance(qtyInfo, PartQuantity):
+                gathered_1Cdata[gathering_index] = np.full(
                     self.context.particles_nb, np.nan
                 )
-                for ii, uid in enumerate(V.data["uid"]):
-                    PostSpaceTimeHeatmaps[field.index][uid] = V.data[key][ii]
+                for ii, uid in enumerate(partvtk.data["uid"]):
+                    gathered_1Cdata[gathering_index][uid] = partvtk.data[key][ii]
 
             else:
-                PostSpaceTimeHeatmaps[field.index] = V.data[key]
+                gathered_1Cdata[gathering_index] = datavtk.data[key]
 
-        return PostSpaceTimeHeatmaps
+        return gathered_1Cdata
 
 
 class GridInfo:
@@ -108,12 +138,13 @@ class GridInfo:
         self.dimensions = context.dimensions
         self.grid_name_1, self.grid_name_2 = self.get_cartesian_grid_labels()
         self.axis_name_1, self.axis_name_2 = self.get_native_grid_labels()
-
+        self.shape = None
         if self.context.outputTypes_info["vtk"].status:
             self.X1Line, self.X2Line = self.get_grid_line_points()
             if self.context.dimensions == 1:
                 self.xmin = np.min(self.X1Line)
                 self.xmax = np.max(self.X1Line)
+                self.shape = np.shape(self.X1Line)
             elif self.context.dimensions == 2:
                 # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
                 self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
@@ -134,6 +165,8 @@ class GridInfo:
                 self.xmax = np.max(np.where(self.mask, self.grid1, 0))
                 self.ymax = np.max(np.where(self.mask, self.grid2, 0))
                 self.ymin = np.min(np.where(self.mask, self.grid2, 0))
+
+                self.shape = np.shape(self.X1)
 
     def get_cartesian_grid_labels(self):
         # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.

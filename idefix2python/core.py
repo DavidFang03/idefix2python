@@ -434,26 +434,18 @@ class Pipeline:
         # Gather data will be stored in a huge table. Each column correspond to
         # one given quantity.
         # Thus we give every qty a unique index, starting from 1 (0 is time)
-        gathering_index = 1
-        quantities_togather = []
-        keys_togather = {}
+        keys_togather = set()
         keys_tobound = remaining_fields_tobound
         for qty in self.oneC_oneVs:
-            if qty.xqty is not None and qty.xqty.key not in keys_togather:
-                quantities_togather.append(qty.xqty)
-                keys_togather[qty.xqty.key] = gathering_index
-                qty.xqty.gathering_index = gathering_index
-                gathering_index += 1
+            if qty.xqty is not None:
+                keys_togather.add(qty.xqty)
 
         for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
             if qty.key not in keys_togather:
-                quantities_togather.append(qty)
-                keys_togather[qty.key] = gathering_index
-                qty.gathering_index = gathering_index
-                gathering_index += 1
+                keys_togather.add(qty)
 
-        if len(quantities_togather) > 0:
-            LOG("Gathering data and bounds, please wait...")
+        if len(keys_togather) > 0 or len(keys_tobound) > 0:
+            LOG("Gathering data and/or bounds, please wait...")
             files_diff = len(self.vtkList) - len(self.partList)
             if files_diff > 0:
                 vtkList_extended = self.vtkList
@@ -471,7 +463,7 @@ class Pipeline:
                     zip(
                         vtkList_extended,
                         partList_extended,
-                        repeat(quantities_togather),
+                        repeat(keys_togather),
                         repeat(keys_tobound),
                     ),
                 )
@@ -484,18 +476,17 @@ class Pipeline:
             for ii in range(nb_vtks):
                 data = gathered_data_and_bounds[ii][0]
                 bounds = gathered_data_and_bounds[ii][1]
-                vtktimes += [data[0]]
+                vtktimes.append(data["TIME"])
 
                 # redistribute data
                 for qty in (
                     self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs
                 ):
                     key = qty.key
-                    gathering_index = keys_togather[key]
-                    qty.values.append(data[gathering_index])
+                    qty.values.append(data[key])
 
                     if getattr(qty, "xqty", None) is not None:
-                        qty.points += [data[keys_togather[qty.xqty.key]]]
+                        qty.points.append(data[qty.xqty.key])
 
                 # redistribute bounds
                 computed_bounds = {}  # for LOG only
@@ -503,18 +494,18 @@ class Pipeline:
                     for qty in self.all_movies:
                         if qty.key in bounds:
                             bound_low, bound_up = bounds[qty.key]
-                            if qty.bounds[0] is not None and bound_low < qty.bounds[0]:
+                            if qty.bounds[0] is None or bound_low < qty.bounds[0]:
                                 qty.bounds[0] = bound_low
-                            if qty.bounds[1] is not None and bound_up > qty.bounds[1]:
+                            if qty.bounds[1] is None or bound_up > qty.bounds[1]:
                                 qty.bounds[1] = bound_up
                             computed_bounds[qty.key] = qty.bounds
 
-                if len(computed_bounds) > 0:
-                    LOG("Bounds computed:")
-                    for key in computed_bounds:
-                        LOG(
-                            f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
-                        )
+            if len(computed_bounds) > 0:
+                LOG("Bounds computed:")
+                for key in computed_bounds:
+                    LOG(
+                        f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
+                    )
 
             self.processor.set_vtktimes(vtktimes)
 

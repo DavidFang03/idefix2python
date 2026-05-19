@@ -114,21 +114,18 @@ class PhysicsProcessor:
             raise Exception(f"{dataPath} and {partPath} don't have the same time.")
 
         commonvtk = self.process(datavtk, partvtk)  # everything is now in datavtk
-        gathered_1Cdata = [None] * (1 + len(quantities_togather))
-        gathered_1Cdata[0] = commonvtk.t[0]
+        gathered_1Cdata = {}
+        gathered_1Cdata["TIME"] = commonvtk.t[0]
 
         for qtyInfo in quantities_togather:
             key = qtyInfo.key
-            gathering_index = qtyInfo.gathering_index
             if isinstance(qtyInfo, PartQuantity):
-                gathered_1Cdata[gathering_index] = np.full(
-                    self.context.particles_nb, np.nan
-                )
+                gathered_1Cdata[key] = np.full(self.context.particles_nb, np.nan)
                 for ii, uid in enumerate(commonvtk.data["uid"]):
-                    gathered_1Cdata[gathering_index][uid] = commonvtk.data[key][ii]
+                    gathered_1Cdata[key][uid] = commonvtk.data[key][ii]
 
             else:
-                gathered_1Cdata[gathering_index] = commonvtk.data[key]
+                gathered_1Cdata[key] = commonvtk.data[key]
 
         # bounds
         bounds = {}

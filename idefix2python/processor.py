@@ -85,9 +85,12 @@ class PhysicsProcessor:
 
         ## Custom computing. Now everything is stored in commonvtk
         for qtyInfo in self.qty_tocompute:
-            commonvtk.data[qtyInfo.key] = np.squeeze(
-                qtyInfo.compute(commonvtk)
-            )  # is squeeze a good idea?
+            if (
+                not isinstance(qtyInfo, PartQuantity) or partvtk is not None
+            ):  # in the renderer there is no need to compute the partquantities again as they are already gathered
+                commonvtk.data[qtyInfo.key] = np.squeeze(
+                    qtyInfo.compute(commonvtk)
+                )  # is squeeze a good idea?
 
             # TODO safeguard for computed shape. Turns out to be not very straightforward.
             # computed_shape = np.shape(datavtk.data[qtyInfo.key])

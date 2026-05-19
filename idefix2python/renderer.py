@@ -202,10 +202,6 @@ class SliceRenderer:
                     elif "alpha" not in qtyInfo.style_kwargs:
                         qtyInfo.style_kwargs["alpha"] = 1
 
-                if hasattr(qtyInfo, "points") and len(qtyInfo.points) > 0:
-                    qtyInfo.points = np.asarray(qtyInfo.points)
-                    qtyInfo.values = np.asarray(qtyInfo.values)
-
             fig.init()
 
     def render(self):
@@ -477,12 +473,12 @@ class SliceRenderer:
                     linewidths=0.3,
                 )
             elif isinstance(back_qty, LineMovie1D):
-                points = part_qty.values[: frame_nb + 1, uid]
+                points = np.asarray(part_qty.values)[: frame_nb + 1, uid]
                 values = 0 * points
                 ax.scatter(points[-1], 0, color=color, marker="x")
             elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
                 points = part_qty.points
-                values = part_qty.values[:, uid]
+                values = np.asarray(part_qty.values)[:, uid]
                 alpha = 1
                 lw = 1
             else:

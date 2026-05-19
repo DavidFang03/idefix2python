@@ -14,7 +14,7 @@ task = "1D_test"
 
 
 def maxrho(v):
-    return v.r[*np.argmax(v.data["RHO"])]
+    return v.x[np.argmax(v.data["Dust0_RHO"])]
 
 
 quantities = [

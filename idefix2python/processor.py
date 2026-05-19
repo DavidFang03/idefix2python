@@ -111,9 +111,9 @@ class PhysicsProcessor:
         if both_vtk_present and (datavtk.t - partvtk.t) > 1e-9:
             raise Exception(f"{dataPath} and {partPath} don't have the same time.")
 
-        self.process(datavtk, partvtk)  # everything is now in datavtk
+        commonvtk = self.process(datavtk, partvtk)  # everything is now in datavtk
         gathered_1Cdata = [None] * (1 + len(quantities_togather))
-        gathered_1Cdata[0] = datavtk.t[0]
+        gathered_1Cdata[0] = commonvtk.t[0]
 
         for qtyInfo in quantities_togather:
             key = qtyInfo.key
@@ -126,7 +126,7 @@ class PhysicsProcessor:
                     gathered_1Cdata[gathering_index][uid] = partvtk.data[key][ii]
 
             else:
-                gathered_1Cdata[gathering_index] = datavtk.data[key]
+                gathered_1Cdata[gathering_index] = commonvtk.data[key]
 
         return gathered_1Cdata
 

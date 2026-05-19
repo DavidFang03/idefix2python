@@ -1,5 +1,11 @@
 import matplotlib.pyplot as plt
-from .quantities import MapMovie2D, LineMovie1D, PartQuantity, SpaceTimeHeatmap
+from .quantities import (
+    MapMovie2D,
+    LineMovie1D,
+    OneComponentOneVariable,
+    PartQuantity,
+    SpaceTimeHeatmap,
+)
 from .tools import LOG
 import numpy as np
 
@@ -32,6 +38,12 @@ class Fig:
                 qtyInfo, SpaceTimeHeatmap
             ):
                 self.axesTimeline.append(qtyInfo)
+            elif isinstance(qtyInfo, OneComponentOneVariable):
+                if qtyInfo.is_timeline:
+                    self.axesTimeline.append(qtyInfo)
+                else:
+                    self.axesMovie.append(qtyInfo)
+                    self.movie = True
             else:
                 raise ValueError("Quantity type not supported")
 

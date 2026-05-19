@@ -429,7 +429,7 @@ class Pipeline:
         # Thus we give every qty a unique index, starting from 1 (0 is time)
         gathering_index = 1
         quantities_togather = []
-        keys_togather = set()
+        keys_togather = {}
         for qty in self.oneC_oneVs:
             if qty.xqty is not None and qty.xqty.key not in keys_togather:
                 quantities_togather.append(qty.xqty)
@@ -445,14 +445,28 @@ class Pipeline:
                 gathering_index += 1
 
         if len(quantities_togather) > 0:
+            files_diff = len(self.vtkList) - len(self.partList)
+            if files_diff > 0:
+                vtkList_extended = self.vtkList
+                partList_extended = self.partList + [None] * files_diff
+            elif files_diff < 0:
+                vtkList_extended = self.vtkList + [None] * (-files_diff)
+                partList_extended = self.partList
+            else:
+                vtkList_extended = self.vtkList
+                partList_extended = self.partList
+
             with Pool(self.userArgs.jobs) as pool:
                 gathered_data = pool.starmap(
                     self.processor.gather_1Cquantities,
-                    zip(self.vtkList, self.partList, repeat(quantities_togather)),
+                    zip(
+                        vtkList_extended, partList_extended, repeat(quantities_togather)
+                    ),
                 )
 
             nb_vtks = len(gathered_data)
             vtktimes = [gathered_data[i][0] for i in range(nb_vtks)]
+            self.processor.set_vtktimes(vtktimes)
             # Redistribute all the gathered data to all quantities.
             for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
                 key = qty.key
@@ -497,30 +511,28 @@ class Pipeline:
                     )
                 )
 
-        # gather spacetime data
-        if len(self.spaceTimeHeatmaps) > 0:
-            with Pool(self.userArgs.jobs) as pool:
-                spat_results = pool.starmap(
-                    self.processor.get_quantities,
-                    zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),
-                )
+        # # gather spacetime data
+        # if len(self.spaceTimeHeatmaps) > 0:
+        #     with Pool(self.userArgs.jobs) as pool:
+        #         spat_results = pool.starmap(
+        #             self.processor.gather_1Cquantities,
+        #             zip(self.vtkList, self.partList, repeat(self.spaceTimeHeatmaps)),
+        #         )
 
-            nb_vtktimes = len(spat_results)
-            vtktimes = [spat_results[i][0] for i in range(nb_vtktimes)]
+        #     nb_vtktimes = len(spat_results)
+        #     vtktimes = [spat_results[i][0] for i in range(nb_vtktimes)]
 
-            for qty in self.spaceTimeHeatmaps:
-                values = np.array(
-                    [spat_results[i][qty.index] for i in range(nb_vtktimes)]
-                )
-                qty.set_data(points=self.processor.gridInfo.X1Line, values=values)
+        #     for qty in self.spaceTimeHeatmaps:
+        #         values = np.array(
+        #             [spat_results[i][qty.index] for i in range(nb_vtktimes)]
+        #         )
+        #         qty.set_data(points=self.processor.gridInfo.X1Line, values=values)
 
-                if qty.ref_function is not None:
-                    t_array = np.array(vtktimes)
-                    if len(t_array) > 1:
-                        t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
-                        qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
-        if vtktimes is not None:
-            self.processor.set_vtktimes(vtktimes)
+        #         if qty.ref_function is not None:
+        #             t_array = np.array(vtktimes)
+        #             if len(t_array) > 1:
+        #                 t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
+        #                 qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
 
         # delegate the render of all this stuff to the Renderer
         self.renderer.set_infos(self.processor.gridInfo, self.processor.partsInfo)

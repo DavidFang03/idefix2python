@@ -11,6 +11,7 @@ from .quantities import (
     MapMovie2D,
     SpaceTimeHeatmap,
     LineMovie1D,
+    OneComponentOneVariable,
     PartQuantity,
 )
 
@@ -21,6 +22,7 @@ __all__ = [
     "MapMovie2D",
     "SpaceTimeHeatmap",
     "LineMovie1D",
+    "OneComponentOneVariable",
     "PartQuantity",
     "readVTK",
     "Fig",

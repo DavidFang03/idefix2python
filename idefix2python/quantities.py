@@ -234,6 +234,7 @@ class OneComponentOneVariable(Data):
             raise Exception(
                 "For uid specific 1C1V quantity, please use PartQuantity instead."
             )
+        self.uids = None
 
         self.xqty = xqty  # if None, it will be time.
         self.is_timeline = xqty is None

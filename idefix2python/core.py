@@ -506,6 +506,11 @@ class Pipeline:
                     LOG(
                         f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
                     )
+            LOG("Final Bounds:")
+            for qtyInfo in self.all_movies:
+                b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"
+                b2 = None if qtyInfo.bounds[1] is None else f"{qtyInfo.bounds[1]:.1e}"
+                LOG(f"{qtyInfo.key:>10} {b1} {b2}")
 
             self.processor.set_vtktimes(vtktimes)
 
@@ -575,12 +580,6 @@ class Pipeline:
                             qtyInfo.set_norm(config[qtyInfo.key][key])
                         else:
                             setattr(qtyInfo, key, config[qtyInfo.key][key])
-
-        LOG("Final Bounds:")
-        for qtyInfo in all_movies:
-            b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"
-            b2 = None if qtyInfo.bounds[1] is None else f"{qtyInfo.bounds[1]:.1e}"
-            LOG(f"{qtyInfo.key:>10} {b1} {b2}")
 
         return remaining_fields_tobound
 

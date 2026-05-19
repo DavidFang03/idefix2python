@@ -354,7 +354,7 @@ class Pipeline:
         )  # pipeline bro helping clueless processor
 
         if self.particles_requested:
-            self.partQuantities += self.processor.partsInfo.partsqty_togather
+            self.partQuantities += self.processor.partsInfo.global_partsqty_togather
 
         self.processor.set_qty_tocompute(qty_tocompute)
         self.processor.set_partQuantities(self.partQuantities)
@@ -431,9 +431,8 @@ class Pipeline:
         vtktimes = None
 
         # Data to gather : 1C1V (including parts) and spheatmaps.
-        # Gather data will be stored in a huge table. Each column correspond to
+        # Gather data will be stored in a dict. Each key correspond to
         # one given quantity.
-        # Thus we give every qty a unique index, starting from 1 (0 is time)
         keys_togather = set()
         keys_tobound = remaining_fields_tobound
         for qty in self.oneC_oneVs:

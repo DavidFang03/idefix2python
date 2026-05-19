@@ -210,18 +210,18 @@ class GridInfo:
 
 class PartsInfo:
     def __init__(self, active_directions):
-        self.partsqty_togather = []
+        self.global_partsqty_togather = []
         X_index = active_directions[0]
         self.parts_X1 = PartQuantity(f"PART_X{X_index + 1}", uids="all")
         self.parts_X1.is_global = True
-        self.partsqty_togather.append(self.parts_X1)
+        self.global_partsqty_togather.append(self.parts_X1)
 
         if len(active_directions) >= 2:
             Y_index = active_directions[1]
             self.parts_X2 = PartQuantity(f"PART_X{Y_index + 1}", uids="all")
 
             self.parts_X2.is_global = True
-            self.partsqty_togather.append(self.parts_X2)
+            self.global_partsqty_togather.append(self.parts_X2)
 
         self.parts_Z = PartQuantity("PART_Z")
         self.parts_Z.is_global = True

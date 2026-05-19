@@ -83,7 +83,7 @@ The three others are not accessible to the user:
 ## Roadmap to v1.0 (!!)
 
 * More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
-* `compute` should take both globalvtk and partvtk argument to compute mixed quantities.
+* `compute` should take both globalvtk and partvtk argument to compute mixed quantities. (ongoing)
 * Automatic labeling (already partially supported through `config.json` file.)
 * Reintroduce `timevol.dat` (timevol) for global quantities.
 * twinx

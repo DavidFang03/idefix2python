@@ -28,7 +28,7 @@ fields2D = [
 fig0 = Fig(fields2D)
 
 
-def z(datavtk, v):
+def z(v):
     r = v.data["PART_X1"]
     theta = v.data["PART_X2"]
     return r * np.cos(theta)

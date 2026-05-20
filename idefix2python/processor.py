@@ -1,7 +1,7 @@
 from .vtk_io import readVTK
 from . import tools
 import numpy as np
-from .quantities import PartQuantity, LineMovie1D, MapMovie2D
+from .quantities import PartQuantity
 
 CARTESIAN_DIMENSION_NAMES = {
     "cartesian": [r"$x$", r"$y$", r"$z$"],
@@ -113,7 +113,7 @@ class PhysicsProcessor:
         partvtk = None if partPath is None else readVTK(partPath)
         both_vtk_present = datavtk is not None and partvtk is not None
 
-        if both_vtk_present and (datavtk.t - partvtk.t) > 1e-9:
+        if both_vtk_present and (datavtk.t[0] - partvtk.t[0]) > 1e-9:
             raise Exception(f"{dataPath} and {partPath} don't have the same time.")
 
         commonvtk = self.process(datavtk, partvtk)  # everything is now in datavtk

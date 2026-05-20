@@ -418,9 +418,10 @@ class Pipeline:
 
         if self.userArgs.onlyMovie:
             for fig in self.figs:
-                if isinstance(fig, (MapMovie2D, LineMovie1D)):
+                if fig.movie:
                     self.renderer.render_movie(fig)
             LOG("Only movie requested. Godspeed.")
+            return
 
         remaining_fields_tobound = self._apply_config()
 

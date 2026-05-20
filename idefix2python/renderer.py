@@ -372,7 +372,7 @@ class SliceRenderer:
         if getattr(ax, "show_time_indicator", True):
             if frame_nb > 0:
                 ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
-            ax.show_time_indicator = False
+                ax.show_time_indicator = False
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
         ax = figure.axes[*sptime.plot_coords].ax

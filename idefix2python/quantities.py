@@ -147,9 +147,6 @@ class MapMovie2D(Data):
         """
         self.X, self.Y = X, Y
 
-    def set_particles_trajectories(self, data):
-        pass
-
 
 class Field1D(Data):
     """
@@ -208,7 +205,6 @@ class SpaceTimeHeatmap(Field1D):
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.set_norm(norm)
         self.uids = uids
-        self.index = next(SpaceTimeHeatmap.instances)
         self.is_timeline = True
         self.is_movie = False
 
@@ -220,8 +216,6 @@ class OneComponentOneVariable(Data):
 
     """
 
-    _key_index_map = {}
-
     def __init__(
         self,
         key,
@@ -232,11 +226,6 @@ class OneComponentOneVariable(Data):
         xqty=None,
         **kwargs,
     ):
-        if key not in OneComponentOneVariable._key_index_map:
-            OneComponentOneVariable._key_index_map[key] = (
-                len(OneComponentOneVariable._key_index_map) + 1
-            )
-        self.index = OneComponentOneVariable._key_index_map[key]
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         if kwargs.get("uids", None) is not None:
             raise Exception(
@@ -258,8 +247,6 @@ class PartQuantity(Data):
         Defaults to "all" (all particles)
     """
 
-    _key_index_map = {}
-
     def __init__(
         self,
         key,
@@ -270,9 +257,6 @@ class PartQuantity(Data):
         uids="all",
         **kwargs,
     ):
-        if key not in PartQuantity._key_index_map:
-            PartQuantity._key_index_map[key] = len(PartQuantity._key_index_map) + 1
-        self.index = PartQuantity._key_index_map[key]
         super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
         self.uids = uids
         self.is_global = False  # default

@@ -416,6 +416,7 @@ class Pipeline:
             self.userArgs,
         )
 
+        # -om -> Only renders Movie
         if self.userArgs.onlyMovie:
             for fig in self.figs:
                 if fig.movie:
@@ -423,17 +424,13 @@ class Pipeline:
             LOG("Only movie requested. Godspeed.")
             return
 
-        remaining_fields_tobound = self._apply_config()
-
         self._check_everything_alright()
-
-        # -om -> Only renders Movie
-
-        vtktimes = None
+        remaining_fields_tobound = self._apply_config()
 
         # Data to gather : 1C1V (including parts) and spheatmaps.
         # Gather data will be stored in a dict. Each key correspond to
         # one given quantity.
+        vtktimes = None
         keys_togather = set()
         keys_tobound = remaining_fields_tobound
         for qty in self.oneC_oneVs:

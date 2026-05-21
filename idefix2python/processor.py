@@ -88,9 +88,8 @@ class PhysicsProcessor:
             if (
                 not isinstance(qtyInfo, PartQuantity) or partvtk is not None
             ):  # in the renderer there is no need to compute the partquantities again as they are already gathered
-                commonvtk.data[qtyInfo.key] = np.squeeze(
-                    qtyInfo.compute(commonvtk)
-                )  # is squeeze a good idea?
+                commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
+                  # do not squeeze
 
             # TODO safeguard for computed shape. Turns out to be not very straightforward.
             # computed_shape = np.shape(datavtk.data[qtyInfo.key])

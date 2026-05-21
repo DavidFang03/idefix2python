@@ -546,8 +546,8 @@ class Pipeline:
 
         if not self.userArgs.noBounds:
             for movie in all_movies:
-                if movie.key not in config or "bounds" not in config[movie.key]:
-                    if movie.key not in remaining_fields_tobound:
+                if not movie.bounds_set:
+                    if movie.key not in config or "bounds" not in config[movie.key]:
                         remaining_fields_tobound.add(movie.key)
             if len(remaining_fields_tobound) > 0:
                 LOG("Fields to bound: ", remaining_fields_tobound)

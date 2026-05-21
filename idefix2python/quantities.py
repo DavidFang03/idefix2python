@@ -31,12 +31,16 @@ class Data:
     """
 
     def __init__(
-        self, key, symbol="", plot_coords=[0, 0], vmin=None, vmax=None, **kwargs
+        self, key, symbol="", plot_coords=[0, 0], bounds=[None, None], **kwargs
     ):
         self.key = key
         self.symbol = symbol
         self.plot_coords = plot_coords
-        self.bounds = [vmin, vmax]
+        self.bounds = bounds
+        if bounds[0] is not None or bounds[1] is not None:
+            self.bounds_set = True
+        else:
+            self.bounds_set = False
 
         self.title = kwargs.get(
             "title", None
@@ -170,12 +174,11 @@ class LineMovie1D(Field1D):
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
         uids=None,
         **kwargs,
     ):
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
         self.is_movie = True
         self.is_timeline = False
@@ -196,13 +199,12 @@ class SpaceTimeHeatmap(Field1D):
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
         norm="linear",
         uids=None,
         **kwargs,
     ):
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.set_norm(norm)
         self.uids = uids
         self.is_timeline = True
@@ -221,12 +223,11 @@ class OneComponentOneVariable(Data):
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
         xqty=None,
         **kwargs,
     ):
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         if kwargs.get("uids", None) is not None:
             raise Exception(
                 "For uid specific 1C1V quantity, please use PartQuantity instead."
@@ -252,12 +253,11 @@ class PartQuantity(Data):
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
         uids="all",
         **kwargs,
     ):
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
         self.is_global = False  # default
         self.is_timeline = True

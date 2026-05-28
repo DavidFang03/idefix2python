@@ -309,6 +309,8 @@ class Pipeline:
         :type zoom: float, optional
         :param streamLines: Configuration for streamlines overlays.
         :type streamLines: StreamlineConfig, optional
+        **options: Additional optional parameters:
+            * scatter_particles (bool): only scatter particles positions instead of the whole trajectory on MapMovie2D
         """
         self.context = Context
         self.userArgs = self.context.args

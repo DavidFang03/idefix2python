@@ -297,6 +297,7 @@ class Pipeline:
         figs,
         zoom=0,
         streamLines=None,
+        **options,
     ):
         """
         Coordinates the detection, processing, and rendering of the simulation data.
@@ -308,6 +309,8 @@ class Pipeline:
         :type zoom: float, optional
         :param streamLines: Configuration for streamlines overlays.
         :type streamLines: StreamlineConfig, optional
+        **options: Additional optional parameters:
+            * scatter_particles (bool): only scatter particles positions instead of the whole trajectory on MapMovie2D
         """
         self.context = Context
         self.userArgs = self.context.args
@@ -326,6 +329,8 @@ class Pipeline:
 
         qty_tocompute = []
         self.particles_requested = False
+
+        self.options = options
         for fig in figs:
             for qtyInfo in fig.quantities:
                 if isinstance(qtyInfo, PartQuantity):
@@ -414,6 +419,7 @@ class Pipeline:
             self.processor,
             self.figs,
             self.userArgs,
+            self.options,
         )
 
         # -om -> Only renders Movie

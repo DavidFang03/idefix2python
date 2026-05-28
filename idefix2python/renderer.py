@@ -102,6 +102,7 @@ class SliceRenderer:
         processor,
         figs,
         userArgs,
+        options,
     ):
         self.context = context
         self.processor = processor
@@ -110,6 +111,7 @@ class SliceRenderer:
         self.figsTimeline = []
         self.userArgs = userArgs
         self.framesPaths = FramesPaths(context, self.userArgs)
+        self.options = options
 
         if self.userArgs.doOnlyFrames and not self.userArgs.onlyMovie:
             self.doMovie = False
@@ -457,9 +459,9 @@ class SliceRenderer:
         if uids is None or len(uids) == 0:
             return
 
-        scatter = False
-        # scatter = True
-        if scatter and isinstance(back_qty, MapMovie2D):
+        if self.options.get("scatter_particles", False) and isinstance(
+            back_qty, MapMovie2D
+        ):
             points = part_qty.points[frame_nb, uids]
             values = part_qty.values[frame_nb, uids]
             alpha = 1

@@ -2,11 +2,11 @@
 <html lang="en" data-accent-color="violet" data-content_root="../">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Particle quantities over heatmap - Idefix2Python 0.1.0 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Particle quantities over heatmap" href="run_multipart_2D.html" /><link rel="prev" title="Particle quantities" href="run_particles.html" /><script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Particle quantities over spacetime heatmap - Idefix2Python 0.1.0 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Particle quantities over 2D heatmap" href="run_multipart_2D.html" /><link rel="prev" title="Particle quantities" href="run_particles.html" /><script>
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
@@ -19,7 +19,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="Particle quantities over heatmap"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Particle quantities over spacetime heatmap"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -65,8 +66,8 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="run_1D.html">1D fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run_2D.html">2D fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run_particles.html">Particle quantities</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Particle quantities over heatmap</a></li>
-<li class="toctree-l2"><a class="reference internal" href="run_multipart_2D.html">Particle quantities over heatmap</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Particle quantities over spacetime heatmap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_multipart_2D.html">Particle quantities over 2D heatmap</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
@@ -101,7 +102,7 @@ data-aria-dark="Switch to auto color mode">
         <span>/</span>
         <meta itemprop="position" content="2" />
       </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <strong itemprop="name">Particle quantities over heatmap</strong>
+        <strong itemprop="name">Particle quantities over spacetime heatmap</strong>
         <meta itemprop="position" content="3" />
       </li></ol>
     <div class="xl:hidden ml-1">
@@ -114,8 +115,8 @@ data-aria-dark="Switch to auto color mode">
 </div><div class="flex flex-col break-words justify-between">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
-          <section id="particle-quantities-over-heatmap">
-<h1>Particle quantities over heatmap<a class="headerlink" href="#particle-quantities-over-heatmap" title="Link to this heading">¶</a></h1>
+          <section id="particle-quantities-over-spacetime-heatmap">
+<h1>Particle quantities over spacetime heatmap<a class="headerlink" href="#particle-quantities-over-spacetime-heatmap" title="Link to this heading">¶</a></h1>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">idefix2python</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContext</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">Fig</span><span class="p">,</span> <span class="n">PartQuantity</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span>
 </span><span data-line="2"><span class="linenos"> 2</span><span class="kn">import</span><span class="w"> </span><span class="nn">utilities</span>
 </span><span data-line="3"><span class="linenos"> 3</span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -186,7 +187,7 @@ data-aria-dark="Switch to auto color mode">
     <a href="run_multipart_2D.html">
       <div class="page-info">
         <span>Next</span>
-        <div class="title">Particle quantities over heatmap</div>
+        <div class="title">Particle quantities over 2D heatmap</div>
       </div>
       <i class="i-lucide chevron-right"></i>
     </a>
@@ -218,5 +219,5 @@ data-aria-dark="Switch to auto color mode">
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/design-tabs.js?v=f930bc37"></script>
-      <script src="../_static/shibuya.js?v=cac61aee"></script></body>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
 </html>

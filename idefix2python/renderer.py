@@ -7,7 +7,13 @@ import numpy as np
 from multiprocessing import Pool
 import shutil
 from pathlib import Path
-from .quantities import MapMovie2D, LineMovie1D, SpaceTimeHeatmap, PartQuantity
+from .quantities import (
+    MapMovie2D,
+    LineMovie1D,
+    SpaceTimeHeatmap,
+    PartQuantity,
+    OneComponentOneVariable,
+)
 from .vtk_io import readVTK
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -141,6 +147,9 @@ class SliceRenderer:
                     qtyInfo.ylabel = self.gridInfo.axis_name_1
 
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
+                    qtyInfo.points = (
+                        self.gridInfo.X1Line
+                    )  # TODO to change if user wants custom xqty
                     qtyInfo.xmin = (
                         qtyInfo.xmin
                         if qtyInfo.xmin is not None
@@ -168,6 +177,23 @@ class SliceRenderer:
                     qtyInfo.xlabel = r"$t$"
                     qtyInfo.ylabel = qtyInfo.symbol
 
+                if qtyInfo.ref_function is not None:
+                    vtktimes = (
+                        self.processor.vtktimes
+                    )  # TODO recover only tstart and tend from context instead
+                    t_smooth = np.linspace(np.min(vtktimes), np.max(vtktimes), 10000)
+                    try:
+                        predicted_values = qtyInfo.ref_function(t_smooth)
+                        qtyInfo.set_ref_data(t_smooth, predicted_values)
+                    except Exception as e:
+                        LOG(
+                            f"Warning: Failed to compute ref_function for {qtyInfo.key}. Error: {e}"
+                        )
+
+                if qtyInfo.is_timeline:
+                    vtktimes = self.processor.vtktimes
+                    qtyInfo.points = vtktimes
+
                 if isinstance(qtyInfo, MapMovie2D) or isinstance(
                     qtyInfo, SpaceTimeHeatmap
                 ):
@@ -176,7 +202,7 @@ class SliceRenderer:
                     elif "alpha" not in qtyInfo.style_kwargs:
                         qtyInfo.style_kwargs["alpha"] = 1
 
-                fig.init()
+            fig.init()
 
     def render(self):
         self._pre_render()
@@ -208,11 +234,11 @@ class SliceRenderer:
             )
 
     def render_Frame(self, frame_nb=None, vtkPath=None):
-
+        # partvtk is not necessary I think from here. Except if I implement LineMovie1D later.
         if vtkPath is not None:  # that means it's a movie
             figures_to_render = self.figsMovie
             VTK = readVTK(vtkPath)
-            self.processor.process(VTK)
+            commonvtk = self.processor.process(datavtk=VTK)
             custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
 
         else:
@@ -224,13 +250,15 @@ class SliceRenderer:
             figure.generate_figure(custom_suptitle=custom_suptitle)
             for qtyInfo in figure.quantities:
                 if isinstance(qtyInfo, MapMovie2D):
-                    self._render_2D(figure, qtyInfo, VTK.data, frame_nb)
+                    self._render_2D(figure, qtyInfo, commonvtk.data, frame_nb)
                 elif isinstance(qtyInfo, LineMovie1D):
-                    self._render_1D(figure, qtyInfo, VTK.data, frame_nb)
+                    self._render_1D(figure, qtyInfo, commonvtk.data, frame_nb)
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
                 elif isinstance(qtyInfo, PartQuantity):
                     self._render_TimeSeries(figure, qtyInfo, frame_nb)
+                elif isinstance(qtyInfo, OneComponentOneVariable):
+                    self._render_1C1V(figure, qtyInfo, frame_nb)
 
             if vtkPath is not None:  # that means it's a movie
                 png_path = self.framesPaths.get_movieframe_path(
@@ -337,9 +365,14 @@ class SliceRenderer:
         )
 
     def do_timeline_stuff(self, figure, timeline, frame_nb=-1):
+        """
+        Draw a vertical line to show current time
+        """
         ax = figure.axes[*timeline.plot_coords].ax
-        if frame_nb > 0:
-            ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
+        if getattr(ax, "show_time_indicator", True):
+            if frame_nb > 0:
+                ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
+                ax.show_time_indicator = False
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
         ax = figure.axes[*sptime.plot_coords].ax
@@ -389,6 +422,13 @@ class SliceRenderer:
         ax.grid(alpha=GRID_OPACITY)
         self.do_timeline_stuff(figure, timeseries, frame_nb)
 
+    def _render_1C1V(self, figure, onec_onev, frame_nb=-1):
+        ax = figure.axes[*onec_onev.plot_coords].ax
+
+        ax.plot(onec_onev.points, onec_onev.values)
+        if onec_onev.xqty is None:  # that means it's a timeline
+            self.do_timeline_stuff(figure, onec_onev, frame_nb)
+
     def draw_particles(self, figure, part_qty, back_qty=None, frame_nb=None):
         """
         back_qty is the background. If back_qty.uids are accounted if back_qty is not None. Otherwise, part_qty.uids
@@ -433,12 +473,12 @@ class SliceRenderer:
                     linewidths=0.3,
                 )
             elif isinstance(back_qty, LineMovie1D):
-                points = part_qty.values[: frame_nb + 1, uid]
+                points = np.asarray(part_qty.values)[: frame_nb + 1, uid]
                 values = 0 * points
                 ax.scatter(points[-1], 0, color=color, marker="x")
             elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
-                points = part_qty.points
-                values = part_qty.values[:, uid]
+                points = self.processor.vtktimes  # pre_render doesn't initialize global partquantities so part_qty.points would be empty here
+                values = np.asarray(part_qty.values)[:, uid]
                 alpha = 1
                 lw = 1
             else:

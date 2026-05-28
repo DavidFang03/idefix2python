@@ -31,12 +31,16 @@ class Data:
     """
 
     def __init__(
-        self, key, symbol="", plot_coords=[0, 0], vmin=None, vmax=None, **kwargs
+        self, key, symbol="", plot_coords=[0, 0], bounds=[None, None], **kwargs
     ):
         self.key = key
         self.symbol = symbol
         self.plot_coords = plot_coords
-        self.bounds = [vmin, vmax]
+        self.bounds = bounds
+        if bounds[0] is not None or bounds[1] is not None:
+            self.bounds_set = True
+        else:
+            self.bounds_set = False
 
         self.title = kwargs.get(
             "title", None
@@ -56,6 +60,9 @@ class Data:
 
         self.style_kwargs = kwargs.get("style_kwargs", {})
         self.parts_kwargs = kwargs.get("parts_kwargs", {})
+
+        self.points = []
+        self.values = []
 
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
@@ -130,6 +137,9 @@ class MapMovie2D(Data):
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
 
+        self.is_movie = True
+        self.is_timeline = False
+
     def set_XYgrid(self, X, Y):
         """
         Assign the spatial cartesian grid used for rendering the 2D pcolormesh.
@@ -141,9 +151,6 @@ class MapMovie2D(Data):
         """
         self.X, self.Y = X, Y
 
-    def set_particles_trajectories(self, data):
-        pass
-
 
 class Field1D(Data):
     """
@@ -153,6 +160,8 @@ class Field1D(Data):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.is_timeline = False
+        self.is_movie = True
 
 
 class LineMovie1D(Field1D):
@@ -165,13 +174,14 @@ class LineMovie1D(Field1D):
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
         uids=None,
         **kwargs,
     ):
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
+        self.is_movie = True
+        self.is_timeline = False
 
 
 class SpaceTimeHeatmap(Field1D):
@@ -189,41 +199,66 @@ class SpaceTimeHeatmap(Field1D):
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
         norm="linear",
         uids=None,
         **kwargs,
     ):
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.set_norm(norm)
         self.uids = uids
-        self.index = next(SpaceTimeHeatmap.instances)
+        self.is_timeline = True
+        self.is_movie = False
 
 
-class PartQuantity(Data):
+class OneComponentOneVariable(Data):
     """
-    Tracks Lagrangian particle properties over time.
+    A y(x) value where x can be any variable. If xqty is None, that means x is time and the quantity will be treated as a timeline.
+    Otherwise, it will be treated as a LineMovie1D.
 
-    :keyword: uids (optional) the ids of the particles wanted.
-        Defaults to "all" (all particles)
     """
-
-    _key_index_map = {}
 
     def __init__(
         self,
         key,
         symbol="",
         plot_coords=[0, 0],
-        vmin=None,
-        vmax=None,
+        bounds=[None, None],
+        xqty=None,
+        **kwargs,
+    ):
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
+        if kwargs.get("uids", None) is not None:
+            raise Exception(
+                "For uid specific 1C1V quantity, please use PartQuantity instead."
+            )
+        self.uids = None
+
+        self.xqty = xqty  # if None, it will be time.
+        self.is_timeline = xqty is None
+        self.is_movie = xqty is not None
+
+
+class PartQuantity(Data):
+    """
+    Particular case of OneComponentOneVariable when the variable is time and that there is one value per particle (so not really one component but rather Npart components...)
+    Tracks Lagrangian particle properties over time.
+
+    :keyword: uids (optional) the ids of the particles wanted.
+        Defaults to "all" (all particles)
+    """
+
+    def __init__(
+        self,
+        key,
+        symbol="",
+        plot_coords=[0, 0],
+        bounds=[None, None],
         uids="all",
         **kwargs,
     ):
-        if key not in PartQuantity._key_index_map:
-            PartQuantity._key_index_map[key] = len(PartQuantity._key_index_map) + 1
-        self.index = PartQuantity._key_index_map[key]
-        super().__init__(key, symbol, plot_coords, vmin, vmax, **kwargs)
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
         self.is_global = False  # default
+        self.is_timeline = True
+        self.is_movie = False

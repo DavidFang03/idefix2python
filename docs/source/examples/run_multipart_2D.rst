@@ -1,5 +1,5 @@
-Particle quantities over heatmap
-================================
+Particle quantities over 2D heatmap
+===================================
 
 .. literalinclude:: ../../../examples/run_multipart_2D.py
    :language: python

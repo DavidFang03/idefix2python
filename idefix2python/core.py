@@ -10,7 +10,13 @@ from . import tools
 from .vtk_io import readVTK
 from .renderer import SliceRenderer
 from .processor import PhysicsProcessor, PartsInfo, DIMENSION_NAMES
-from .quantities import PartQuantity, SpaceTimeHeatmap, MapMovie2D, LineMovie1D
+from .quantities import (
+    PartQuantity,
+    SpaceTimeHeatmap,
+    MapMovie2D,
+    LineMovie1D,
+    OneComponentOneVariable,
+)
 
 
 class OutputTypeInfo:
@@ -311,10 +317,11 @@ class Pipeline:
         self.processor = PhysicsProcessor(self.context, self.userArgs, self.streamLines)
 
         self.figs = figs
-        self.spaceTimeHeatmaps = []
-        self.partQuantities = []
-        self.linemovies1D = []
         self.mapmovies2D = []
+        self.linemovies1D = []
+        self.spaceTimeHeatmaps = []
+        self.oneC_oneVs = []
+        self.partQuantities = []
         self.quantities = []
 
         qty_tocompute = []
@@ -329,9 +336,12 @@ class Pipeline:
                     self.linemovies1D.append(qtyInfo)
                 elif isinstance(qtyInfo, MapMovie2D):
                     self.mapmovies2D.append(qtyInfo)
+                elif isinstance(qtyInfo, OneComponentOneVariable):
+                    self.oneC_oneVs.append(qtyInfo)
                 self.quantities.append(qtyInfo)
 
                 if qtyInfo.compute is not None:
+                    # TODO add safeguard in case two identical keys with differents compute.
                     qty_tocompute.append(qtyInfo)
 
                 if qtyInfo.uids is not None:
@@ -344,22 +354,17 @@ class Pipeline:
         )  # pipeline bro helping clueless processor
 
         if self.particles_requested:
-            self.partQuantities += self.processor.partsInfo.partsqty_togather
+            self.partQuantities += self.processor.partsInfo.global_partsqty_togather
 
         self.processor.set_qty_tocompute(qty_tocompute)
         self.processor.set_partQuantities(self.partQuantities)
 
         self._name_frames()
-        self._apply_config()
-
-        self.renderer = SliceRenderer(
-            self.context,
-            self.processor,
-            self.figs,
-            self.userArgs,
-        )
 
     def _check_everything_alright(self):
+        """
+        Simply check if necessary files exist.
+        """
         # Check whether the particles requested exist
         available_uids = set(self.context.all_particles_uids)
         for qty in [
@@ -403,45 +408,109 @@ class Pipeline:
         """
         Pray.
         """
-        self._check_everything_alright()
+
+        self.renderer = SliceRenderer(
+            self.context,
+            self.processor,
+            self.figs,
+            self.userArgs,
+        )
 
         # -om -> Only renders Movie
+        if self.userArgs.onlyMovie:
+            for fig in self.figs:
+                if fig.movie:
+                    self.renderer.render_movie(fig)
+            LOG("Only movie requested. Godspeed.")
+            return
 
-        for fig in self.figs:
-            if isinstance(fig, (MapMovie2D, LineMovie1D)):
-                self.renderer.render_movie(fig)
+        self._check_everything_alright()
+        remaining_fields_tobound = self._apply_config()
 
+        # Data to gather : 1C1V (including parts) and spheatmaps.
+        # Gather data will be stored in a dict. Each key correspond to
+        # one given quantity.
         vtktimes = None
+        keys_togather = set()
+        keys_tobound = remaining_fields_tobound
+        for qty in self.oneC_oneVs:
+            if qty.xqty is not None:
+                keys_togather.add(qty.xqty)
 
-        # Gather particles data
-        if len(self.partQuantities) > 0:
-            with Pool(self.userArgs.jobs) as pool:
-                particles_result = pool.starmap(
-                    self.processor.get_quantities,
-                    zip(self.partList, repeat(self.partQuantities)),
-                )
+        for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
+            if qty.key not in keys_togather:
+                keys_togather.add(qty)
 
-            nb_vtktimes = len(particles_result)
-            vtktimes = [particles_result[i][0] for i in range(nb_vtktimes)]
-            if len(vtktimes) > 1:
-                t_smooth = np.linspace(min(vtktimes), max(vtktimes), 10000)
+        if len(keys_togather) > 0 or len(keys_tobound) > 0:
+            LOG("Gathering data and/or bounds, please wait...")
+            files_diff = len(self.vtkList) - len(self.partList)
+            if files_diff > 0:
+                vtkList_extended = self.vtkList
+                partList_extended = self.partList + [None] * files_diff
+            elif files_diff < 0:
+                vtkList_extended = self.vtkList + [None] * (-files_diff)
+                partList_extended = self.partList
             else:
-                t_smooth = np.array(vtktimes)
+                vtkList_extended = self.vtkList
+                partList_extended = self.partList
 
-            for qty in self.partQuantities:
-                values = np.array(
-                    [particles_result[i][qty.index] for i in range(nb_vtktimes)]
+            with Pool(self.userArgs.jobs) as pool:
+                gathered_data_and_bounds = pool.starmap(
+                    self.processor.gather_1Cquantities,
+                    zip(
+                        vtkList_extended,
+                        partList_extended,
+                        repeat(keys_togather),
+                        repeat(keys_tobound),
+                    ),
                 )
-                qty.set_data(points=vtktimes, values=values)
 
-                if qty.ref_function is not None:
-                    try:
-                        predicted_values = qty.ref_function(t_smooth)
-                        qty.set_ref_data(t_smooth, predicted_values)
-                    except Exception as e:
-                        LOG(
-                            f"Warning: Failed to compute ref_function for {qty.key}. Error: {e}"
-                        )
+            nb_vtks = len(gathered_data_and_bounds)
+
+            # Let's browser that huge result
+            # Redistribute all the gathered data to all quantities.
+            vtktimes = []
+            for ii in range(nb_vtks):
+                data = gathered_data_and_bounds[ii][0]
+                bounds = gathered_data_and_bounds[ii][1]
+                vtktimes.append(data["TIME"])
+
+                # redistribute data
+                for qty in (
+                    self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs
+                ):
+                    key = qty.key
+                    qty.values.append(data[key])
+
+                    if getattr(qty, "xqty", None) is not None:
+                        qty.points.append(data[qty.xqty.key])
+
+                # redistribute bounds
+                computed_bounds = {}  # for LOG only
+                if not self.userArgs.noBounds and ii > 5:
+                    for qty in self.all_movies:
+                        if qty.key in bounds:
+                            bound_low, bound_up = bounds[qty.key]
+                            if qty.bounds[0] is None or bound_low < qty.bounds[0]:
+                                qty.bounds[0] = bound_low
+                            if qty.bounds[1] is None or bound_up > qty.bounds[1]:
+                                qty.bounds[1] = bound_up
+                            computed_bounds[qty.key] = qty.bounds
+
+            if len(computed_bounds) > 0:
+                LOG("Bounds computed:")
+                for key in computed_bounds:
+                    LOG(
+                        f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
+                    )
+            LOG("Final Bounds:")
+            for qtyInfo in self.all_movies:
+                b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"
+                b2 = None if qtyInfo.bounds[1] is None else f"{qtyInfo.bounds[1]:.1e}"
+                LOG(f"{qtyInfo.key:>10} {b1} {b2}")
+
+            self.processor.set_vtktimes(vtktimes)
+
             if self.particles_requested and len(self.context.active_directions) >= 2:
                 # cartesian for pcolormesh
                 self.processor.partsInfo.parts_Z.set_data(
@@ -451,31 +520,6 @@ class Pipeline:
                         self.context.geometry,
                     )
                 )
-
-        # gather spacetime data
-        if len(self.spaceTimeHeatmaps) > 0:
-            with Pool(self.userArgs.jobs) as pool:
-                spat_results = pool.starmap(
-                    self.processor.get_quantities,
-                    zip(self.vtkList, repeat(self.spaceTimeHeatmaps)),
-                )
-
-            nb_vtktimes = len(spat_results)
-            vtktimes = [spat_results[i][0] for i in range(nb_vtktimes)]
-
-            for qty in self.spaceTimeHeatmaps:
-                values = np.array(
-                    [spat_results[i][qty.index] for i in range(nb_vtktimes)]
-                )
-                qty.set_data(points=self.processor.gridInfo.X1Line, values=values)
-
-                if qty.ref_function is not None:
-                    t_array = np.array(vtktimes)
-                    if len(t_array) > 1:
-                        t_smooth = np.linspace(t_array.min(), t_array.max(), 500)
-                        qty.set_ref_data(t_smooth, qty.ref_function(t_smooth))
-        if vtktimes is not None:
-            self.processor.set_vtktimes(vtktimes)
 
         # delegate the render of all this stuff to the Renderer
         self.renderer.set_infos(self.processor.gridInfo, self.processor.partsInfo)
@@ -494,33 +538,19 @@ class Pipeline:
 
         # gathering bounds for movies
         all_movies = [*self.linemovies1D, *self.mapmovies2D]
+        self.all_movies = all_movies
         config = self.context.config
-        computed_bounds = {}
 
         LOG(f"config.json file requested: {config}")
+        remaining_fields_tobound = set()
 
         if not self.userArgs.noBounds:
-            LOG("Computing bounds, please wait...")
-            fields_tobound = []
             for movie in all_movies:
-                if movie.key not in config or "bounds" not in config[movie.key]:
-                    if movie.key not in fields_tobound:
-                        fields_tobound.append(movie.key)
-            if len(fields_tobound) > 0:
-                LOG("Fields to bound: ", fields_tobound)
-                bound_list = (
-                    self.slice1_list if len(self.slice1_list) > 0 else self.vtkList
-                )
-                computed_bounds = self._get_bounds(
-                    bound_list[min(len(bound_list), 5) :],
-                    fields_tobound,
-                )
-                LOG("Bounds computed:")
-                for key in computed_bounds:
-                    LOG(
-                        f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
-                    )
-
+                if not movie.bounds_set:
+                    if movie.key not in config or "bounds" not in config[movie.key]:
+                        remaining_fields_tobound.add(movie.key)
+            if len(remaining_fields_tobound) > 0:
+                LOG("Fields to bound: ", remaining_fields_tobound)
             else:
                 LOG("All fields are already bounded in config")
         else:
@@ -548,66 +578,7 @@ class Pipeline:
                         else:
                             setattr(qtyInfo, key, config[qtyInfo.key][key])
 
-        for qtyInfo in all_movies:  # only movies should be bounded
-            if qtyInfo.key in computed_bounds and not self.userArgs.noBounds:
-                qtyInfo.set_bounds(computed_bounds[qtyInfo.key])
-            elif self.userArgs.noBounds:
-                qtyInfo.set_bounds([None, None])
-
-        LOG("Final Bounds:")
-        for qtyInfo in all_movies:
-            b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"
-            b2 = None if qtyInfo.bounds[1] is None else f"{qtyInfo.bounds[1]:.1e}"
-            LOG(f"{qtyInfo.key:>10} {b1} {b2}")
-
-    def _get_bounds(self, vtkList, fields_keys):
-        """
-        Get the bounds (min, max) of all given fields. I recommend not passing the entire vtkList but rather vtkList[1:] to discard the first output(s ?).
-
-        vtkList    List of dump file paths
-        field       Field
-
-        returns
-        dict where dict[field] = (min, max)
-        """
-        fieldskeys_indexes = {}
-        for i, key in enumerate(fields_keys):
-            fieldskeys_indexes[key] = i
-
-        with Pool(self.userArgs.jobs) as pool:
-            computed_bounds = pool.map(
-                self._get_bounds_indiv,
-                [[vtk, fieldskeys_indexes] for vtk in vtkList],
-            )
-        computed_bounds = np.array(computed_bounds)
-        bounds = {}
-        if len(computed_bounds) == 0:
-            return bounds
-        for key in fields_keys:
-            i = fieldskeys_indexes[key]
-            bounds[key] = (
-                np.nanmin(computed_bounds[:, i, 0]),
-                np.nanmax(computed_bounds[:, i, 1]),
-            )
-        return bounds
-
-    def _get_bounds_indiv(self, args):
-        """
-        args (list[2]) must have two components:
-            first:   vtk_path (str)
-            second:   fields_indexes (dict) where fields_indexes[field] = index
-        """
-        vtk_path = args[0]
-        fieldskeys_indexes = args[1]
-        V = readVTK(vtk_path)
-        self.processor.process(V)
-        bounds = np.empty((len(fieldskeys_indexes), 2))
-        for field in fieldskeys_indexes.keys():
-            data = V.data[field]
-            index = fieldskeys_indexes[field]
-            bounds[index, 0] = np.nanmin(data)
-            bounds[index, 1] = np.nanmax(data)
-        return bounds
+        return remaining_fields_tobound
 
 
 def _get_args():

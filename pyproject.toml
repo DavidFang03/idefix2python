@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
     "numpy",
     "matplotlib",
+    "inifix>=5.1.0",
 ]
 
 [tool.setuptools.packages.find]

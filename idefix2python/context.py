@@ -4,6 +4,7 @@ from .tools import LOG
 import argparse
 from . import tools
 from .vtk_io import readVTK
+import inifix
 import numpy as np
 
 CARTESIAN_DIMENSION_NAMES = {
@@ -207,12 +208,12 @@ class RunContext:
         )
         self.format_inputs_text = ""
         if self.debug:
-            if self.iniPath.is_file():
-                self.format_inputs_text = tools.formatInputs(self.iniPath)
-            else:
+            if not self.iniPath.exists():
                 raise FileNotFoundError(
                     f"debug requested but {self.iniPath} doesn't exist"
                 )
+            with self.iniPath.open("rb") as fh:
+                self.format_inputs_text = inifix.load(fh, sections="require")
 
         self.partFolder = kwargs.get("partFolder", None)
 

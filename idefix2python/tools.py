@@ -37,39 +37,6 @@ def fmt(x, pos):
     return r"${} \times 10^{{{}}}$".format(a, b)
 
 
-def formatInputs(iniPath):
-    """
-    Formats the .ini file into a decent dict
-    """
-    with open(iniPath) as ini:
-        content = ini.read()
-
-    sections = {}
-    current_section = None
-
-    MAX_VAL_LEN = 22
-
-    for line in content.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-
-        if line.startswith("[") and line.endswith("]"):
-            current_section = line[1:-1]
-            sections[current_section] = []
-        elif current_section:
-            parts = line.split()
-            if len(parts) >= 2:
-                key = parts[0]
-                val = " ".join(parts[1:])
-                val = "".join(val.split("#")[0])
-                if len(val) > MAX_VAL_LEN:
-                    val = "..." + val[MAX_VAL_LEN - 3 :]
-                sections[current_section].append(f"{key:<14} {val}")
-
-    return {k: "\n".join(v) for k, v in sections.items() if v}
-
-
 def annotateInputs(fig, ini_dict, padding_top=0.0):
     """
     Writes text on the `fig` with distinctive sections.

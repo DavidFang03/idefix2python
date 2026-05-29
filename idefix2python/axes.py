@@ -12,7 +12,7 @@ import numpy as np
 from . import tools
 
 # No data should appear in Fig, Ax: they are sent by Renderer.
-DPI = 400
+DPI = 550
 
 
 class Fig:

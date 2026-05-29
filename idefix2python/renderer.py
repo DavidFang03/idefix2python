@@ -285,9 +285,6 @@ class SliceRenderer:
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
-        """
-        streamlines don't support zoom atm because the grid needs to be converted to cartesian coordinates.
-        """
         lw_streamline = 0.2
         density_streamline = [1, 2]
         arrowstyle_streamline = "->"
@@ -297,17 +294,19 @@ class SliceRenderer:
             and len(qtyInfo.streamlines) == 2
         ):
             u_key1, u_key2 = qtyInfo.streamlines
+            mask1 = self.gridInfo.mask1
+            mask2 = self.gridInfo.mask2
             if u_key1 in data and u_key2 in data:
                 ux, uz = tools.convertVector_toXZ(
-                    data[u_key1],
-                    data[u_key2],
-                    self.gridInfo.X1,
-                    self.gridInfo.X2,
+                    data[u_key1][mask2][:, mask1],
+                    data[u_key2][mask2][:, mask1],
+                    self.gridInfo.X1_toshow,
+                    self.gridInfo.X2_toshow,
                     self.context.geometry,
                 )
                 x_coords, z_coords, Ux_uni, Uy_uni = tools.get_streamplot_data(
-                    self.gridInfo.X1Line,
-                    self.gridInfo.X2Line,
+                    self.gridInfo.X1Line_toshow,
+                    self.gridInfo.X2Line_toshow,
                     ux,
                     uz,
                     self.context.geometry,

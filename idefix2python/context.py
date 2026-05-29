@@ -419,6 +419,7 @@ class GridInfo:
             self.mask1 = np.full(self.X1Line.shape, True, dtype=bool)
             self.mask2 = np.full(self.X2Line.shape, True, dtype=bool)
             self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
+
         else:
             print(np.shape(self.X1Line), np.shape(self.X2Line))
             self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
@@ -429,3 +430,6 @@ class GridInfo:
             )
         # self.mask, _ = np.meshgrid(self.mask1, self.mask2)
         self.mask = np.logical_and.outer(self.mask2, self.mask1)
+        self.X1_toshow, self.X2_toshow = np.meshgrid(
+            self.X1Line_toshow, self.X2Line_toshow
+        )

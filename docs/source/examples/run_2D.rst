@@ -46,3 +46,17 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :muted:
          :caption: 2D_test_fig0_config.mp4
 
+   .. tab-item:: Zoom
+
+      .. literalinclude:: ../../../examples/run_2D_zoom.py
+         :language: python
+         :linenos:
+      
+      .. video:: ../../../examples/data_test/videos/2D_test_zoom_fig0_config.mp4
+         :width: 100%
+         :autoplay:
+         :loop:
+         :muted:
+         :caption: 2D_test_zoom_fig0_config.mp4
+
+

@@ -539,10 +539,7 @@ class SliceRenderer:
         if isinstance(qtyInfo, MapMovie2D):
             grid1 = self.gridInfo.grid1
             grid2 = self.gridInfo.grid2
-            print(np.shape(data[qtyInfo.key]))
-            print(np.shape(self.gridInfo.mask))
             data_mesh = np.where(self.gridInfo.mask, data[qtyInfo.key], np.nan)
-            # print(data_mesh)
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
             grid1, grid2 = np.meshgrid(

@@ -367,23 +367,23 @@ class GridInfo:
         self.shape = None
         if self.context.outputTypes_info["vtk"].status:
             self.X1Line, self.X2Line = self.get_grid_line_points()
-            if self.context.dimensions == 1:
-                self.xmin = np.min(self.X1Line)
-                self.xmax = np.max(self.X1Line)
-                self.shape = np.shape(self.X1Line)
-            elif self.context.dimensions == 2:
-                # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
-                self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
-                self.grid1, self.grid2 = tools.convertGrid_toXZ(
-                    self.X1, self.X2, self.context.geometry
-                )
+            # if self.context.dimensions == 1:
+            self.xmin = np.min(self.X1Line)
+            self.xmax = np.max(self.X1Line)
+            # elif self.context.dimensions == 2:
+            # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
+            self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
+            self.grid1, self.grid2 = tools.convertGrid_toXZ(
+                self.X1, self.X2, self.context.geometry
+            )
 
-                self.xmin = 0  # works good atm
-                self.xmax = np.max(self.grid1)
-                self.ymax = np.max(self.grid2)
-                self.ymin = np.min(self.grid2)
+            self.X1 = np.squeeze(self.X1)  # if it's 1D
+            self.shape = np.shape(self.X1)
 
-                self.shape = np.shape(self.X1)
+            self.xmin = 0  # or min(X1) if one 1D?
+            self.xmax = np.max(self.grid1)
+            self.ymax = np.max(self.grid2)
+            self.ymin = np.min(self.grid2)
 
     def get_cartesian_grid_labels(self):
         # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.
@@ -416,10 +416,10 @@ class GridInfo:
 
     def apply_zoom(self, zoom):
         if zoom is None:
-            self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
             self.X1Line_toshow, self.X2Line_toshow = self.X1Line, self.X2Line
             self.mask1 = np.full(self.X1Line.shape, True, dtype=bool)
             self.mask2 = np.full(self.X2Line.shape, True, dtype=bool)
+            self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
         else:
             print(np.shape(self.X1Line), np.shape(self.X2Line))
             self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
@@ -430,6 +430,3 @@ class GridInfo:
             )
         # self.mask, _ = np.meshgrid(self.mask1, self.mask2)
         self.mask = np.logical_and.outer(self.mask2, self.mask1)
-        print("hey", self.mask1)
-        print("hey", self.mask2)
-        print("hey", self.mask)

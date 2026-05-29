@@ -58,14 +58,14 @@ class FramesPaths:
     runName_fig0.mp4
     With possible args:
     [unbounded, config]
+    Instead of runName, you can use a custom_name instead
     """
 
-    def __init__(self, context, userArgs):
+    def __init__(self, context, userArgs, **kwargs):
         self.context = context
+        self.basename = kwargs.get("custom_name", self.context.runName)
 
         self.userargsinfos = []
-        if userArgs.zoom:
-            self.userargsinfos += [f"zoom{userArgs.zoom}"]
         if userArgs.noBounds:
             self.userargsinfos += ["unbounded"]
         elif context.configPath is not None:
@@ -73,8 +73,7 @@ class FramesPaths:
 
     def get_movieframe_pattern(self, figname):
         file_pattern = (
-            "_".join([self.context.runName] + [figname] + ["*"] + self.userargsinfos)
-            + ".png"
+            "_".join([self.basename] + [figname] + ["*"] + self.userargsinfos) + ".png"
         )
         return str(self.context.slice1Folder / file_pattern)
 
@@ -83,15 +82,11 @@ class FramesPaths:
         return filepath
 
     def get_timeline_path(self, figname):
-        filename = (
-            "_".join([self.context.runName] + [figname] + self.userargsinfos) + ".png"
-        )
+        filename = "_".join([self.basename] + [figname] + self.userargsinfos) + ".png"
         return str(self.context.frameRootFolder / filename)
 
     def get_movie_path(self, figname):
-        filename = (
-            "_".join([self.context.runName] + [figname] + self.userargsinfos) + ".mp4"
-        )
+        filename = "_".join([self.basename] + [figname] + self.userargsinfos) + ".mp4"
         return str(self.context.videosFolder / filename)
 
 

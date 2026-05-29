@@ -537,9 +537,9 @@ class SliceRenderer:
         """
 
         if isinstance(qtyInfo, MapMovie2D):
-            grid1 = self.gridInfo.grid1
-            grid2 = self.gridInfo.grid2
-            data_mesh = np.where(self.gridInfo.mask, data[qtyInfo.key], np.nan)
+            grid1 = self.gridInfo.grid1_toshow
+            grid2 = self.gridInfo.grid2_toshow
+            data_mesh = data[qtyInfo.key][self.gridInfo.mask2][:, self.gridInfo.mask1]
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
             grid1, grid2 = np.meshgrid(
@@ -592,16 +592,6 @@ class SliceRenderer:
             self._draw_contours(
                 figure, qtyInfo, data_mesh, cbar
             )  # support for Spacetimeheatmap? later PR.
-
-        if "zoom" in self.options and isinstance(qtyInfo, MapMovie2D):
-            ax.contourf(
-                grid1,
-                grid2,
-                np.logical_not(self.gridInfo.mask),
-                levels=[0.5, 1],
-                hatches=["////"],
-                colors="none",
-            )
 
         return cbar
 

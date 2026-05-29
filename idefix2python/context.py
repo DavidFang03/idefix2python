@@ -377,8 +377,7 @@ class GridInfo:
                 self.X2Line = Lines[1]  # will not be used anyway
             else:
                 self.X2Line = Lines[active_dirs[1]]
-            self.xmin = np.min(self.X1Line)
-            self.xmax = np.max(self.X1Line)
+
             # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
             self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
             self.grid1, self.grid2 = tools.convertLines_toXZgrid(
@@ -387,11 +386,6 @@ class GridInfo:
 
             # self.X1 = np.squeeze(self.X1)  # if it's 1D
             # self.shape = np.shape(self.X1)
-
-            self.xmin = np.min(self.grid1)  # or min(X1) if one 1D?
-            self.xmax = np.max(self.grid1)
-            self.ymax = np.max(self.grid2)
-            self.ymin = np.min(self.grid2)
         else:
             self.active = False
 
@@ -421,15 +415,18 @@ class GridInfo:
             self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
 
         else:
-            print(np.shape(self.X1Line), np.shape(self.X2Line))
             self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
             self.X1Line_toshow = self.X1Line[self.mask1]
             self.X2Line_toshow = self.X2Line[self.mask2]
-            self.grid1_toshow, self.grid2_toshow = np.meshgrid(
-                self.X1Line_toshow, self.X2Line_toshow
-            )
-        # self.mask, _ = np.meshgrid(self.mask1, self.mask2)
+            self.grid1_toshow = self.grid1[self.mask2][:, self.mask1]
+            self.grid2_toshow = self.grid2[self.mask2][:, self.mask1]
         self.mask = np.logical_and.outer(self.mask2, self.mask1)
         self.X1_toshow, self.X2_toshow = np.meshgrid(
             self.X1Line_toshow, self.X2Line_toshow
         )
+        self.x1min = np.min(self.X1Line_toshow)
+        self.x1max = np.max(self.X1Line_toshow)
+        self.xmin = np.min(self.grid1_toshow)  # or min(X1) if one 1D?
+        self.xmax = np.max(self.grid1_toshow)
+        self.ymin = np.min(self.grid2_toshow)
+        self.ymax = np.max(self.grid2_toshow)

@@ -359,6 +359,7 @@ class RunContext:
 
 class GridInfo:
     def __init__(self, context):
+        self.active = True  # if data*.vtk found
         self.context = context
         self.geometry = context.geometry
         self.dimensions = context.dimensions
@@ -366,24 +367,33 @@ class GridInfo:
         self.axis_name_1, self.axis_name_2 = self.get_native_grid_labels()
         self.shape = None
         if self.context.outputTypes_info["vtk"].status:
-            self.X1Line, self.X2Line = self.get_grid_line_points()
-            # if self.context.dimensions == 1:
+            active_dirs = self.context.active_directions
+            vtk = self.context.outputTypes_info["vtk"].vtk
+            Lines = [
+                tools.get_Position(vtk, self.context.geometry, dir) for dir in range(3)
+            ]
+            self.X1Line = Lines[active_dirs[0]]
+            if len(active_dirs) == 1:
+                self.X2Line = Lines[1]  # will not be used anyway
+            else:
+                self.X2Line = Lines[active_dirs[1]]
             self.xmin = np.min(self.X1Line)
             self.xmax = np.max(self.X1Line)
-            # elif self.context.dimensions == 2:
-            # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
+            # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
             self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
-            self.grid1, self.grid2 = tools.convertGrid_toXZ(
-                self.X1, self.X2, self.context.geometry
+            self.grid1, self.grid2 = tools.convertLines_toXZgrid(
+                *Lines, self.context.geometry
             )
 
-            self.X1 = np.squeeze(self.X1)  # if it's 1D
-            self.shape = np.shape(self.X1)
+            # self.X1 = np.squeeze(self.X1)  # if it's 1D
+            # self.shape = np.shape(self.X1)
 
-            self.xmin = 0  # or min(X1) if one 1D?
+            self.xmin = np.min(self.grid1)  # or min(X1) if one 1D?
             self.xmax = np.max(self.grid1)
             self.ymax = np.max(self.grid2)
             self.ymin = np.min(self.grid2)
+        else:
+            self.active = False
 
     def get_cartesian_grid_labels(self):
         # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.
@@ -402,17 +412,6 @@ class GridInfo:
                 # max 2 dimensions is supported
                 names[i] = DIMENSION_NAMES[self.context.geometry][dir]
         return names
-
-    def get_grid_line_points(self):
-        Lines = [None, None]
-
-        vtk = self.context.outputTypes_info["vtk"].vtk
-        for i, dir in enumerate(self.context.active_directions):
-            if i < 2:
-                # max 2 dimensions is supported
-                Lines[i] = tools.get_Position(vtk, self.context.geometry, dir)
-
-        return Lines
 
     def apply_zoom(self, zoom):
         if zoom is None:

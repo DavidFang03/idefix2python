@@ -159,6 +159,18 @@ def movie(pattern_png, movie_path, fps=10):
     print(f"[OK] {movie_path}")
 
 
+def convertLines_toXZgrid(X1, X2, X3, geometry):
+    if geometry == "cartesian":
+        return np.meshgrid(X1, X2)
+    elif geometry == "cylindric":
+        return np.meshgrid(X1, X2)
+    elif geometry == "polar":
+        return np.meshgrid(X1, X3)
+    elif geometry == "spherical":
+        grid = np.meshgrid(X1, X2)
+        return grid[0] * np.sin(grid[1]), grid[0] * np.cos(grid[1])
+
+
 def convertGrid_toXZ(X1, X2, geometry):
     if geometry == "cartesian":
         return X1, X2
@@ -188,7 +200,7 @@ def get_streamplot_data(
     X1, X2, Ux_data, Uy_data, geometry, zoom=None, resolution=200, method="linear"
 ):
     """
-    X,Y must be Lines, Ux and Uy are the data points.
+    X1,X2 must be Lines, Ux_data and Uy_data are the data points.
     Returns the 1d arrays x_coords and y-coords, with the interpolated values Ux_uni, Uy_uni (2D arrays) that can go directly in streamplot
     """
     from scipy.interpolate import RegularGridInterpolator

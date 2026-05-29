@@ -114,9 +114,10 @@ class SliceRenderer:
             self.doMovie = True
 
         self.gridInfo = self.context.gridInfo
-        self.gridInfo.apply_zoom(
-            options.get("zoom", None)
-        )  # initialize gridInfo.*_toshow
+        if self.gridInfo.active:
+            self.gridInfo.apply_zoom(
+                options.get("zoom", None)
+            )  # initialize gridInfo.*_toshow
 
     def set_infos(self, partsInfo):
         self.partsInfo = partsInfo

@@ -87,7 +87,7 @@ The three others are not accessible to the user:
 * twinx
 
 ### Known issues
-* `-f -1` doesn't show particles trajectories
+* `POLAR` geometry in more than 2 dimensions is not supported.
 
 ### Not a priority
 * Support multiple pipelines

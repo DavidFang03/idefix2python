@@ -61,7 +61,7 @@ class FramesPaths:
     Instead of runName, you can use a custom_name instead
     """
 
-    def __init__(self, context, userArgs, kwargs):
+    def __init__(self, context, userArgs, **kwargs):
         self.context = context
         self.basename = kwargs.get("custom_name", self.context.runName)
 

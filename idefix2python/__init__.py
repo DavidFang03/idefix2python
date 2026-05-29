@@ -1,12 +1,5 @@
-from .core import (
-    Pipeline,
-    RunContext,
-)
-
-from .axes import Fig
-
-from .vtk_io import readVTK
-
+from .context import RunContext
+from .core import Pipeline
 from .quantities import (
     MapMovie2D,
     SpaceTimeHeatmap,
@@ -14,6 +7,9 @@ from .quantities import (
     OneComponentOneVariable,
     PartQuantity,
 )
+from .axes import Fig
+from .vtk_io import readVTK
+
 
 # This tells the linter (and users) that these are the intended public API
 __all__ = [

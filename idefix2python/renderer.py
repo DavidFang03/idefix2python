@@ -196,13 +196,13 @@ class SliceRenderer:
                     vtktimes = self.processor.vtktimes
                     qtyInfo.points = vtktimes
 
-                if isinstance(qtyInfo, MapMovie2D) or isinstance(
-                    qtyInfo, SpaceTimeHeatmap
-                ):
-                    if qtyInfo.uids is not None and "alpha" not in qtyInfo.style_kwargs:
-                        qtyInfo.style_kwargs["alpha"] = 0.20
-                    elif "alpha" not in qtyInfo.style_kwargs:
-                        qtyInfo.style_kwargs["alpha"] = 1
+                # if isinstance(qtyInfo, MapMovie2D) or isinstance(
+                #     qtyInfo, SpaceTimeHeatmap
+                # ):
+                #     if qtyInfo.uids is not None and "alpha" not in qtyInfo.style_kwargs:
+                #         qtyInfo.style_kwargs["alpha"] = 0.20
+                #     elif "alpha" not in qtyInfo.style_kwargs:
+                #         qtyInfo.style_kwargs["alpha"] = 1
 
             fig.init()
 
@@ -580,7 +580,8 @@ class SliceRenderer:
             norm=norm,
             **qtyInfo.style_kwargs,
             # shading="gouraud",
-            edgecolors="face",
+            edgecolors="none",
+            antialiased=True,
         )
 
         cbar = colorbar(cmesh, cbformat)
@@ -612,7 +613,7 @@ def colorbar(mappable, cbformat):
     fig = ax.figure
     loc = "bottom"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="5%", pad=0.75)
+    cax = divider.append_axes(loc, size="2%", pad=0.5)
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

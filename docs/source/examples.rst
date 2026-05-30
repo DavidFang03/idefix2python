@@ -51,6 +51,6 @@ Here are more complex examples
    .. grid-item-card:: Multi particles
       :link: examples/run_multipart_2D
       :link-type: doc
-      :img-top: ../../examples/data_test/frames/multipart_2D/slice1/multipart_2D_fig0_0020_config.png
+      :img-top: ../../examples/data_test/frames/multipart_2D/slice1/multipart_2D_fig0_0020.png
 
       Many particles in :math:`(x,z)` simulation

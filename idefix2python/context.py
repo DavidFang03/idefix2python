@@ -215,6 +215,7 @@ class RunContext:
                 )
 
         self.partFolder = kwargs.get("partFolder", None)
+        self.framepath_basename = kwargs.get("custom_name", self.runName)
 
         self.frameFolderName = kwargs.get("frameFolder", runName)
         self.active_directions = kwargs.get("active_directions", [])

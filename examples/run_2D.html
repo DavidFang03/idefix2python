@@ -210,12 +210,14 @@ Fixed Bounds (config.json)</label><div class="sd-tab-content docutils">
 </span><span data-line="34"><span class="linenos">34</span><span class="p">]</span>
 </span><span data-line="35"><span class="linenos">35</span><span class="n">fig0</span> <span class="o">=</span> <span class="n">Fig</span><span class="p">(</span><span class="n">quantities</span><span class="p">,</span> <span class="n">suptitle</span><span class="o">=</span><span class="s2">&quot;Density and Mach number on a beautiful heatmap&quot;</span><span class="p">)</span>
 </span><span data-line="36"><span class="linenos">36</span>
-</span><span data-line="37"><span class="linenos">37</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">,</span> <span class="n">configPath</span><span class="o">=</span><span class="n">configPath</span><span class="p">)</span>
-</span><span data-line="38"><span class="linenos">38</span>
-</span><span data-line="39"><span class="linenos">39</span>
-</span><span data-line="40"><span class="linenos">40</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-</span><span data-line="41"><span class="linenos">41</span>    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="p">[</span><span class="n">fig0</span><span class="p">])</span>
-</span><span data-line="42"><span class="linenos">42</span>    <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="37"><span class="linenos">37</span><span class="n">runContext</span> <span class="o">=</span> <span class="n">RunContext</span><span class="p">(</span>
+</span><span data-line="38"><span class="linenos">38</span>    <span class="n">task</span><span class="p">,</span> <span class="n">projectPath</span><span class="p">,</span> <span class="n">configPath</span><span class="o">=</span><span class="n">configPath</span><span class="p">,</span> <span class="n">custom_name</span><span class="o">=</span><span class="s2">&quot;2D_test_config&quot;</span>
+</span><span data-line="39"><span class="linenos">39</span><span class="p">)</span>
+</span><span data-line="40"><span class="linenos">40</span>
+</span><span data-line="41"><span class="linenos">41</span>
+</span><span data-line="42"><span class="linenos">42</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span data-line="43"><span class="linenos">43</span>    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">runContext</span><span class="p">,</span> <span class="p">[</span><span class="n">fig0</span><span class="p">])</span>
+</span><span data-line="44"><span class="linenos">44</span>    <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id1">
@@ -245,7 +247,7 @@ Fixed Bounds (config.json)</label><div class="sd-tab-content docutils">
 </span></pre></div>
 </div>
 </div>
-<figure  class="sphinx-contrib-video-container align-left"><video autoplay="True" controls="True" loop="True" muted="True" preload="auto" width="100%"><source src="../_images/2D_test_fig0_config.mp4" type="video/mp4"></video><figcaption class="align-center"><p style="text-align: left; display:inline-block"><span class="caption-text">2D_test_fig0_config.mp4</span></p></figcaption></figure></div>
+<figure  class="sphinx-contrib-video-container align-left"><video autoplay="True" controls="True" loop="True" muted="True" preload="auto" width="100%"><source src="../_images/2D_test_config_fig0.mp4" type="video/mp4"></video><figcaption class="align-center"><p style="text-align: left; display:inline-block"><span class="caption-text">2D_test_config_fig0.mp4</span></p></figcaption></figure></div>
 </div>
 </section>
 

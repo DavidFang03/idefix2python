@@ -34,7 +34,9 @@ quantities = [
 ]
 fig0 = Fig(quantities, suptitle="Density and Mach number on a beautiful heatmap")
 
-runContext = RunContext(task, projectPath, configPath=configPath)
+runContext = RunContext(
+    task, projectPath, configPath=configPath, custom_name="2D_test_config"
+)
 
 
 if __name__ == "__main__":

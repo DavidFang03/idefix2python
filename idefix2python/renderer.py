@@ -61,15 +61,13 @@ class FramesPaths:
     Instead of runName, you can use a custom_name instead
     """
 
-    def __init__(self, context, userArgs, **kwargs):
+    def __init__(self, context, userArgs):
         self.context = context
-        self.basename = kwargs.get("custom_name", self.context.runName)
+        self.basename = context.framepath_basename
 
         self.userargsinfos = []
         if userArgs.noBounds:
             self.userargsinfos += ["unbounded"]
-        elif context.configPath is not None:
-            self.userargsinfos += ["config"]
 
     def get_movieframe_pattern(self, figname):
         file_pattern = (

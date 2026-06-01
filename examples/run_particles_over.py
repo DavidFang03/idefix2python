@@ -37,6 +37,7 @@ fig0 = Fig(
 runContext = RunContext(
     task,
     projectPath,
+    show_ini=True
 )
 
 if __name__ == "__main__":

@@ -91,6 +91,7 @@ class Fig:
     def save_and_close(self, path):
         for ax in self.axes.flat:
             ax.last_pimp()
+            ax.ax.set_ylim(None, None)
         self.fig.savefig(path, dpi=DPI, bbox_inches="tight")
         plt.close(self.fig)
         LOG(f"[OK] {path}")
@@ -115,7 +116,7 @@ class Ax:
 
     def add_quantity(self, qtyInfo):
         """
-        These procedures are universal for any kind of qty.
+        For any kind of qty.
         """
         self.quantities.append(qtyInfo)
 

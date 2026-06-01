@@ -22,8 +22,8 @@ class PhysicsProcessor:
         self.userArgs = userArgs
         self.streamLines = streamLines
 
-    def set_qty_tocompute(self, qty_tocompute):
-        self.qty_tocompute = qty_tocompute
+    def set_waitlist(self, waitlist):
+        self.waitlist = waitlist
 
     def set_localQuantities(self, localQuantities):
         self.localQuantities = localQuantities
@@ -80,9 +80,13 @@ class PhysicsProcessor:
                         commonvtk.data[key] = partvtk.data[key]
 
         ## Custom computing. Now everything is stored in commonvtk
-        for qtyInfo in self.qty_tocompute:
-            if (
-                not isinstance(qtyInfo, PartQuantity) or partvtk is not None
+        for qtyInfo in self.waitlist:
+            if isinstance(qtyInfo, LocalQuantity) and partvtk is not None:
+                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
+                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
+            elif (
+                (not isinstance(qtyInfo, PartQuantity) or partvtk is not None)
+                and qtyInfo.compute is not None
             ):  # in the renderer there is no need to compute the partquantities again as they are already gathered
                 commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
                 # do not squeeze
@@ -97,10 +101,6 @@ class PhysicsProcessor:
             # else:
             #     expected_shape = None
             ## Local quantities
-        if partvtk is not None:
-            for qtyInfo in self.localQuantities:
-                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
-                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
 
         return commonvtk
 

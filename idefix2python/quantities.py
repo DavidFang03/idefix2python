@@ -283,6 +283,8 @@ class LocalQuantity(Data):
         uids="all",
         **kwargs,
     ):
+        if kwargs.get("compute"):
+            raise ValueError("compute is not allwed for LocalQuantity")
         super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.localkey = localkey
         self.uids = uids

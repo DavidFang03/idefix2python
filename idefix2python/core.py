@@ -50,7 +50,7 @@ class Pipeline:
         self.localQuantities = []
         self.quantities = []
 
-        qty_tocompute = []
+        waitlist = []
         self.particles_requested = False
 
         self.options = options
@@ -70,9 +70,9 @@ class Pipeline:
                     self.localQuantities.append(qtyInfo)
                 self.quantities.append(qtyInfo)
 
-                if qtyInfo.compute is not None:
+                if qtyInfo.compute is not None or isinstance(qtyInfo, LocalQuantity):
                     # TODO add safeguard in case two identical keys with differents compute.
-                    qty_tocompute.append(qtyInfo)
+                    waitlist.append(qtyInfo)
 
                 if qtyInfo.uids is not None:
                     self.particles_requested = True
@@ -84,6 +84,7 @@ class Pipeline:
                         f"{qtyInfo.key}_local", qtyInfo.key, is_global=True
                     )
                     self.localQuantities.append(lq)
+                    waitlist.append(lq)
                     qtyInfo.set_localqty(lq)
 
         self.processor.partsInfo = PartsInfo(
@@ -93,7 +94,7 @@ class Pipeline:
         if self.particles_requested:
             self.partQuantities += self.processor.partsInfo.global_partsqty_togather
 
-        self.processor.set_qty_tocompute(qty_tocompute)
+        self.processor.set_waitlist(waitlist)
         self.processor.set_partQuantities(self.partQuantities)
         self.processor.set_localQuantities(self.localQuantities)
 

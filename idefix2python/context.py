@@ -177,7 +177,7 @@ class RunContext:
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
-            * debug (bool): debug mode will show the .ini file.
+            * show_ini (bool): show_ini mode will show the .ini file.
                 Defaults to False.
             * iniPath (Path): Custom path to the .ini input file. Defaults to
               `projectPath/inputs/{runName}.ini`.
@@ -192,7 +192,7 @@ class RunContext:
         self.projectPath = Path(projectPath)
         self.projectPath.resolve(strict=True)
 
-        self.debug = kwargs.get("debug", False)
+        self.show_ini = kwargs.get("show_ini", False)
 
         self.userArgs = kwargs.get("args", _get_args())
 
@@ -207,10 +207,10 @@ class RunContext:
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
         self.inidata = None
-        if self.debug:
+        if self.show_ini:
             if not self.iniPath.exists():
                 raise FileNotFoundError(
-                    f"debug requested but {self.iniPath} doesn't exist"
+                    f"show_ini requested but {self.iniPath} doesn't exist"
                 )
             with self.iniPath.open("rb") as fh:
                 self.inidata = inifix.load(fh, sections="require")

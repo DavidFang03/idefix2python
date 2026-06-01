@@ -99,10 +99,17 @@ class Fig:
         self.initxt = initxt
 
     def save_and_close(self, path):
-        print(self.initxt)
         if self.initxt:
-            padding_top = 0.1
-            tools.annotateInputs(self.fig, self.initxt, padding_top=padding_top)
+            self.fig.text(
+                0.1,
+                1,
+                self.initxt,
+                family="monospace",
+                fontsize=7,
+                va="bottom",
+                ha="left",
+                usetex=False,
+            )
 
         for ax in self.axes.flat:
             ax.last_pimp()

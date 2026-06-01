@@ -38,65 +38,6 @@ def fmt(x, pos):
     return r"${} \times 10^{{{}}}$".format(a, b)
 
 
-def annotateInputs(fig, initxt, padding_top=0.0):
-    """
-    Writes text on the `fig` with distinctive sections.
-    """
-
-    # COL_WIDTH = 42
-    # COLS_NB = 3
-
-    # txt = ""
-    # for section_name, section in inidata.values():
-    #     txt += section_name + "\n"
-    #     for param_name, params in section.values():
-    #         if isinstance(params, list):
-
-    # all_panels = []
-    # keys = list(ini_dict.keys())
-    # # table_section_names =
-    # table_param_names = [keys[i : i + COLS_NB] for i in range(0, len(keys), COLS_NB)]
-
-    # for section_group in table:
-    #     formatted_columns = [
-    #         [f"[{name}]", *ini_dict[name].split("\n")]
-    #         for name in section_group
-    #         if name in ini_dict
-    #     ]
-
-    #     if not formatted_columns:
-    #         continue
-
-    #     printable_rows = [
-    #         "".join(f"{section_line:<{COL_WIDTH}}" for section_line in horizontal_slice)
-    #         for horizontal_slice in zip_longest(*formatted_columns, fillvalue="")
-    #     ]
-
-    #     text_panel = "\n".join(printable_rows)
-    #     all_panels.append(text_panel)
-
-    # final_display_string = "\n\n\n".join(all_panels)
-
-    # total_lines = final_display_string.count("\n") + 1
-    # header_space = total_lines * 0.014
-    # margin_top = header_space + padding_top
-
-    # final_display_string = inifix.format_string(initxt)
-    final_display_string = initxt
-    fig.text(
-        0.1,
-        1,
-        final_display_string,
-        family="monospace",
-        fontsize=7,
-        va="bottom",
-        ha="left",
-        usetex=False,
-    )
-
-    # fig.subplots_adjust(top=1.0 - margin_top - 0.05)
-
-
 def divide_discardingNullDenominator(a, b):
     """
     Returns a/b but with None wherever b=0

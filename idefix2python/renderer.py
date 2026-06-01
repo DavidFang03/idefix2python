@@ -106,10 +106,11 @@ class SliceRenderer:
         self.userArgs = userArgs
         self.framesPaths = FramesPaths(context, self.userArgs)
         self.options = options
+        self.doMovie = True
 
-        if self.userArgs.doOnlyFrames and not self.userArgs.onlyMovie:
+        if self.userArgs.doOnlyFrames or self.options.get("no_movie"):
             self.doMovie = False
-        else:
+        if self.userArgs.onlyMovie:
             self.doMovie = True
 
         self.gridInfo = self.context.gridInfo

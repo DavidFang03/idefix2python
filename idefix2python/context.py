@@ -207,6 +207,7 @@ class RunContext:
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
         self.inidata = None
+        self.initxt = None
         if self.show_ini:
             if not self.iniPath.exists():
                 raise FileNotFoundError(

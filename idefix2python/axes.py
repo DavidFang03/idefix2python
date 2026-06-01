@@ -34,21 +34,8 @@ class Fig:
         for qtyInfo in quantities:
             if isinstance(qtyInfo, LineMovie1D) or isinstance(qtyInfo, MapMovie2D):
                 self.movie = True
-                self.axesMovie.append(qtyInfo)
-            elif (
-                isinstance(qtyInfo, PartQuantity)
-                or isinstance(qtyInfo, SpaceTimeHeatmap)
-                or isinstance(qtyInfo, LocalQuantity)
-            ):
-                self.axesTimeline.append(qtyInfo)
-            elif isinstance(qtyInfo, OneComponentOneVariable):
-                if qtyInfo.is_timeline:
-                    self.axesTimeline.append(qtyInfo)
-                else:
-                    self.axesMovie.append(qtyInfo)
-                    self.movie = True
-            else:
-                raise ValueError("Quantity type not supported")
+            elif isinstance(qtyInfo, OneComponentOneVariable) and qtyInfo.is_movie:
+                self.movie = True
 
             if qtyInfo.plot_coords[0] > self.rows - 1:
                 self.rows = qtyInfo.plot_coords[0] + 1

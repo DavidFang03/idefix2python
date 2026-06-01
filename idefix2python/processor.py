@@ -79,13 +79,6 @@ class PhysicsProcessor:
                             raise Exception("processor is about to overwrite datavtk")
                         commonvtk.data[key] = partvtk.data[key]
 
-        ## Local quantities
-        if partvtk is not None:
-            for qtyInfo in self.localQuantities:
-                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
-                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
-                print(np.shape(commonvtk.data[qtyInfo.key]))
-
         ## Custom computing. Now everything is stored in commonvtk
         for qtyInfo in self.qty_tocompute:
             if (
@@ -103,6 +96,12 @@ class PhysicsProcessor:
             # elif isinstance(qtyInfo, SpaceTimeHeatmap)
             # else:
             #     expected_shape = None
+            ## Local quantities
+        if partvtk is not None:
+            for qtyInfo in self.localQuantities:
+                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
+                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
+
         return commonvtk
 
     def gather_1Cquantities(

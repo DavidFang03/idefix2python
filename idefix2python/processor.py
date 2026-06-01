@@ -1,7 +1,19 @@
 from .vtk_io import readVTK
 from . import tools
 import numpy as np
-from .quantities import PartQuantity
+from .quantities import PartQuantity, LocalQuantity
+
+
+def pos_to_gridIndexes(gridInfo, commonvtk):
+    pX1 = commonvtk.data["PART_X1"]
+    pX2 = commonvtk.data["PART_X2"]
+    i = np.array([np.argmin(np.abs(gridInfo.X1Line - x)) for x in pX1])
+
+    if len(gridInfo.X2Line) > 1:
+        j = np.array([np.argmin(np.abs(gridInfo.X2Line - x)) for x in pX2])
+        return j, i
+    else:
+        return (i,)
 
 
 class PhysicsProcessor:
@@ -10,8 +22,11 @@ class PhysicsProcessor:
         self.userArgs = userArgs
         self.streamLines = streamLines
 
-    def set_qty_tocompute(self, qty_tocompute):
-        self.qty_tocompute = qty_tocompute
+    def set_waitlist(self, waitlist):
+        self.waitlist = waitlist
+
+    def set_localQuantities(self, localQuantities):
+        self.localQuantities = localQuantities
 
     def set_partQuantities(self, partQuantities):
         self.partQuantities = partQuantities
@@ -65,9 +80,13 @@ class PhysicsProcessor:
                         commonvtk.data[key] = partvtk.data[key]
 
         ## Custom computing. Now everything is stored in commonvtk
-        for qtyInfo in self.qty_tocompute:
-            if (
-                not isinstance(qtyInfo, PartQuantity) or partvtk is not None
+        for qtyInfo in self.waitlist:
+            if isinstance(qtyInfo, LocalQuantity) and partvtk is not None:
+                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
+                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
+            elif (
+                (not isinstance(qtyInfo, PartQuantity) or partvtk is not None)
+                and qtyInfo.compute is not None
             ):  # in the renderer there is no need to compute the partquantities again as they are already gathered
                 commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
                 # do not squeeze
@@ -81,6 +100,8 @@ class PhysicsProcessor:
             # elif isinstance(qtyInfo, SpaceTimeHeatmap)
             # else:
             #     expected_shape = None
+            ## Local quantities
+
         return commonvtk
 
     def gather_1Cquantities(
@@ -102,7 +123,7 @@ class PhysicsProcessor:
 
         for qtyInfo in quantities_togather:
             key = qtyInfo.key
-            if isinstance(qtyInfo, PartQuantity):
+            if isinstance(qtyInfo, PartQuantity) or isinstance(qtyInfo, LocalQuantity):
                 gathered_1Cdata[key] = np.full(self.context.particles_nb, np.nan)
                 for ii, uid in enumerate(commonvtk.data["uid"]):
                     gathered_1Cdata[key][uid] = commonvtk.data[key][ii]

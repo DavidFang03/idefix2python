@@ -11,8 +11,9 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     SpaceTimeHeatmap,
-    PartQuantity,
     OneComponentOneVariable,
+    PartQuantity,
+    LocalQuantity,
 )
 from .vtk_io import readVTK
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -268,10 +269,14 @@ class SliceRenderer:
                     self._render_1D(figure, qtyInfo, commonvtk.data, frame_nb)
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
-                elif isinstance(qtyInfo, PartQuantity):
+                elif isinstance(qtyInfo, PartQuantity) or isinstance(
+                    qtyInfo, LocalQuantity
+                ):
                     self._render_TimeSeries(figure, qtyInfo, frame_nb)
                 elif isinstance(qtyInfo, OneComponentOneVariable):
                     self._render_1C1V(figure, qtyInfo, frame_nb)
+                else:
+                    raise ValueError("Quantity type not supported")
 
             if vtkPath is not None:  # that means it's a movie
                 png_path = self.framesPaths.get_movieframe_path(
@@ -422,7 +427,9 @@ class SliceRenderer:
         if isinstance(timeseries, PartQuantity) and timeseries.is_global:
             return
 
-        if isinstance(timeseries, PartQuantity):
+        if isinstance(timeseries, PartQuantity) or isinstance(
+            timeseries, LocalQuantity
+        ):
             self.draw_particles(
                 figure,
                 part_qty=timeseries,
@@ -503,8 +510,8 @@ class SliceRenderer:
                     )
                 elif isinstance(back_qty, LineMovie1D):
                     points = np.asarray(part_qty.values)[: frame_nb + 1, uid]
-                    values = 0 * points
-                    ax.scatter(points[-1], 0, color=color, marker="x")
+                    values = np.asarray(back_qty.localqty.values)[: frame_nb + 1, uid]
+                    ax.scatter(points[-1], values[-1], color=color, marker="x")
                 elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
                     points = self.processor.vtktimes  # pre_render doesn't initialize global partquantities so part_qty.points would be empty here
                     values = np.asarray(part_qty.values)[:, uid]

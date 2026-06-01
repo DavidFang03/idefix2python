@@ -168,6 +168,7 @@ class Pipeline:
             if qty.key not in keys_togather:
                 keys_togather.add(qty)
 
+        # redistribute bounds
         if len(keys_togather) > 0 or len(keys_tobound) > 0:
             LOG("Gathering data and/or bounds, please wait...")
             files_diff = len(self.vtkList) - len(self.partList)
@@ -212,8 +213,6 @@ class Pipeline:
                     if getattr(qty, "xqty", None) is not None:
                         qty.points.append(data[qty.xqty.key])
 
-                # redistribute bounds
-                computed_bounds = {}  # for LOG only
                 if not self.userArgs.noBounds and ii > 5:
                     for qty in self.all_movies:
                         if qty.key in bounds:
@@ -222,14 +221,13 @@ class Pipeline:
                                 qty.bounds[0] = bound_low
                             if qty.bounds[1] is None or bound_up > qty.bounds[1]:
                                 qty.bounds[1] = bound_up
-                            computed_bounds[qty.key] = qty.bounds
 
-            if len(computed_bounds) > 0:
+            if len(keys_tobound) > 0:
                 LOG("Bounds computed:")
-                for key in computed_bounds:
-                    LOG(
-                        f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
-                    )
+                for qty in self.all_movies:
+                    if qty.key in keys_tobound:
+                        LOG(f"{qty.key:>10}: {qty.bounds[0]:.1e} {qty.bounds[1]:.1e}")
+
             LOG("Final Bounds:")
             for qtyInfo in self.all_movies:
                 b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"

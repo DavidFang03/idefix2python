@@ -30,14 +30,12 @@ class Data:
         * **compute** (callable): Custom function to calculate new fields on the fly.
     """
 
-    def __init__(
-        self, key, symbol="", plot_coords=[0, 0], bounds=[None, None], **kwargs
-    ):
+    def __init__(self, key, symbol="", plot_coords=None, bounds=None, **kwargs):
         self.key = key
         self.symbol = symbol
-        self.plot_coords = plot_coords
-        self.bounds = bounds
-        if bounds[0] is not None or bounds[1] is not None:
+        self.plot_coords = plot_coords if plot_coords else [0, 0]
+        self.bounds = bounds if bounds else [None, None]
+        if self.bounds[0] is not None or self.bounds[1] is not None:
             self.bounds_set = True
         else:
             self.bounds_set = False
@@ -102,7 +100,7 @@ class MapMovie2D(Data):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
+        plot_coords=None,
         norm="linear",
         streamlines=None,
         uids=None,
@@ -173,8 +171,8 @@ class LineMovie1D(Field1D):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         uids=None,
         **kwargs,
     ):
@@ -198,8 +196,8 @@ class SpaceTimeHeatmap(Field1D):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         norm="linear",
         uids=None,
         **kwargs,
@@ -222,8 +220,8 @@ class OneComponentOneVariable(Data):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         xqty=None,
         **kwargs,
     ):
@@ -252,8 +250,8 @@ class PartQuantity(Data):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         uids="all",
         **kwargs,
     ):

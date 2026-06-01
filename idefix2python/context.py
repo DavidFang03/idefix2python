@@ -206,14 +206,15 @@ class RunContext:
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
-        self.format_inputs_text = ""
+        self.inidata = None
         if self.debug:
             if not self.iniPath.exists():
                 raise FileNotFoundError(
                     f"debug requested but {self.iniPath} doesn't exist"
                 )
             with self.iniPath.open("rb") as fh:
-                self.format_inputs_text = inifix.load(fh, sections="require")
+                self.inidata = inifix.load(fh, sections="require")
+            self.initxt = inifix.format_string(self.iniPath.read_text(encoding="utf-8"))
 
         self.partFolder = kwargs.get("partFolder", None)
 

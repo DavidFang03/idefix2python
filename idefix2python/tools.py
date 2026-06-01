@@ -1,6 +1,7 @@
 import numpy as np
 import json
 from itertools import zip_longest
+import inifix
 
 
 def LOG(*args):
@@ -37,56 +38,63 @@ def fmt(x, pos):
     return r"${} \times 10^{{{}}}$".format(a, b)
 
 
-def annotateInputs(fig, ini_dict, padding_top=0.0):
+def annotateInputs(fig, initxt, padding_top=0.0):
     """
     Writes text on the `fig` with distinctive sections.
     """
-    if ini_dict == {}:
-        return
 
-    COL_WIDTH = 42
-    COLS_NB = 3
+    # COL_WIDTH = 42
+    # COLS_NB = 3
 
-    all_panels = []
-    keys = list(ini_dict.keys())
-    table = [keys[i : i + COLS_NB] for i in range(0, len(keys), COLS_NB)]
+    # txt = ""
+    # for section_name, section in inidata.values():
+    #     txt += section_name + "\n"
+    #     for param_name, params in section.values():
+    #         if isinstance(params, list):
 
-    for section_group in table:
-        formatted_columns = [
-            [f"[{name}]", *ini_dict[name].split("\n")]
-            for name in section_group
-            if name in ini_dict
-        ]
+    # all_panels = []
+    # keys = list(ini_dict.keys())
+    # # table_section_names =
+    # table_param_names = [keys[i : i + COLS_NB] for i in range(0, len(keys), COLS_NB)]
 
-        if not formatted_columns:
-            continue
+    # for section_group in table:
+    #     formatted_columns = [
+    #         [f"[{name}]", *ini_dict[name].split("\n")]
+    #         for name in section_group
+    #         if name in ini_dict
+    #     ]
 
-        printable_rows = [
-            "".join(f"{section_line:<{COL_WIDTH}}" for section_line in horizontal_slice)
-            for horizontal_slice in zip_longest(*formatted_columns, fillvalue="")
-        ]
+    #     if not formatted_columns:
+    #         continue
 
-        text_panel = "\n".join(printable_rows)
-        all_panels.append(text_panel)
+    #     printable_rows = [
+    #         "".join(f"{section_line:<{COL_WIDTH}}" for section_line in horizontal_slice)
+    #         for horizontal_slice in zip_longest(*formatted_columns, fillvalue="")
+    #     ]
 
-    final_display_string = "\n\n\n".join(all_panels)
+    #     text_panel = "\n".join(printable_rows)
+    #     all_panels.append(text_panel)
 
-    total_lines = final_display_string.count("\n") + 1
-    header_space = total_lines * 0.014
-    margin_top = header_space + padding_top
+    # final_display_string = "\n\n\n".join(all_panels)
 
+    # total_lines = final_display_string.count("\n") + 1
+    # header_space = total_lines * 0.014
+    # margin_top = header_space + padding_top
+
+    # final_display_string = inifix.format_string(initxt)
+    final_display_string = initxt
     fig.text(
-        0.55,
-        1 - margin_top,
+        0.1,
+        1,
         final_display_string,
         family="monospace",
         fontsize=7,
         va="bottom",
-        ha="center",
+        ha="left",
         usetex=False,
     )
 
-    fig.subplots_adjust(top=1.0 - margin_top - 0.05)
+    # fig.subplots_adjust(top=1.0 - margin_top - 0.05)
 
 
 def divide_discardingNullDenominator(a, b):

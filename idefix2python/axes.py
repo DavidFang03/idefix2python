@@ -119,7 +119,7 @@ class Ax:
         """
         self.quantities.append(qtyInfo)
 
-        # looking for the smallest domain
+        # looking for the largest domain
         for attr in ["xmin", "ymin", "xmax", "ymax"]:
             if getattr(qtyInfo, attr) is not None:
                 if getattr(self, attr) is None:
@@ -128,13 +128,13 @@ class Ax:
                     setattr(
                         self,
                         attr,
-                        np.nanmax([getattr(qtyInfo, attr), getattr(self, attr)]),
+                        np.nanmin([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
                 elif "max" in attr:
                     setattr(
                         self,
                         attr,
-                        np.nanmin([getattr(qtyInfo, attr), getattr(self, attr)]),
+                        np.nanmax([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
 
         for attr in ["xscale", "yscale"]:

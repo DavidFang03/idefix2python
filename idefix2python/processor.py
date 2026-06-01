@@ -79,6 +79,13 @@ class PhysicsProcessor:
                             raise Exception("processor is about to overwrite datavtk")
                         commonvtk.data[key] = partvtk.data[key]
 
+        ## Local quantities
+        if partvtk is not None:
+            for qtyInfo in self.localQuantities:
+                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
+                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
+                print(np.shape(commonvtk.data[qtyInfo.key]))
+
         ## Custom computing. Now everything is stored in commonvtk
         for qtyInfo in self.qty_tocompute:
             if (
@@ -86,13 +93,6 @@ class PhysicsProcessor:
             ):  # in the renderer there is no need to compute the partquantities again as they are already gathered
                 commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
                 # do not squeeze
-
-        ## Local quantities
-        if partvtk is not None:
-            for qtyInfo in self.localQuantities:
-                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
-                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
-                print(np.shape(commonvtk.data[qtyInfo.key]))
 
             # TODO safeguard for computed shape. Turns out to be not very straightforward.
             # computed_shape = np.shape(datavtk.data[qtyInfo.key])

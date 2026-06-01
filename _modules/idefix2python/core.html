@@ -153,297 +153,298 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="33"><span class="sd">        **options: Additional optional parameters:</span>
 </span><span data-line="34"><span class="sd">            * scatter_particles (bool): only scatter particles positions instead of the whole trajectory on MapMovie2D</span>
 </span><span data-line="35"><span class="sd">            * zoom (callable): To show only a limited part of the domain.</span>
-</span><span data-line="36"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="37">        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">Context</span>
-</span><span data-line="38">        <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">userArgs</span>
-</span><span data-line="39">
-</span><span data-line="40">        <span class="bp">self</span><span class="o">.</span><span class="n">streamLines</span> <span class="o">=</span> <span class="n">streamLines</span>
-</span><span data-line="41">
-</span><span data-line="42">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">PhysicsProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">streamLines</span><span class="p">)</span>
-</span><span data-line="43">
-</span><span data-line="44">        <span class="bp">self</span><span class="o">.</span><span class="n">figs</span> <span class="o">=</span> <span class="n">figs</span>
-</span><span data-line="45">        <span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="46">        <span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="47">        <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="48">        <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="49">        <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="50">        <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="51">        <span class="bp">self</span><span class="o">.</span><span class="n">quantities</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="52">
-</span><span data-line="53">        <span class="n">waitlist</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="54">        <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="55">
-</span><span data-line="56">        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
-</span><span data-line="57">        <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="n">figs</span><span class="p">:</span>
-</span><span data-line="58">            <span class="k">for</span> <span class="n">qtyInfo</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">quantities</span><span class="p">:</span>
-</span><span data-line="59">                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">PartQuantity</span><span class="p">):</span>
-</span><span data-line="60">                    <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="61">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span><span class="p">):</span>
-</span><span data-line="62">                    <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="63">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LineMovie1D</span><span class="p">):</span>
-</span><span data-line="64">                    <span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="65">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">MapMovie2D</span><span class="p">):</span>
-</span><span data-line="66">                    <span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="67">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">OneComponentOneVariable</span><span class="p">):</span>
-</span><span data-line="68">                    <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="69">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LocalQuantity</span><span class="p">):</span>
-</span><span data-line="70">                    <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="71">                <span class="bp">self</span><span class="o">.</span><span class="n">quantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="72">
-</span><span data-line="73">                <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">compute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LocalQuantity</span><span class="p">):</span>
-</span><span data-line="74">                    <span class="c1"># TODO add safeguard in case two identical keys with differents compute.</span>
-</span><span data-line="75">                    <span class="n">waitlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
-</span><span data-line="76">
-</span><span data-line="77">                <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="78">                    <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="79">                    <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-</span><span data-line="80">                        <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">all_particles_uids</span>
-</span><span data-line="81">
-</span><span data-line="82">                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LineMovie1D</span><span class="p">)</span> <span class="ow">and</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="83">                    <span class="n">lq</span> <span class="o">=</span> <span class="n">LocalQuantity</span><span class="p">(</span>
-</span><span data-line="84">                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">_local&quot;</span><span class="p">,</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">is_global</span><span class="o">=</span><span class="kc">True</span>
-</span><span data-line="85">                    <span class="p">)</span>
-</span><span data-line="86">                    <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lq</span><span class="p">)</span>
-</span><span data-line="87">                    <span class="n">waitlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lq</span><span class="p">)</span>
-</span><span data-line="88">                    <span class="n">qtyInfo</span><span class="o">.</span><span class="n">set_localqty</span><span class="p">(</span><span class="n">lq</span><span class="p">)</span>
-</span><span data-line="89">
-</span><span data-line="90">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span> <span class="o">=</span> <span class="n">PartsInfo</span><span class="p">(</span>
-</span><span data-line="91">            <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">active_directions</span>
-</span><span data-line="92">        <span class="p">)</span>  <span class="c1"># pipeline bro helping clueless processor</span>
-</span><span data-line="93">
-</span><span data-line="94">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span><span class="p">:</span>
-</span><span data-line="95">            <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">global_partsqty_togather</span>
-</span><span data-line="96">
-</span><span data-line="97">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_waitlist</span><span class="p">(</span><span class="n">waitlist</span><span class="p">)</span>
-</span><span data-line="98">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_partQuantities</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">)</span>
-</span><span data-line="99">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_localQuantities</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="p">)</span>
-</span><span data-line="100">
-</span><span data-line="101">        <span class="bp">self</span><span class="o">.</span><span class="n">_name_frames</span><span class="p">()</span>
-</span><span data-line="102">
-</span><span data-line="103">    <span class="k">def</span><span class="w"> </span><span class="nf">_check_everything_alright</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="104"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="105"><span class="sd">        Simply check if necessary files exist.</span>
-</span><span data-line="106"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="107">        <span class="c1"># Check whether the particles requested exist</span>
-</span><span data-line="108">        <span class="n">available_uids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">all_particles_uids</span><span class="p">)</span>
-</span><span data-line="109">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="p">[</span>
-</span><span data-line="110">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">,</span>
-</span><span data-line="111">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="p">,</span>
-</span><span data-line="112">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">,</span>
-</span><span data-line="113">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">,</span>
-</span><span data-line="114">        <span class="p">]:</span>
-</span><span data-line="115">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">uids</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">uids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="116">                <span class="n">missing_uids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">uids</span><span class="p">)</span> <span class="o">-</span> <span class="n">available_uids</span>
-</span><span data-line="117">                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_uids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="118">                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-</span><span data-line="119">                        <span class="sa">f</span><span class="s2">&quot;One or more requested particle uids do not exist: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing_uids</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="120">                    <span class="p">)</span>
-</span><span data-line="121">
-</span><span data-line="122">        <span class="n">partInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">outputTypes_info</span><span class="p">[</span><span class="s2">&quot;particles&quot;</span><span class="p">]</span>
-</span><span data-line="123">        <span class="n">globalInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">outputTypes_info</span><span class="p">[</span><span class="s2">&quot;vtk&quot;</span><span class="p">]</span>
-</span><span data-line="124">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span><span class="p">:</span>
-</span><span data-line="125">            <span class="k">if</span> <span class="ow">not</span> <span class="n">partInfo</span><span class="o">.</span><span class="n">status</span><span class="p">:</span>
-</span><span data-line="126">                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-</span><span data-line="127">                    <span class="sa">f</span><span class="s2">&quot;Particle quantities were requested, but no part*.vtk files were found at </span><span class="si">{</span><span class="n">partInfo</span><span class="o">.</span><span class="n">files</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="128">                <span class="p">)</span>
-</span><span data-line="129">
-</span><span data-line="130">        <span class="k">if</span> <span class="p">(</span>
-</span><span data-line="131">            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</span><span data-line="132">            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">)</span>
-</span><span data-line="133">            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</span><span data-line="134">        <span class="p">):</span>
-</span><span data-line="135">            <span class="k">if</span> <span class="ow">not</span> <span class="n">globalInfo</span><span class="o">.</span><span class="n">status</span><span class="p">:</span>
-</span><span data-line="136">                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-</span><span data-line="137">                    <span class="sa">f</span><span class="s2">&quot;Global quantities were requested, but no data*.vtk files were found at </span><span class="si">{</span><span class="n">globalInfo</span><span class="o">.</span><span class="n">files</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="138">                <span class="p">)</span>
-</span><span data-line="139">
-</span><span data-line="140">        <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Quantities to compute:&quot;</span><span class="p">)</span>
-</span><span data-line="141">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;LineMovie1D&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="142">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;MapMovie2D&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="143">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;SpaceTimeHeatmap&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="144">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;PartQuantity&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="145">
+</span><span data-line="36"><span class="sd">            * no_movie (bool): No movie will be produced.</span>
+</span><span data-line="37"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="38">        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">Context</span>
+</span><span data-line="39">        <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">userArgs</span>
+</span><span data-line="40">
+</span><span data-line="41">        <span class="bp">self</span><span class="o">.</span><span class="n">streamLines</span> <span class="o">=</span> <span class="n">streamLines</span>
+</span><span data-line="42">
+</span><span data-line="43">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">PhysicsProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">streamLines</span><span class="p">)</span>
+</span><span data-line="44">
+</span><span data-line="45">        <span class="bp">self</span><span class="o">.</span><span class="n">figs</span> <span class="o">=</span> <span class="n">figs</span>
+</span><span data-line="46">        <span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="47">        <span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="48">        <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="49">        <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="50">        <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="51">        <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="52">        <span class="bp">self</span><span class="o">.</span><span class="n">quantities</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="53">
+</span><span data-line="54">        <span class="n">waitlist</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="55">        <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="56">
+</span><span data-line="57">        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
+</span><span data-line="58">        <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="n">figs</span><span class="p">:</span>
+</span><span data-line="59">            <span class="k">for</span> <span class="n">qtyInfo</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">quantities</span><span class="p">:</span>
+</span><span data-line="60">                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">PartQuantity</span><span class="p">):</span>
+</span><span data-line="61">                    <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="62">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">SpaceTimeHeatmap</span><span class="p">):</span>
+</span><span data-line="63">                    <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="64">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LineMovie1D</span><span class="p">):</span>
+</span><span data-line="65">                    <span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="66">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">MapMovie2D</span><span class="p">):</span>
+</span><span data-line="67">                    <span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="68">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">OneComponentOneVariable</span><span class="p">):</span>
+</span><span data-line="69">                    <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="70">                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LocalQuantity</span><span class="p">):</span>
+</span><span data-line="71">                    <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="72">                <span class="bp">self</span><span class="o">.</span><span class="n">quantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="73">
+</span><span data-line="74">                <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">compute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LocalQuantity</span><span class="p">):</span>
+</span><span data-line="75">                    <span class="c1"># TODO add safeguard in case two identical keys with differents compute.</span>
+</span><span data-line="76">                    <span class="n">waitlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">)</span>
+</span><span data-line="77">
+</span><span data-line="78">                <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="79">                    <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="80">                    <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+</span><span data-line="81">                        <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">all_particles_uids</span>
+</span><span data-line="82">
+</span><span data-line="83">                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">LineMovie1D</span><span class="p">)</span> <span class="ow">and</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">uids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="84">                    <span class="n">lq</span> <span class="o">=</span> <span class="n">LocalQuantity</span><span class="p">(</span>
+</span><span data-line="85">                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">_local&quot;</span><span class="p">,</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">is_global</span><span class="o">=</span><span class="kc">True</span>
+</span><span data-line="86">                    <span class="p">)</span>
+</span><span data-line="87">                    <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lq</span><span class="p">)</span>
+</span><span data-line="88">                    <span class="n">waitlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lq</span><span class="p">)</span>
+</span><span data-line="89">                    <span class="n">qtyInfo</span><span class="o">.</span><span class="n">set_localqty</span><span class="p">(</span><span class="n">lq</span><span class="p">)</span>
+</span><span data-line="90">
+</span><span data-line="91">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span> <span class="o">=</span> <span class="n">PartsInfo</span><span class="p">(</span>
+</span><span data-line="92">            <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">active_directions</span>
+</span><span data-line="93">        <span class="p">)</span>  <span class="c1"># pipeline bro helping clueless processor</span>
+</span><span data-line="94">
+</span><span data-line="95">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span><span class="p">:</span>
+</span><span data-line="96">            <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">global_partsqty_togather</span>
+</span><span data-line="97">
+</span><span data-line="98">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_waitlist</span><span class="p">(</span><span class="n">waitlist</span><span class="p">)</span>
+</span><span data-line="99">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_partQuantities</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">)</span>
+</span><span data-line="100">        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_localQuantities</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="p">)</span>
+</span><span data-line="101">
+</span><span data-line="102">        <span class="bp">self</span><span class="o">.</span><span class="n">_name_frames</span><span class="p">()</span>
+</span><span data-line="103">
+</span><span data-line="104">    <span class="k">def</span><span class="w"> </span><span class="nf">_check_everything_alright</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="105"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="106"><span class="sd">        Simply check if necessary files exist.</span>
+</span><span data-line="107"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="108">        <span class="c1"># Check whether the particles requested exist</span>
+</span><span data-line="109">        <span class="n">available_uids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">all_particles_uids</span><span class="p">)</span>
+</span><span data-line="110">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="p">[</span>
+</span><span data-line="111">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">,</span>
+</span><span data-line="112">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="p">,</span>
+</span><span data-line="113">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">,</span>
+</span><span data-line="114">            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">,</span>
+</span><span data-line="115">        <span class="p">]:</span>
+</span><span data-line="116">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">uids</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">uids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="117">                <span class="n">missing_uids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">uids</span><span class="p">)</span> <span class="o">-</span> <span class="n">available_uids</span>
+</span><span data-line="118">                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_uids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="119">                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+</span><span data-line="120">                        <span class="sa">f</span><span class="s2">&quot;One or more requested particle uids do not exist: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing_uids</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="121">                    <span class="p">)</span>
+</span><span data-line="122">
+</span><span data-line="123">        <span class="n">partInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">outputTypes_info</span><span class="p">[</span><span class="s2">&quot;particles&quot;</span><span class="p">]</span>
+</span><span data-line="124">        <span class="n">globalInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">outputTypes_info</span><span class="p">[</span><span class="s2">&quot;vtk&quot;</span><span class="p">]</span>
+</span><span data-line="125">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span><span class="p">:</span>
+</span><span data-line="126">            <span class="k">if</span> <span class="ow">not</span> <span class="n">partInfo</span><span class="o">.</span><span class="n">status</span><span class="p">:</span>
+</span><span data-line="127">                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+</span><span data-line="128">                    <span class="sa">f</span><span class="s2">&quot;Particle quantities were requested, but no part*.vtk files were found at </span><span class="si">{</span><span class="n">partInfo</span><span class="o">.</span><span class="n">files</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="129">                <span class="p">)</span>
+</span><span data-line="130">
+</span><span data-line="131">        <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="132">            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</span><span data-line="133">            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">)</span>
+</span><span data-line="134">            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</span><span data-line="135">        <span class="p">):</span>
+</span><span data-line="136">            <span class="k">if</span> <span class="ow">not</span> <span class="n">globalInfo</span><span class="o">.</span><span class="n">status</span><span class="p">:</span>
+</span><span data-line="137">                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+</span><span data-line="138">                    <span class="sa">f</span><span class="s2">&quot;Global quantities were requested, but no data*.vtk files were found at </span><span class="si">{</span><span class="n">globalInfo</span><span class="o">.</span><span class="n">files</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="139">                <span class="p">)</span>
+</span><span data-line="140">
+</span><span data-line="141">        <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Quantities to compute:&quot;</span><span class="p">)</span>
+</span><span data-line="142">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;LineMovie1D&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="143">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;MapMovie2D&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="144">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;SpaceTimeHeatmap&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="145">        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;PartQuantity&#39;</span><span class="si">:</span><span class="s2">&gt;20</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="146">
 <div class="viewcode-block" id="Pipeline.run">
 <a class="viewcode-back" href="../../api.html#idefix2python.Pipeline.run">[docs]</a>
-</span><span data-line="146">    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="147"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="148"><span class="sd">        Pray.</span>
-</span><span data-line="149"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="150">        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span> <span class="o">=</span> <span class="n">SliceRenderer</span><span class="p">(</span>
-</span><span data-line="151">            <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span>
-</span><span data-line="152">            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span>
-</span><span data-line="153">            <span class="bp">self</span><span class="o">.</span><span class="n">figs</span><span class="p">,</span>
-</span><span data-line="154">            <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="p">,</span>
-</span><span data-line="155">            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">,</span>
-</span><span data-line="156">        <span class="p">)</span>
-</span><span data-line="157">
-</span><span data-line="158">        <span class="c1"># -om -&gt; Only renders Movie</span>
-</span><span data-line="159">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">onlyMovie</span><span class="p">:</span>
-</span><span data-line="160">            <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">figs</span><span class="p">:</span>
-</span><span data-line="161">                <span class="k">if</span> <span class="n">fig</span><span class="o">.</span><span class="n">movie</span><span class="p">:</span>
-</span><span data-line="162">                    <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render_movie</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
-</span><span data-line="163">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Only movie requested. Godspeed.&quot;</span><span class="p">)</span>
-</span><span data-line="164">            <span class="k">return</span>
-</span><span data-line="165">
-</span><span data-line="166">        <span class="bp">self</span><span class="o">.</span><span class="n">_check_everything_alright</span><span class="p">()</span>
-</span><span data-line="167">        <span class="n">remaining_fields_tobound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_config</span><span class="p">()</span>
-</span><span data-line="168">
-</span><span data-line="169">        <span class="c1"># Data to gather : 1C1V (including parts) and spheatmaps.</span>
-</span><span data-line="170">        <span class="c1"># Gather data will be stored in a dict. Each key correspond to</span>
-</span><span data-line="171">        <span class="c1"># one given quantity.</span>
-</span><span data-line="172">        <span class="n">vtktimes</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="173">        <span class="n">quantities_togather</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="174">        <span class="n">keys_tobound</span> <span class="o">=</span> <span class="n">remaining_fields_tobound</span>
-</span><span data-line="175">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span><span class="p">:</span>
-</span><span data-line="176">            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">xqty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="177">                <span class="n">quantities_togather</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">xqty</span><span class="p">)</span>
-</span><span data-line="178">
-</span><span data-line="179">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span><span class="p">:</span>
-</span><span data-line="180">            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">quantities_togather</span><span class="p">:</span>
-</span><span data-line="181">                <span class="n">quantities_togather</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qty</span><span class="p">)</span>
-</span><span data-line="182">
-</span><span data-line="183">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="p">:</span>
-</span><span data-line="184">            <span class="n">quantities_togather</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qty</span><span class="p">)</span>
-</span><span data-line="185">
-</span><span data-line="186">        <span class="c1"># redistribute bounds</span>
-</span><span data-line="187">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">quantities_togather</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys_tobound</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="188">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Gathering data and/or bounds, please wait...&quot;</span><span class="p">)</span>
-</span><span data-line="189">            <span class="n">files_diff</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partList</span><span class="p">)</span>
-</span><span data-line="190">            <span class="k">if</span> <span class="n">files_diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="191">                <span class="n">vtkList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span>
-</span><span data-line="192">                <span class="n">partList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partList</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">files_diff</span>
-</span><span data-line="193">            <span class="k">elif</span> <span class="n">files_diff</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="194">                <span class="n">vtkList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">files_diff</span><span class="p">)</span>
-</span><span data-line="195">                <span class="n">partList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partList</span>
-</span><span data-line="196">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="197">                <span class="n">vtkList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span>
-</span><span data-line="198">                <span class="n">partList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partList</span>
-</span><span data-line="199">
-</span><span data-line="200">            <span class="k">with</span> <span class="n">Pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">jobs</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
-</span><span data-line="201">                <span class="n">gathered_data_and_bounds</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span>
-</span><span data-line="202">                    <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">gather_1Cquantities</span><span class="p">,</span>
-</span><span data-line="203">                    <span class="nb">zip</span><span class="p">(</span>
-</span><span data-line="204">                        <span class="n">vtkList_extended</span><span class="p">,</span>
-</span><span data-line="205">                        <span class="n">partList_extended</span><span class="p">,</span>
-</span><span data-line="206">                        <span class="n">repeat</span><span class="p">(</span><span class="n">quantities_togather</span><span class="p">),</span>
-</span><span data-line="207">                        <span class="n">repeat</span><span class="p">(</span><span class="n">keys_tobound</span><span class="p">),</span>
-</span><span data-line="208">                    <span class="p">),</span>
-</span><span data-line="209">                <span class="p">)</span>
-</span><span data-line="210">
-</span><span data-line="211">            <span class="n">nb_vtks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gathered_data_and_bounds</span><span class="p">)</span>
-</span><span data-line="212">
-</span><span data-line="213">            <span class="c1"># Let&#39;s browser that huge result</span>
-</span><span data-line="214">            <span class="c1"># Redistribute all the gathered data to all quantities.</span>
-</span><span data-line="215">            <span class="n">vtktimes</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="216">            <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_vtks</span><span class="p">):</span>
-</span><span data-line="217">                <span class="n">data</span> <span class="o">=</span> <span class="n">gathered_data_and_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-</span><span data-line="218">                <span class="n">bounds</span> <span class="o">=</span> <span class="n">gathered_data_and_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="219">                <span class="n">vtktimes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;TIME&quot;</span><span class="p">])</span>
-</span><span data-line="220">
-</span><span data-line="221">                <span class="c1"># redistribute data</span>
-</span><span data-line="222">                <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="p">(</span>
-</span><span data-line="223">                    <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span>
-</span><span data-line="224">                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span>
-</span><span data-line="225">                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span>
-</span><span data-line="226">                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span>
-</span><span data-line="227">                <span class="p">):</span>
-</span><span data-line="228">                    <span class="n">key</span> <span class="o">=</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span>
-</span><span data-line="229">                    <span class="n">qty</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-</span><span data-line="230">
-</span><span data-line="231">                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">qty</span><span class="p">,</span> <span class="s2">&quot;xqty&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="232">                        <span class="n">qty</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">qty</span><span class="o">.</span><span class="n">xqty</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
-</span><span data-line="233">
-</span><span data-line="234">                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">noBounds</span> <span class="ow">and</span> <span class="n">ii</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
-</span><span data-line="235">                    <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span><span class="p">:</span>
-</span><span data-line="236">                        <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">:</span>
-</span><span data-line="237">                            <span class="n">bound_low</span><span class="p">,</span> <span class="n">bound_up</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="n">qty</span><span class="o">.</span><span class="n">key</span><span class="p">]</span>
-</span><span data-line="238">                            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">bound_low</span> <span class="o">&lt;</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-</span><span data-line="239">                                <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bound_low</span>
-</span><span data-line="240">                            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">bound_up</span> <span class="o">&gt;</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-</span><span data-line="241">                                <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">bound_up</span>
-</span><span data-line="242">
-</span><span data-line="243">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys_tobound</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="244">                <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Bounds computed:&quot;</span><span class="p">)</span>
-</span><span data-line="245">                <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span><span class="p">:</span>
-</span><span data-line="246">                    <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">keys_tobound</span><span class="p">:</span>
-</span><span data-line="247">                        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qty</span><span class="o">.</span><span class="n">key</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="248">
-</span><span data-line="249">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Final Bounds:&quot;</span><span class="p">)</span>
-</span><span data-line="250">            <span class="k">for</span> <span class="n">qtyInfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span><span class="p">:</span>
-</span><span data-line="251">                <span class="n">b1</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="252">                <span class="n">b2</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="253">                <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">b1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">b2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="254">
-</span><span data-line="255">            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_vtktimes</span><span class="p">(</span><span class="n">vtktimes</span><span class="p">)</span>
-</span><span data-line="256">
-</span><span data-line="257">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">active_directions</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
-</span><span data-line="258">                <span class="c1"># cartesian for pcolormesh</span>
-</span><span data-line="259">                <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">parts_Z</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span>
-</span><span data-line="260">                    <span class="o">*</span><span class="n">convertGrid_toXZ</span><span class="p">(</span>
-</span><span data-line="261">                        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">parts_X1</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-</span><span data-line="262">                        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">parts_X2</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-</span><span data-line="263">                        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span>
-</span><span data-line="264">                    <span class="p">)</span>
-</span><span data-line="265">                <span class="p">)</span>
-</span><span data-line="266">
-</span><span data-line="267">        <span class="c1"># delegate the render of all this stuff to the Renderer</span>
-</span><span data-line="268">        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">set_infos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="p">)</span>
-</span><span data-line="269">        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
+</span><span data-line="147">    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="148"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="149"><span class="sd">        Pray.</span>
+</span><span data-line="150"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="151">        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span> <span class="o">=</span> <span class="n">SliceRenderer</span><span class="p">(</span>
+</span><span data-line="152">            <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span>
+</span><span data-line="153">            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span>
+</span><span data-line="154">            <span class="bp">self</span><span class="o">.</span><span class="n">figs</span><span class="p">,</span>
+</span><span data-line="155">            <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="p">,</span>
+</span><span data-line="156">            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">,</span>
+</span><span data-line="157">        <span class="p">)</span>
+</span><span data-line="158">
+</span><span data-line="159">        <span class="c1"># -om -&gt; Only renders Movie</span>
+</span><span data-line="160">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">onlyMovie</span><span class="p">:</span>
+</span><span data-line="161">            <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">figs</span><span class="p">:</span>
+</span><span data-line="162">                <span class="k">if</span> <span class="n">fig</span><span class="o">.</span><span class="n">movie</span><span class="p">:</span>
+</span><span data-line="163">                    <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render_movie</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+</span><span data-line="164">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Only movie requested. Godspeed.&quot;</span><span class="p">)</span>
+</span><span data-line="165">            <span class="k">return</span>
+</span><span data-line="166">
+</span><span data-line="167">        <span class="bp">self</span><span class="o">.</span><span class="n">_check_everything_alright</span><span class="p">()</span>
+</span><span data-line="168">        <span class="n">remaining_fields_tobound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_config</span><span class="p">()</span>
+</span><span data-line="169">
+</span><span data-line="170">        <span class="c1"># Data to gather : 1C1V (including parts) and spheatmaps.</span>
+</span><span data-line="171">        <span class="c1"># Gather data will be stored in a dict. Each key correspond to</span>
+</span><span data-line="172">        <span class="c1"># one given quantity.</span>
+</span><span data-line="173">        <span class="n">vtktimes</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="174">        <span class="n">quantities_togather</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="175">        <span class="n">keys_tobound</span> <span class="o">=</span> <span class="n">remaining_fields_tobound</span>
+</span><span data-line="176">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span><span class="p">:</span>
+</span><span data-line="177">            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">xqty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="178">                <span class="n">quantities_togather</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qty</span><span class="o">.</span><span class="n">xqty</span><span class="p">)</span>
+</span><span data-line="179">
+</span><span data-line="180">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span><span class="p">:</span>
+</span><span data-line="181">            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">quantities_togather</span><span class="p">:</span>
+</span><span data-line="182">                <span class="n">quantities_togather</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qty</span><span class="p">)</span>
+</span><span data-line="183">
+</span><span data-line="184">        <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span><span class="p">:</span>
+</span><span data-line="185">            <span class="n">quantities_togather</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qty</span><span class="p">)</span>
+</span><span data-line="186">
+</span><span data-line="187">        <span class="c1"># redistribute bounds</span>
+</span><span data-line="188">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">quantities_togather</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys_tobound</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="189">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Gathering data and/or bounds, please wait...&quot;</span><span class="p">)</span>
+</span><span data-line="190">            <span class="n">files_diff</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partList</span><span class="p">)</span>
+</span><span data-line="191">            <span class="k">if</span> <span class="n">files_diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="192">                <span class="n">vtkList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span>
+</span><span data-line="193">                <span class="n">partList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partList</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">files_diff</span>
+</span><span data-line="194">            <span class="k">elif</span> <span class="n">files_diff</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="195">                <span class="n">vtkList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">files_diff</span><span class="p">)</span>
+</span><span data-line="196">                <span class="n">partList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partList</span>
+</span><span data-line="197">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="198">                <span class="n">vtkList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span>
+</span><span data-line="199">                <span class="n">partList_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partList</span>
+</span><span data-line="200">
+</span><span data-line="201">            <span class="k">with</span> <span class="n">Pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">jobs</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+</span><span data-line="202">                <span class="n">gathered_data_and_bounds</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span>
+</span><span data-line="203">                    <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">gather_1Cquantities</span><span class="p">,</span>
+</span><span data-line="204">                    <span class="nb">zip</span><span class="p">(</span>
+</span><span data-line="205">                        <span class="n">vtkList_extended</span><span class="p">,</span>
+</span><span data-line="206">                        <span class="n">partList_extended</span><span class="p">,</span>
+</span><span data-line="207">                        <span class="n">repeat</span><span class="p">(</span><span class="n">quantities_togather</span><span class="p">),</span>
+</span><span data-line="208">                        <span class="n">repeat</span><span class="p">(</span><span class="n">keys_tobound</span><span class="p">),</span>
+</span><span data-line="209">                    <span class="p">),</span>
+</span><span data-line="210">                <span class="p">)</span>
+</span><span data-line="211">
+</span><span data-line="212">            <span class="n">nb_vtks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gathered_data_and_bounds</span><span class="p">)</span>
+</span><span data-line="213">
+</span><span data-line="214">            <span class="c1"># Let&#39;s browser that huge result</span>
+</span><span data-line="215">            <span class="c1"># Redistribute all the gathered data to all quantities.</span>
+</span><span data-line="216">            <span class="n">vtktimes</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="217">            <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_vtks</span><span class="p">):</span>
+</span><span data-line="218">                <span class="n">data</span> <span class="o">=</span> <span class="n">gathered_data_and_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="219">                <span class="n">bounds</span> <span class="o">=</span> <span class="n">gathered_data_and_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="220">                <span class="n">vtktimes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;TIME&quot;</span><span class="p">])</span>
+</span><span data-line="221">
+</span><span data-line="222">                <span class="c1"># redistribute data</span>
+</span><span data-line="223">                <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="p">(</span>
+</span><span data-line="224">                    <span class="bp">self</span><span class="o">.</span><span class="n">partQuantities</span>
+</span><span data-line="225">                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">spaceTimeHeatmaps</span>
+</span><span data-line="226">                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneC_oneVs</span>
+</span><span data-line="227">                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">localQuantities</span>
+</span><span data-line="228">                <span class="p">):</span>
+</span><span data-line="229">                    <span class="n">key</span> <span class="o">=</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span>
+</span><span data-line="230">                    <span class="n">qty</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+</span><span data-line="231">
+</span><span data-line="232">                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">qty</span><span class="p">,</span> <span class="s2">&quot;xqty&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="233">                        <span class="n">qty</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">qty</span><span class="o">.</span><span class="n">xqty</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
+</span><span data-line="234">
+</span><span data-line="235">                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">noBounds</span> <span class="ow">and</span> <span class="n">ii</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+</span><span data-line="236">                    <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span><span class="p">:</span>
+</span><span data-line="237">                        <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">:</span>
+</span><span data-line="238">                            <span class="n">bound_low</span><span class="p">,</span> <span class="n">bound_up</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="n">qty</span><span class="o">.</span><span class="n">key</span><span class="p">]</span>
+</span><span data-line="239">                            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">bound_low</span> <span class="o">&lt;</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+</span><span data-line="240">                                <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bound_low</span>
+</span><span data-line="241">                            <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">bound_up</span> <span class="o">&gt;</span> <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+</span><span data-line="242">                                <span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">bound_up</span>
+</span><span data-line="243">
+</span><span data-line="244">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys_tobound</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="245">                <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Bounds computed:&quot;</span><span class="p">)</span>
+</span><span data-line="246">                <span class="k">for</span> <span class="n">qty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span><span class="p">:</span>
+</span><span data-line="247">                    <span class="k">if</span> <span class="n">qty</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">keys_tobound</span><span class="p">:</span>
+</span><span data-line="248">                        <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qty</span><span class="o">.</span><span class="n">key</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">qty</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="249">
+</span><span data-line="250">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Final Bounds:&quot;</span><span class="p">)</span>
+</span><span data-line="251">            <span class="k">for</span> <span class="n">qtyInfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span><span class="p">:</span>
+</span><span data-line="252">                <span class="n">b1</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="253">                <span class="n">b2</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="254">                <span class="n">LOG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">b1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">b2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="255">
+</span><span data-line="256">            <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">set_vtktimes</span><span class="p">(</span><span class="n">vtktimes</span><span class="p">)</span>
+</span><span data-line="257">
+</span><span data-line="258">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles_requested</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">active_directions</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+</span><span data-line="259">                <span class="c1"># cartesian for pcolormesh</span>
+</span><span data-line="260">                <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">parts_Z</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span>
+</span><span data-line="261">                    <span class="o">*</span><span class="n">convertGrid_toXZ</span><span class="p">(</span>
+</span><span data-line="262">                        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">parts_X1</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+</span><span data-line="263">                        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="o">.</span><span class="n">parts_X2</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+</span><span data-line="264">                        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span>
+</span><span data-line="265">                    <span class="p">)</span>
+</span><span data-line="266">                <span class="p">)</span>
+</span><span data-line="267">
+</span><span data-line="268">        <span class="c1"># delegate the render of all this stuff to the Renderer</span>
+</span><span data-line="269">        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">set_infos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">partsInfo</span><span class="p">)</span>
+</span><span data-line="270">        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">()</span></div>
 
-</span><span data-line="270">
-</span><span data-line="271">    <span class="k">def</span><span class="w"> </span><span class="nf">_name_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="272">        <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span>
-</span><span data-line="273">
-</span><span data-line="274">        <span class="bp">self</span><span class="o">.</span><span class="n">slice1_list</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_slice1_vtkFiles</span><span class="p">()</span>
-</span><span data-line="275">        <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_global_vtkFiles</span><span class="p">()</span>
-</span><span data-line="276">        <span class="bp">self</span><span class="o">.</span><span class="n">partList</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_particles_vtkFiles</span><span class="p">()</span>
-</span><span data-line="277">
-</span><span data-line="278">    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="279">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">onlyMovie</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">onlyAnalysis</span><span class="p">:</span>
-</span><span data-line="280">            <span class="k">return</span>
-</span><span data-line="281">
-</span><span data-line="282">        <span class="c1"># gathering bounds for movies</span>
-</span><span data-line="283">        <span class="n">all_movies</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">]</span>
-</span><span data-line="284">        <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span> <span class="o">=</span> <span class="n">all_movies</span>
-</span><span data-line="285">        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">config</span>
-</span><span data-line="286">
-</span><span data-line="287">        <span class="n">remaining_fields_tobound</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-</span><span data-line="288">
-</span><span data-line="289">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">noBounds</span><span class="p">:</span>
-</span><span data-line="290">            <span class="k">for</span> <span class="n">movie</span> <span class="ow">in</span> <span class="n">all_movies</span><span class="p">:</span>
-</span><span data-line="291">                <span class="k">if</span> <span class="ow">not</span> <span class="n">movie</span><span class="o">.</span><span class="n">bounds_set</span><span class="p">:</span>
-</span><span data-line="292">                    <span class="k">if</span> <span class="n">movie</span><span class="o">.</span><span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">or</span> <span class="s2">&quot;bounds&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">movie</span><span class="o">.</span><span class="n">key</span><span class="p">]:</span>
-</span><span data-line="293">                        <span class="n">remaining_fields_tobound</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">movie</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
-</span><span data-line="294">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_fields_tobound</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="295">                <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Fields to bound: &quot;</span><span class="p">,</span> <span class="n">remaining_fields_tobound</span><span class="p">)</span>
-</span><span data-line="296">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="297">                <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;All fields are already bounded in config&quot;</span><span class="p">)</span>
-</span><span data-line="298">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="299">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Bounds computation discarded.&quot;</span><span class="p">)</span>
-</span><span data-line="300">
-</span><span data-line="301">        <span class="k">for</span> <span class="n">qtyInfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantities</span><span class="p">:</span>
-</span><span data-line="302">            <span class="n">AVAILABLE_KWARGS</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="303">                <span class="s2">&quot;bounds&quot;</span><span class="p">,</span>
-</span><span data-line="304">                <span class="s2">&quot;symbol&quot;</span><span class="p">,</span>
-</span><span data-line="305">                <span class="s2">&quot;title&quot;</span><span class="p">,</span>
-</span><span data-line="306">                <span class="s2">&quot;style_kwargs&quot;</span><span class="p">,</span>
-</span><span data-line="307">                <span class="s2">&quot;xmin&quot;</span><span class="p">,</span>
-</span><span data-line="308">                <span class="s2">&quot;xmax&quot;</span><span class="p">,</span>
-</span><span data-line="309">                <span class="s2">&quot;ymin&quot;</span><span class="p">,</span>
-</span><span data-line="310">                <span class="s2">&quot;ymax&quot;</span><span class="p">,</span>
-</span><span data-line="311">                <span class="s2">&quot;xscale&quot;</span><span class="p">,</span>
-</span><span data-line="312">                <span class="s2">&quot;yscale&quot;</span><span class="p">,</span>
-</span><span data-line="313">                <span class="s2">&quot;norm&quot;</span><span class="p">,</span>
-</span><span data-line="314">            <span class="p">]</span>
-</span><span data-line="315">            <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-</span><span data-line="316">                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">]:</span>
-</span><span data-line="317">                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">AVAILABLE_KWARGS</span><span class="p">:</span>
-</span><span data-line="318">                        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;norm&quot;</span><span class="p">:</span>
-</span><span data-line="319">                            <span class="n">qtyInfo</span><span class="o">.</span><span class="n">set_norm</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
-</span><span data-line="320">                        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="321">                            <span class="nb">setattr</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
-</span><span data-line="322">
-</span><span data-line="323">        <span class="k">return</span> <span class="n">remaining_fields_tobound</span></div>
+</span><span data-line="271">
+</span><span data-line="272">    <span class="k">def</span><span class="w"> </span><span class="nf">_name_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="273">        <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span>
+</span><span data-line="274">
+</span><span data-line="275">        <span class="bp">self</span><span class="o">.</span><span class="n">slice1_list</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_slice1_vtkFiles</span><span class="p">()</span>
+</span><span data-line="276">        <span class="bp">self</span><span class="o">.</span><span class="n">vtkList</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_global_vtkFiles</span><span class="p">()</span>
+</span><span data-line="277">        <span class="bp">self</span><span class="o">.</span><span class="n">partList</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_particles_vtkFiles</span><span class="p">()</span>
+</span><span data-line="278">
+</span><span data-line="279">    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="280">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">onlyMovie</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">onlyAnalysis</span><span class="p">:</span>
+</span><span data-line="281">            <span class="k">return</span>
+</span><span data-line="282">
+</span><span data-line="283">        <span class="c1"># gathering bounds for movies</span>
+</span><span data-line="284">        <span class="n">all_movies</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">linemovies1D</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mapmovies2D</span><span class="p">]</span>
+</span><span data-line="285">        <span class="bp">self</span><span class="o">.</span><span class="n">all_movies</span> <span class="o">=</span> <span class="n">all_movies</span>
+</span><span data-line="286">        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">config</span>
+</span><span data-line="287">
+</span><span data-line="288">        <span class="n">remaining_fields_tobound</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+</span><span data-line="289">
+</span><span data-line="290">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">userArgs</span><span class="o">.</span><span class="n">noBounds</span><span class="p">:</span>
+</span><span data-line="291">            <span class="k">for</span> <span class="n">movie</span> <span class="ow">in</span> <span class="n">all_movies</span><span class="p">:</span>
+</span><span data-line="292">                <span class="k">if</span> <span class="ow">not</span> <span class="n">movie</span><span class="o">.</span><span class="n">bounds_set</span><span class="p">:</span>
+</span><span data-line="293">                    <span class="k">if</span> <span class="n">movie</span><span class="o">.</span><span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">or</span> <span class="s2">&quot;bounds&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">movie</span><span class="o">.</span><span class="n">key</span><span class="p">]:</span>
+</span><span data-line="294">                        <span class="n">remaining_fields_tobound</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">movie</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</span><span data-line="295">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_fields_tobound</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="296">                <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Fields to bound: &quot;</span><span class="p">,</span> <span class="n">remaining_fields_tobound</span><span class="p">)</span>
+</span><span data-line="297">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="298">                <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;All fields are already bounded in config&quot;</span><span class="p">)</span>
+</span><span data-line="299">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="300">            <span class="n">LOG</span><span class="p">(</span><span class="s2">&quot;Bounds computation discarded.&quot;</span><span class="p">)</span>
+</span><span data-line="301">
+</span><span data-line="302">        <span class="k">for</span> <span class="n">qtyInfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantities</span><span class="p">:</span>
+</span><span data-line="303">            <span class="n">AVAILABLE_KWARGS</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="304">                <span class="s2">&quot;bounds&quot;</span><span class="p">,</span>
+</span><span data-line="305">                <span class="s2">&quot;symbol&quot;</span><span class="p">,</span>
+</span><span data-line="306">                <span class="s2">&quot;title&quot;</span><span class="p">,</span>
+</span><span data-line="307">                <span class="s2">&quot;style_kwargs&quot;</span><span class="p">,</span>
+</span><span data-line="308">                <span class="s2">&quot;xmin&quot;</span><span class="p">,</span>
+</span><span data-line="309">                <span class="s2">&quot;xmax&quot;</span><span class="p">,</span>
+</span><span data-line="310">                <span class="s2">&quot;ymin&quot;</span><span class="p">,</span>
+</span><span data-line="311">                <span class="s2">&quot;ymax&quot;</span><span class="p">,</span>
+</span><span data-line="312">                <span class="s2">&quot;xscale&quot;</span><span class="p">,</span>
+</span><span data-line="313">                <span class="s2">&quot;yscale&quot;</span><span class="p">,</span>
+</span><span data-line="314">                <span class="s2">&quot;norm&quot;</span><span class="p">,</span>
+</span><span data-line="315">            <span class="p">]</span>
+</span><span data-line="316">            <span class="k">if</span> <span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+</span><span data-line="317">                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">]:</span>
+</span><span data-line="318">                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">AVAILABLE_KWARGS</span><span class="p">:</span>
+</span><span data-line="319">                        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;norm&quot;</span><span class="p">:</span>
+</span><span data-line="320">                            <span class="n">qtyInfo</span><span class="o">.</span><span class="n">set_norm</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+</span><span data-line="321">                        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="322">                            <span class="nb">setattr</span><span class="p">(</span><span class="n">qtyInfo</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="n">qtyInfo</span><span class="o">.</span><span class="n">key</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+</span><span data-line="323">
+</span><span data-line="324">        <span class="k">return</span> <span class="n">remaining_fields_tobound</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">

@@ -11,8 +11,9 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     SpaceTimeHeatmap,
-    PartQuantity,
     OneComponentOneVariable,
+    PartQuantity,
+    LocalQuantity,
 )
 from .vtk_io import readVTK
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -268,10 +269,14 @@ class SliceRenderer:
                     self._render_1D(figure, qtyInfo, commonvtk.data, frame_nb)
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
-                elif isinstance(qtyInfo, PartQuantity):
+                elif isinstance(qtyInfo, PartQuantity) or isinstance(
+                    qtyInfo, LocalQuantity
+                ):
                     self._render_TimeSeries(figure, qtyInfo, frame_nb)
                 elif isinstance(qtyInfo, OneComponentOneVariable):
                     self._render_1C1V(figure, qtyInfo, frame_nb)
+                else:
+                    raise ValueError("Quantity type not supported")
 
             if vtkPath is not None:  # that means it's a movie
                 png_path = self.framesPaths.get_movieframe_path(
@@ -422,7 +427,9 @@ class SliceRenderer:
         if isinstance(timeseries, PartQuantity) and timeseries.is_global:
             return
 
-        if isinstance(timeseries, PartQuantity):
+        if isinstance(timeseries, PartQuantity) or isinstance(
+            timeseries, LocalQuantity
+        ):
             self.draw_particles(
                 figure,
                 part_qty=timeseries,

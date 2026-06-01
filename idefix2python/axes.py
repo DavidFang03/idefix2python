@@ -3,8 +3,9 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     OneComponentOneVariable,
-    PartQuantity,
     SpaceTimeHeatmap,
+    PartQuantity,
+    LocalQuantity,
 )
 from .tools import LOG
 import numpy as np
@@ -34,8 +35,10 @@ class Fig:
             if isinstance(qtyInfo, LineMovie1D) or isinstance(qtyInfo, MapMovie2D):
                 self.movie = True
                 self.axesMovie.append(qtyInfo)
-            elif isinstance(qtyInfo, PartQuantity) or isinstance(
-                qtyInfo, SpaceTimeHeatmap
+            elif (
+                isinstance(qtyInfo, PartQuantity)
+                or isinstance(qtyInfo, SpaceTimeHeatmap)
+                or isinstance(qtyInfo, LocalQuantity)
             ):
                 self.axesTimeline.append(qtyInfo)
             elif isinstance(qtyInfo, OneComponentOneVariable):

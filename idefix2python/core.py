@@ -1,6 +1,5 @@
 from multiprocessing import Pool
 from itertools import repeat
-
 from .tools import LOG
 from .renderer import SliceRenderer
 from .processor import PhysicsProcessor, PartsInfo
@@ -10,6 +9,7 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     OneComponentOneVariable,
+    LocalQuantity,
 )
 from .tools import convertGrid_toXZ
 
@@ -47,6 +47,7 @@ class Pipeline:
         self.spaceTimeHeatmaps = []
         self.oneC_oneVs = []
         self.partQuantities = []
+        self.localQuantities = []
         self.quantities = []
 
         qty_tocompute = []
@@ -65,6 +66,8 @@ class Pipeline:
                     self.mapmovies2D.append(qtyInfo)
                 elif isinstance(qtyInfo, OneComponentOneVariable):
                     self.oneC_oneVs.append(qtyInfo)
+                elif isinstance(qtyInfo, LocalQuantity):
+                    self.localQuantities.append(qtyInfo)
                 self.quantities.append(qtyInfo)
 
                 if qtyInfo.compute is not None:
@@ -76,6 +79,13 @@ class Pipeline:
                     if qtyInfo.uids == "all":
                         qtyInfo.uids = self.context.all_particles_uids
 
+                if isinstance(qtyInfo, LineMovie1D) and qtyInfo.uids is not None:
+                    lq = LocalQuantity(
+                        f"{qtyInfo.key}_local", qtyInfo.key, is_global=True
+                    )
+                    self.localQuantities.append(lq)
+                    qtyInfo.set_localqty(lq)
+
         self.processor.partsInfo = PartsInfo(
             self.context.active_directions
         )  # pipeline bro helping clueless processor
@@ -85,6 +95,7 @@ class Pipeline:
 
         self.processor.set_qty_tocompute(qty_tocompute)
         self.processor.set_partQuantities(self.partQuantities)
+        self.processor.set_localQuantities(self.localQuantities)
 
         self._name_frames()
 
@@ -158,18 +169,21 @@ class Pipeline:
         # Gather data will be stored in a dict. Each key correspond to
         # one given quantity.
         vtktimes = None
-        keys_togather = set()
+        quantities_togather = []
         keys_tobound = remaining_fields_tobound
         for qty in self.oneC_oneVs:
             if qty.xqty is not None:
-                keys_togather.add(qty.xqty)
+                quantities_togather.append(qty.xqty)
 
         for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
-            if qty.key not in keys_togather:
-                keys_togather.add(qty)
+            if qty.key not in quantities_togather:
+                quantities_togather.append(qty)
+
+        for qty in self.localQuantities:
+            quantities_togather.append(qty)
 
         # redistribute bounds
-        if len(keys_togather) > 0 or len(keys_tobound) > 0:
+        if len(quantities_togather) > 0 or len(keys_tobound) > 0:
             LOG("Gathering data and/or bounds, please wait...")
             files_diff = len(self.vtkList) - len(self.partList)
             if files_diff > 0:
@@ -188,7 +202,7 @@ class Pipeline:
                     zip(
                         vtkList_extended,
                         partList_extended,
-                        repeat(keys_togather),
+                        repeat(quantities_togather),
                         repeat(keys_tobound),
                     ),
                 )
@@ -205,7 +219,10 @@ class Pipeline:
 
                 # redistribute data
                 for qty in (
-                    self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs
+                    self.partQuantities
+                    + self.spaceTimeHeatmaps
+                    + self.oneC_oneVs
+                    + self.localQuantities
                 ):
                     key = qty.key
                     qty.values.append(data[key])

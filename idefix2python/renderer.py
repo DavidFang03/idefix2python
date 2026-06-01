@@ -503,8 +503,8 @@ class SliceRenderer:
                     )
                 elif isinstance(back_qty, LineMovie1D):
                     points = np.asarray(part_qty.values)[: frame_nb + 1, uid]
-                    values = 0 * points
-                    ax.scatter(points[-1], 0, color=color, marker="x")
+                    values = np.asarray(back_qty.localqty.values)[: frame_nb + 1, uid]
+                    ax.scatter(points[-1], values[-1], color=color, marker="x")
                 elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
                     points = self.processor.vtktimes  # pre_render doesn't initialize global partquantities so part_qty.points would be empty here
                     values = np.asarray(part_qty.values)[:, uid]

@@ -1,7 +1,19 @@
 from .vtk_io import readVTK
 from . import tools
 import numpy as np
-from .quantities import PartQuantity
+from .quantities import PartQuantity, LocalQuantity
+
+
+def pos_to_gridIndexes(gridInfo, commonvtk):
+    pX1 = commonvtk.data["PART_X1"]
+    pX2 = commonvtk.data["PART_X2"]
+    i = np.array([np.argmin(np.abs(gridInfo.X1Line - x)) for x in pX1])
+
+    if len(gridInfo.X2Line) > 1:
+        j = np.array([np.argmin(np.abs(gridInfo.X2Line - x)) for x in pX2])
+        return j, i
+    else:
+        return (i,)
 
 
 class PhysicsProcessor:
@@ -12,6 +24,9 @@ class PhysicsProcessor:
 
     def set_qty_tocompute(self, qty_tocompute):
         self.qty_tocompute = qty_tocompute
+
+    def set_localQuantities(self, localQuantities):
+        self.localQuantities = localQuantities
 
     def set_partQuantities(self, partQuantities):
         self.partQuantities = partQuantities
@@ -72,6 +87,13 @@ class PhysicsProcessor:
                 commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
                 # do not squeeze
 
+        ## Local quantities
+        if partvtk is not None:
+            for qtyInfo in self.localQuantities:
+                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
+                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
+                print(np.shape(commonvtk.data[qtyInfo.key]))
+
             # TODO safeguard for computed shape. Turns out to be not very straightforward.
             # computed_shape = np.shape(datavtk.data[qtyInfo.key])
             # if isinstance(qtyInfo, MapMovie2D) or isinstance(qtyInfo, LineMovie1D):
@@ -102,7 +124,7 @@ class PhysicsProcessor:
 
         for qtyInfo in quantities_togather:
             key = qtyInfo.key
-            if isinstance(qtyInfo, PartQuantity):
+            if isinstance(qtyInfo, PartQuantity) or isinstance(qtyInfo, LocalQuantity):
                 gathered_1Cdata[key] = np.full(self.context.particles_nb, np.nan)
                 for ii, uid in enumerate(commonvtk.data["uid"]):
                     gathered_1Cdata[key][uid] = commonvtk.data[key][ii]

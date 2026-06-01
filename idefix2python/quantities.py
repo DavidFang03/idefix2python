@@ -181,6 +181,9 @@ class LineMovie1D(Field1D):
         self.is_movie = True
         self.is_timeline = False
 
+    def set_localqty(self, localqty):
+        self.localqty = localqty
+
 
 class SpaceTimeHeatmap(Field1D):
     """
@@ -257,6 +260,32 @@ class PartQuantity(Data):
     ):
         super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
-        self.is_global = False  # default
+        self.is_global = kwargs.get("is_global", False)
+        self.is_timeline = True
+        self.is_movie = False
+
+
+class LocalQuantity(Data):
+    """
+    Particle case of PartQuantity.
+    To access the quantity of the cell on which the particle is (No interpolation atm)
+    :keyword: uids (optional) the ids of the particles wanted.
+        Defaults to "all" (all particles)
+    """
+
+    def __init__(
+        self,
+        key,
+        localkey,
+        symbol="",
+        plot_coords=None,
+        bounds=None,
+        uids="all",
+        **kwargs,
+    ):
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
+        self.localkey = localkey
+        self.uids = uids
+        self.is_global = kwargs.get("is_global", False)
         self.is_timeline = True
         self.is_movie = False

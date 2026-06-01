@@ -10,8 +10,6 @@ class PhysicsProcessor:
         self.userArgs = userArgs
         self.streamLines = streamLines
 
-        self.gridInfo = self.context.gridInfo
-
     def set_qty_tocompute(self, qty_tocompute):
         self.qty_tocompute = qty_tocompute
 
@@ -32,9 +30,6 @@ class PhysicsProcessor:
             for qt in datavtk.data:
                 if self.context.dimensions == 2:
                     datavtk.data[qt] = np.transpose(np.squeeze(datavtk.data[qt]))
-                    datavtk.data[qt] = np.where(
-                        self.gridInfo.mask, datavtk.data[qt], np.nan
-                    )
 
                 elif (
                     self.context.dimensions == 1

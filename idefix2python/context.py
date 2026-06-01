@@ -35,16 +35,6 @@ def _get_args():
     )
 
     parser.add_argument(
-        "-z",
-        "--zoom",
-        nargs="?",
-        const=0,
-        default=0,
-        help="float: will only render r < zoom",
-        type=float,
-    )
-
-    parser.add_argument(
         "--no-bounds",
         action="store_true",
         dest="noBounds",
@@ -199,6 +189,7 @@ class RunContext:
         configPath = kwargs.get("configPath", None)
         self.configPath = configPath
         if configPath is not None:
+            LOG(f"config.json file requested: {configPath}")
             self.config = tools.process_configs(configPath)
 
         self.dataPath = self.projectPath / "outputs" / runName
@@ -226,7 +217,7 @@ class RunContext:
         self._setup_directories()
         self._check_data()
 
-        self.gridInfo = GridInfo(self, self.userArgs.zoom)
+        self.gridInfo = GridInfo(self)
 
     def _setup_directories(self):
         self.frameRootFolder = self.projectPath / "frames" / self.frameFolderName
@@ -368,7 +359,8 @@ class RunContext:
 
 
 class GridInfo:
-    def __init__(self, context, zoom=None):
+    def __init__(self, context):
+        self.active = True  # if data*.vtk found
         self.context = context
         self.geometry = context.geometry
         self.dimensions = context.dimensions
@@ -376,33 +368,27 @@ class GridInfo:
         self.axis_name_1, self.axis_name_2 = self.get_native_grid_labels()
         self.shape = None
         if self.context.outputTypes_info["vtk"].status:
-            self.X1Line, self.X2Line = self.get_grid_line_points()
-            if self.context.dimensions == 1:
-                self.xmin = np.min(self.X1Line)
-                self.xmax = np.max(self.X1Line)
-                self.shape = np.shape(self.X1Line)
-            elif self.context.dimensions == 2:
-                # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
-                self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
-                self.grid1, self.grid2 = tools.convertGrid_toXZ(
-                    self.X1, self.X2, self.context.geometry
-                )
+            active_dirs = self.context.active_directions
+            vtk = self.context.outputTypes_info["vtk"].vtk
+            Lines = [
+                tools.get_Position(vtk, self.context.geometry, dir) for dir in range(3)
+            ]
+            self.X1Line = Lines[active_dirs[0]]
+            if len(active_dirs) == 1:
+                self.X2Line = Lines[1]  # will not be used anyway
+            else:
+                self.X2Line = Lines[active_dirs[1]]
 
-                if not zoom:
-                    self.mask = np.full(self.grid1.shape, True, dtype=bool)
-                    self.mask = self.grid2 > 0
-                    # )  # TODO hard coded, will be removed in later PR
-                else:
-                    self.mask = (
-                        (self.grid1 < zoom) & (np.abs(self.grid2) < zoom)
-                        # & (np.abs(np.pi / 2 - self.Theta) > np.pi / 12)
-                    )
-                self.xmin = 0  # works good atm
-                self.xmax = np.max(np.where(self.mask, self.grid1, 0))
-                self.ymax = np.max(np.where(self.mask, self.grid2, 0))
-                self.ymin = np.min(np.where(self.mask, self.grid2, 0))
+            # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
+            self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
+            self.grid1, self.grid2 = tools.convertLines_toXZgrid(
+                *Lines, self.context.geometry
+            )
 
-                self.shape = np.shape(self.X1)
+            # self.X1 = np.squeeze(self.X1)  # if it's 1D
+            # self.shape = np.shape(self.X1)
+        else:
+            self.active = False
 
     def get_cartesian_grid_labels(self):
         # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.
@@ -422,13 +408,26 @@ class GridInfo:
                 names[i] = DIMENSION_NAMES[self.context.geometry][dir]
         return names
 
-    def get_grid_line_points(self):
-        Lines = [None, None]
+    def apply_zoom(self, zoom):
+        if zoom is None:
+            self.X1Line_toshow, self.X2Line_toshow = self.X1Line, self.X2Line
+            self.mask1 = np.full(self.X1Line.shape, True, dtype=bool)
+            self.mask2 = np.full(self.X2Line.shape, True, dtype=bool)
+            self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
 
-        vtk = self.context.outputTypes_info["vtk"].vtk
-        for i, dir in enumerate(self.context.active_directions):
-            if i < 2:
-                # max 2 dimensions is supported
-                Lines[i] = tools.get_Position(vtk, self.context.geometry, dir)
-
-        return Lines
+        else:
+            self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
+            self.X1Line_toshow = self.X1Line[self.mask1]
+            self.X2Line_toshow = self.X2Line[self.mask2]
+            self.grid1_toshow = self.grid1[self.mask2][:, self.mask1]
+            self.grid2_toshow = self.grid2[self.mask2][:, self.mask1]
+        self.mask = np.logical_and.outer(self.mask2, self.mask1)
+        self.X1_toshow, self.X2_toshow = np.meshgrid(
+            self.X1Line_toshow, self.X2Line_toshow
+        )
+        self.x1min = np.min(self.X1Line_toshow)
+        self.x1max = np.max(self.X1Line_toshow)
+        self.xmin = np.min(self.grid1_toshow)  # or min(X1) if one 1D?
+        self.xmax = np.max(self.grid1_toshow)
+        self.ymin = np.min(self.grid2_toshow)
+        self.ymax = np.max(self.grid2_toshow)

@@ -19,7 +19,6 @@ class Pipeline:
         self,
         Context,
         figs,
-        zoom=0,
         streamLines=None,
         **options,
     ):
@@ -29,12 +28,11 @@ class Pipeline:
         :type Context: RunContext
         :param figs: `Figure` instances.
         :type figs: list[Figure]
-        :param zoom: Zoom level for the rendering view (for 2D only currently).
-        :type zoom: float, optional
         :param streamLines: Configuration for streamlines overlays.
         :type streamLines: StreamlineConfig, optional
         **options: Additional optional parameters:
             * scatter_particles (bool): only scatter particles positions instead of the whole trajectory on MapMovie2D
+            * zoom (callable): To show only a limited part of the domain.
         """
         self.context = Context
         self.userArgs = self.context.userArgs
@@ -137,7 +135,6 @@ class Pipeline:
         """
         Pray.
         """
-
         self.renderer = SliceRenderer(
             self.context,
             self.processor,
@@ -252,7 +249,7 @@ class Pipeline:
                 )
 
         # delegate the render of all this stuff to the Renderer
-        self.renderer.set_infos(self.processor.gridInfo, self.processor.partsInfo)
+        self.renderer.set_infos(self.processor.partsInfo)
         self.renderer.render()
 
     def _name_frames(self):
@@ -271,7 +268,6 @@ class Pipeline:
         self.all_movies = all_movies
         config = self.context.config
 
-        LOG(f"config.json file requested: {config}")
         remaining_fields_tobound = set()
 
         if not self.userArgs.noBounds:

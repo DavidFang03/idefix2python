@@ -159,6 +159,18 @@ def movie(pattern_png, movie_path, fps=10):
     print(f"[OK] {movie_path}")
 
 
+def convertLines_toXZgrid(X1, X2, X3, geometry):
+    if geometry == "cartesian":
+        return np.meshgrid(X1, X2)
+    elif geometry == "cylindric":
+        return np.meshgrid(X1, X2)
+    elif geometry == "polar":
+        return np.meshgrid(X1, X3)
+    elif geometry == "spherical":
+        grid = np.meshgrid(X1, X2)
+        return grid[0] * np.sin(grid[1]), grid[0] * np.cos(grid[1])
+
+
 def convertGrid_toXZ(X1, X2, geometry):
     if geometry == "cartesian":
         return X1, X2
@@ -185,10 +197,10 @@ def convertVector_toXZ(uX1, uX2, X1, X2, geometry):
 
 
 def get_streamplot_data(
-    X1, X2, Ux_data, Uy_data, geometry, zoom=None, resolution=200, method="linear"
+    X1, X2, Ux_data, Uy_data, geometry, resolution=200, method="linear"
 ):
     """
-    X,Y must be Lines, Ux and Uy are the data points.
+    X1,X2 must be Lines, Ux_data and Uy_data are the data points.
     Returns the 1d arrays x_coords and y-coords, with the interpolated values Ux_uni, Uy_uni (2D arrays) that can go directly in streamplot
     """
     from scipy.interpolate import RegularGridInterpolator
@@ -216,12 +228,8 @@ def get_streamplot_data(
 
     if geometry in ["cylindric", "cartesian"]:
         x_min = np.min(X1)
-        if zoom is None:
-            x_max = np.max(X2)
-            z_min, z_max = np.min(X2), np.max(X2)
-        else:
-            x_max = zoom
-            z_min, z_max = -zoom, zoom
+        x_max = np.max(X2)
+        z_min, z_max = np.min(X2), np.max(X2)
 
         x_coords = x_min + np.arange(resolution) * ((x_max - x_min) / (resolution - 1))
         z_coords = z_min + np.arange(resolution) * ((z_max - z_min) / (resolution - 1))
@@ -231,7 +239,7 @@ def get_streamplot_data(
 
     elif geometry == "spherical":
         r_min, r_max = np.min(X1), np.max(X1)
-        r_max = r_max if zoom is None else zoom
+        r_max = r_max
         z_min, z_max = -r_max, r_max
         x_coords = r_min + np.arange(resolution) * ((r_max - r_min) / (resolution - 1))
         z_coords = z_min + np.arange(resolution) * ((z_max - z_min) / (resolution - 1))

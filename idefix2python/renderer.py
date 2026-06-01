@@ -111,8 +111,13 @@ class SliceRenderer:
         else:
             self.doMovie = True
 
-    def set_infos(self, gridInfo, partsInfo):
-        self.gridInfo = gridInfo
+        self.gridInfo = self.context.gridInfo
+        if self.gridInfo.active:
+            self.gridInfo.apply_zoom(
+                options.get("zoom", None)
+            )  # initialize gridInfo.*_toshow
+
+    def set_infos(self, partsInfo):
         self.partsInfo = partsInfo
 
     def _pre_render(self):
@@ -275,9 +280,6 @@ class SliceRenderer:
             else:
                 png_path = self.framesPaths.get_timeline_path(figure.name)
 
-            if self.userArgs.zoom:
-                figure.fig.patch.set_linewidth(10)
-                figure.fig.patch.set_edgecolor("cornflowerblue")
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
@@ -290,17 +292,19 @@ class SliceRenderer:
             and len(qtyInfo.streamlines) == 2
         ):
             u_key1, u_key2 = qtyInfo.streamlines
+            mask1 = self.gridInfo.mask1
+            mask2 = self.gridInfo.mask2
             if u_key1 in data and u_key2 in data:
                 ux, uz = tools.convertVector_toXZ(
-                    data[u_key1],
-                    data[u_key2],
-                    self.gridInfo.X1,
-                    self.gridInfo.X2,
+                    data[u_key1][mask2][:, mask1],
+                    data[u_key2][mask2][:, mask1],
+                    self.gridInfo.X1_toshow,
+                    self.gridInfo.X2_toshow,
                     self.context.geometry,
                 )
                 x_coords, z_coords, Ux_uni, Uy_uni = tools.get_streamplot_data(
-                    self.gridInfo.X1Line,
-                    self.gridInfo.X2Line,
+                    self.gridInfo.X1Line_toshow,
+                    self.gridInfo.X2Line_toshow,
                     ux,
                     uz,
                     self.context.geometry,
@@ -531,16 +535,16 @@ class SliceRenderer:
         """
 
         if isinstance(qtyInfo, MapMovie2D):
-            grid1 = self.gridInfo.grid1
-            grid2 = self.gridInfo.grid2
-            data_mesh = data[qtyInfo.key]
+            grid1 = self.gridInfo.grid1_toshow
+            grid2 = self.gridInfo.grid2_toshow
+            data_mesh = data[qtyInfo.key][self.gridInfo.mask2][:, self.gridInfo.mask1]
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
             grid1, grid2 = np.meshgrid(
                 np.asarray(self.processor.vtktimes),
                 np.asarray(self.gridInfo.X1Line),
             )
-            data_mesh = np.transpose(qtyInfo.values)
+            data_mesh = np.transpose(qtyInfo.values)[self.gridInfo.mask1]
         vmin, vmax = qtyInfo.bounds
         if vmin is None or self.userArgs.noBounds:
             vmin = np.nanmin(data_mesh)
@@ -586,16 +590,6 @@ class SliceRenderer:
             self._draw_contours(
                 figure, qtyInfo, data_mesh, cbar
             )  # support for Spacetimeheatmap? later PR.
-
-        if self.userArgs.zoom and isinstance(qtyInfo, MapMovie2D):
-            ax.contourf(
-                grid1,
-                grid2,
-                np.logical_not(self.gridInfo.mask),
-                levels=[0.5, 1],
-                hatches=["////"],
-                colors="none",
-            )
 
         return cbar
 

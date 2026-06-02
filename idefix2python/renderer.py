@@ -371,7 +371,6 @@ class SliceRenderer:
                 ls="--",
                 label="Reference",
             )
-            ax.legend()
         ax.set_ylim(
             *qty1DInfo.bounds
         )  # TODO bounds will be more properly handled in later PR
@@ -450,12 +449,12 @@ class SliceRenderer:
         back_qty is the background. If back_qty.uids are accounted if back_qty is not None. Otherwise, part_qty.uids
         """
         if back_qty is None:
-            Ax = figure.axes[*part_qty.plot_coords]
+            Ax_container = figure.axes[*part_qty.plot_coords]
             uids = part_qty.uids
         else:
-            Ax = figure.axes[*back_qty.plot_coords]
+            Ax_container = figure.axes[*back_qty.plot_coords]
             uids = back_qty.uids
-        ax = Ax.ax
+        ax = Ax_container.ax
 
         if uids is None or len(uids) == 0:
             return
@@ -530,13 +529,13 @@ class SliceRenderer:
                     label = part_qty.label_func(uid)
                 if back_qty is not None:
                     if back_qty.label:
-                        label = back_qty.label(uid)
+                        label = back_qty.label
                     if back_qty.label_func is not None:
                         label = back_qty.label_func(uid)
 
                 if label is not None:
                     line.set_label(label)
-                    Ax.set_doLegend()
+                    Ax_container.set_doLegend()
 
         if len(part_qty.pointsRef) > 0:
             ax.plot(

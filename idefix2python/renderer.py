@@ -351,7 +351,10 @@ class SliceRenderer:
 
         ax = figure.axes[*qty1DInfo.plot_coords].ax
 
-        ax.plot(self.gridInfo.X1Line, data[qty1DInfo.key])
+        (line,) = ax.plot(self.gridInfo.X1Line, data[qty1DInfo.key])
+        if qty1DInfo.label:
+            line.set_label(qty1DInfo.label)
+            figure.axes[*qty1DInfo.plot_coords].set_doLegend()
 
         self.draw_particles(
             figure,
@@ -366,7 +369,7 @@ class SliceRenderer:
                 qty1DInfo.pointsRef,
                 qty1DInfo.valuesRef,
                 ls="--",
-                label="Analytical",
+                label="Reference",
             )
             ax.legend()
         ax.set_ylim(
@@ -402,24 +405,17 @@ class SliceRenderer:
             part_qty=self.partsInfo.parts_X1,
             back_qty=sptime,
         )
-
-        has_legend_items = False
         if len(sptime.pointsRef) > 0:
             plot_kwargs = {}
             if hasattr(sptime.ref_function, "plot_kwargs"):
                 plot_kwargs = sptime.ref_function.plot_kwargs
                 if "zorder" not in plot_kwargs:
                     plot_kwargs["zorder"] = 3
-                if "label" in plot_kwargs:
-                    has_legend_items = True
             ax.plot(
                 sptime.pointsRef,
                 sptime.valuesRef,
                 **plot_kwargs,
             )
-
-        if has_legend_items:
-            ax.legend()
 
         self.do_timeline_stuff(figure, sptime, frame_nb)
 
@@ -454,11 +450,12 @@ class SliceRenderer:
         back_qty is the background. If back_qty.uids are accounted if back_qty is not None. Otherwise, part_qty.uids
         """
         if back_qty is None:
-            ax = figure.axes[*part_qty.plot_coords].ax
+            Ax = figure.axes[*part_qty.plot_coords]
             uids = part_qty.uids
         else:
-            ax = figure.axes[*back_qty.plot_coords].ax
+            Ax = figure.axes[*back_qty.plot_coords]
             uids = back_qty.uids
+        ax = Ax.ax
 
         if uids is None or len(uids) == 0:
             return
@@ -482,12 +479,8 @@ class SliceRenderer:
             for ii, uid in enumerate(uids):
                 lw = 1
                 alpha = 1
-                if hasattr(part_qty, "labels") and ii < len(part_qty.labels):
-                    label = part_qty.labels[ii]
-                else:
-                    label = uid
 
-                # TODO Make this part applicable to any kwargs, not just color/label
+                # TODO Make this part applicable to any kwargs, not just color
                 if back_qty is not None and "color" in back_qty.parts_kwargs:
                     color = back_qty.parts_kwargs["color"]
                 elif hasattr(part_qty, "colors") and ii < len(part_qty.colors):
@@ -520,10 +513,9 @@ class SliceRenderer:
                 else:
                     raise NotImplementedError(f"{back_qty} doesn't support particles")
 
-                ax.plot(
+                (line,) = ax.plot(
                     points,
                     values,
-                    label=label,  # TODO Show this label. Later PR.
                     color=color,
                     lw=lw,
                     alpha=alpha,
@@ -531,9 +523,24 @@ class SliceRenderer:
                     markersize=0.2,
                 )
 
+                label = None
+                if part_qty.label:
+                    label = part_qty.label
+                if part_qty.label_func is not None:
+                    label = part_qty.label_func(uid)
+                if back_qty is not None:
+                    if back_qty.label:
+                        label = back_qty.label(uid)
+                    if back_qty.label_func is not None:
+                        label = back_qty.label_func(uid)
+
+                if label is not None:
+                    line.set_label(label)
+                    Ax.set_doLegend()
+
         if len(part_qty.pointsRef) > 0:
             ax.plot(
-                part_qty.pointsRef, part_qty.valuesRef, ls="--", lw=2, label="Predicted"
+                part_qty.pointsRef, part_qty.valuesRef, ls="--", lw=2, label="Reference"
             )
 
     def _draw_pcolormesh(self, figure, qtyInfo, data=None):

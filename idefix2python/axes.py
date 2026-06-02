@@ -112,6 +112,7 @@ class Ax:
         self.quantities = []
         self.is_pmesh_grid = False
         self.active = True
+        self.doLegend = False
 
     def add_quantity(self, qtyInfo):
         """
@@ -177,3 +178,9 @@ class Ax:
         title = ", ".join(self.qtytitles_list)
 
         self.ax.set_title(title)
+
+        if self.doLegend:
+            self.ax.legend()
+
+    def set_doLegend(self):
+        self.doLegend = True

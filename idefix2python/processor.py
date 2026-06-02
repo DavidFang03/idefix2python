@@ -4,18 +4,6 @@ import numpy as np
 from .quantities import PartQuantity, LocalQuantity
 
 
-def pos_to_gridIndexes(gridInfo, commonvtk):
-    pX1 = commonvtk.data["PART_X1"]
-    pX2 = commonvtk.data["PART_X2"]
-    i = np.array([np.argmin(np.abs(gridInfo.X1Line - x)) for x in pX1])
-
-    if len(gridInfo.X2Line) > 1:
-        j = np.array([np.argmin(np.abs(gridInfo.X2Line - x)) for x in pX2])
-        return j, i
-    else:
-        return (i,)
-
-
 def pos_to_gridTSC(gridInfo, commonvtk):
     pX1 = commonvtk.data["PART_X1"]
     pX2 = commonvtk.data["PART_X2"]

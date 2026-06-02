@@ -439,7 +439,6 @@ class SliceRenderer:
             raise NotImplementedError("only part here")
             return  # TODO some room for timevol.dat here
 
-        ax.set_ylim(*timeseries.bounds)
         ax.grid(alpha=GRID_OPACITY)
         self.do_timeline_stuff(figure, timeseries, frame_nb)
 

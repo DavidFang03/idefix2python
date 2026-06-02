@@ -5,9 +5,6 @@ from .quantities import PartQuantity, LocalQuantity
 
 
 def pos_to_gridTSC(gridInfo, commonvtk):
-    pX1 = commonvtk.data["PART_X1"]
-    pX2 = commonvtk.data["PART_X2"]
-
     def get_nonuniform_tsc(pos_array, x, xl, dx):
         ci = np.searchsorted(xl, pos_array) - 1
         ci = np.clip(ci, 1, len(x) - 2)
@@ -22,12 +19,12 @@ def pos_to_gridTSC(gridInfo, commonvtk):
         return ci, (w_left, w_center, w_right)
 
     ci, weights_x1 = get_nonuniform_tsc(
-        pX1, gridInfo.X1Line, gridInfo.X1LineL, gridInfo.dX1
+        commonvtk.data["PART_X1"], gridInfo.X1Line, gridInfo.X1LineL, gridInfo.dX1
     )
 
     if len(gridInfo.X2Line) > 1:
         cj, weights_x2 = get_nonuniform_tsc(
-            pX2, gridInfo.X2Line, gridInfo.X2LineL, gridInfo.dX2
+            commonvtk.data["PART_X2"], gridInfo.X2Line, gridInfo.X2LineL, gridInfo.dX2
         )
         return (ci, weights_x1), (cj, weights_x2)
     else:

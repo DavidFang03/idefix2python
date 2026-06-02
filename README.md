@@ -81,10 +81,10 @@ The three others are not accessible to the user:
 
 ## Roadmap to v1.0 (!!)
 
-* Better zoom API (ongoing)
+* `part_kwargs` handling
 * Automatic labeling (already partially supported through `config.json` file.)
-* Reintroduce `timevol.dat` (timevol) for global quantities.
 * twinx
+* Reintroduce `timevol.dat` (timevol) for global quantities.
 
 ### Known issues
 * `POLAR` geometry in more than 2 dimensions is not supported.

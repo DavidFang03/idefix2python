@@ -239,14 +239,21 @@ def get_streamplot_data(
 
     elif geometry == "spherical":
         r_min, r_max = np.min(X1), np.max(X1)
-        r_max = r_max
-        z_min, z_max = -r_max, r_max
-        x_coords = r_min + np.arange(resolution) * ((r_max - r_min) / (resolution - 1))
+        theta_min, theta_max = np.min(X2), np.max(X2)
+        x_min = 0.0
+        x_max = r_max * np.sin(theta_max)
+        z_min = (
+            r_max * np.cos(theta_max)
+            if theta_max > np.pi / 2
+            else r_min * np.cos(theta_max)
+        )
+        z_max = r_max * np.cos(theta_min)
+        x_coords = x_min + np.arange(resolution) * ((x_max - x_min) / (resolution - 1))
         z_coords = z_min + np.arange(resolution) * ((z_max - z_min) / (resolution - 1))
 
         X_uni, Z_uni = np.meshgrid(x_coords, z_coords)
         R_fromuni = np.sqrt(X_uni**2 + Z_uni**2)
-        Theta_fromuni = np.pi / 2 - np.atan(Z_uni / X_uni)
+        Theta_fromuni = np.pi / 2 - np.atan2(X_uni, Z_uni)
         pts = np.stack((R_fromuni, Theta_fromuni), axis=-1)
 
     else:

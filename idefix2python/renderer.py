@@ -289,10 +289,6 @@ class SliceRenderer:
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
-        lw_streamline = 0.2
-        density_streamline = [1, 2]
-        arrowstyle_streamline = "->"
-
         if (
             isinstance(qtyInfo.streamlines, (list, tuple))
             and len(qtyInfo.streamlines) == 2
@@ -314,17 +310,13 @@ class SliceRenderer:
                     ux,
                     uz,
                     self.context.geometry,
-                    self.gridInfo.xmax,
                 )
                 figure.axes[*qtyInfo.plot_coords].ax.streamplot(
                     x_coords,
                     z_coords,
                     Ux_uni,
                     Uy_uni,
-                    density=density_streamline,
-                    linewidth=lw_streamline,
-                    arrowstyle=arrowstyle_streamline,
-                    color=qtyInfo.streamline_color,
+                    **qtyInfo.streamline_kwargs,
                 )
 
         else:

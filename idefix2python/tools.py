@@ -273,6 +273,19 @@ def get_Position(file, geometry, direction):
     return positions[direction]
 
 
+def get_PositionL(file, geometry, direction):
+    match geometry:
+        case "cartesian":
+            positions = [file.xl, file.yl, file.zl]
+        case "polar":
+            positions = [file.xl, file.yl, file.zl]
+        case "cylindrical":
+            positions = [file.rl, file.zl, None]
+        case "spherical":
+            positions = [file.rl, file.thetal, file.phil]
+    return positions[direction]
+
+
 def get_streamline_name(u_key1):
     """
     Determines a nice LaTeX name for the streamline based on the field key.

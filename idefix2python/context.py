@@ -373,11 +373,20 @@ class GridInfo:
             Lines = [
                 tools.get_Position(vtk, self.context.geometry, dir) for dir in range(3)
             ]
+            LinesL = [
+                tools.get_PositionL(vtk, self.context.geometry, dir) for dir in range(3)
+            ]
             self.X1Line = Lines[active_dirs[0]]
+            self.X1LineL = LinesL[active_dirs[0]]
+            self.dX1 = np.diff(self.X1LineL)
             if len(active_dirs) == 1:
                 self.X2Line = Lines[1]  # will not be used anyway
+                self.X2LineL = LinesL[1]
+
             else:
                 self.X2Line = Lines[active_dirs[1]]
+                self.X2LineL = LinesL[active_dirs[1]]
+            self.dX2 = np.diff(self.X2LineL)
 
             # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
             self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
@@ -385,8 +394,6 @@ class GridInfo:
                 *Lines, self.context.geometry
             )
 
-            # self.X1 = np.squeeze(self.X1)  # if it's 1D
-            # self.shape = np.shape(self.X1)
         else:
             self.active = False
 

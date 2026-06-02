@@ -4,16 +4,31 @@ import numpy as np
 from .quantities import PartQuantity, LocalQuantity
 
 
-def pos_to_gridIndexes(gridInfo, commonvtk):
-    pX1 = commonvtk.data["PART_X1"]
-    pX2 = commonvtk.data["PART_X2"]
-    i = np.array([np.argmin(np.abs(gridInfo.X1Line - x)) for x in pX1])
+def pos_to_gridTSC(gridInfo, commonvtk):
+    def get_nonuniform_tsc(pos_array, x, xl, dx):
+        ci = np.searchsorted(xl, pos_array) - 1
+        ci = np.clip(ci, 1, len(x) - 2)
+
+        # d = (x - xl) / dx
+        d = (pos_array - xl[ci]) / dx[ci]
+
+        w_left = 0.5 * (1.0 - d) ** 2
+        w_center = 0.75 - (d - 0.5) ** 2
+        w_right = 0.5 * d**2
+
+        return ci, (w_left, w_center, w_right)
+
+    ci, weights_x1 = get_nonuniform_tsc(
+        commonvtk.data["PART_X1"], gridInfo.X1Line, gridInfo.X1LineL, gridInfo.dX1
+    )
 
     if len(gridInfo.X2Line) > 1:
-        j = np.array([np.argmin(np.abs(gridInfo.X2Line - x)) for x in pX2])
-        return j, i
+        cj, weights_x2 = get_nonuniform_tsc(
+            commonvtk.data["PART_X2"], gridInfo.X2Line, gridInfo.X2LineL, gridInfo.dX2
+        )
+        return (ci, weights_x1), (cj, weights_x2)
     else:
-        return (i,)
+        return (ci, weights_x1), None
 
 
 class PhysicsProcessor:
@@ -82,8 +97,28 @@ class PhysicsProcessor:
         ## Custom computing. Now everything is stored in commonvtk
         for qtyInfo in self.waitlist:
             if isinstance(qtyInfo, LocalQuantity) and partvtk is not None:
-                indexes = pos_to_gridIndexes(self.context.gridInfo, commonvtk)
-                commonvtk.data[qtyInfo.key] = commonvtk.data[qtyInfo.localkey][*indexes]
+                tsc_x1, tsc_x2 = pos_to_gridTSC(self.context.gridInfo, commonvtk)
+
+                ci, (w1_l, w1_c, w1_r) = tsc_x1
+                fluid_field = commonvtk.data[qtyInfo.localkey]
+
+                if tsc_x2 is not None:
+                    cj, (w2_l, w2_c, w2_r) = tsc_x2
+                    interpolated_values = np.zeros(len(ci))
+
+                    for dj, wj in zip([-1, 0, 1], [w2_l, w2_c, w2_r]):
+                        for di, wi in zip([-1, 0, 1], [w1_l, w1_c, w1_r]):
+                            fluid_vals = fluid_field[cj + dj, ci + di]
+                            interpolated_values += (wj * wi) * fluid_vals
+
+                    commonvtk.data[qtyInfo.key] = interpolated_values
+
+                else:
+                    interpolated_values = np.zeros(len(ci))
+                    for di, wi in zip([-1, 0, 1], [w1_l, w1_c, w1_r]):
+                        interpolated_values += wi * fluid_field[ci + di]
+
+                    commonvtk.data[qtyInfo.key] = interpolated_values
             elif (
                 (not isinstance(qtyInfo, PartQuantity) or partvtk is not None)
                 and qtyInfo.compute is not None

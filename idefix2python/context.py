@@ -253,7 +253,6 @@ class RunContext:
         ]:
             os.makedirs(path, exist_ok=True)
 
-        print(self.userArgs.clean)
         if self.userArgs.clean:
             for frames_dir in self.frameRootFolder.iterdir():
                 if frames_dir.is_dir():
@@ -264,7 +263,6 @@ class RunContext:
                         LOG(f"Removing {file_count} frames from {frames_dir}")
                         for item in frames_dir.iterdir():
                             if item.is_file() or item.is_symlink():
-                                print(item)
                                 item.unlink()
 
     def _check_data(self):

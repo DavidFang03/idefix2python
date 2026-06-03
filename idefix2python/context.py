@@ -193,8 +193,8 @@ class RunContext:
             LOG(f"config.json file requested: {configPath}")
             self.config = tools.process_configs(configPath)
 
-        self.dataFolder = kwargs.get(
-            "dataFolder", self.projectPath / "outputs" / runName
+        self.dataFolder = Path(
+            kwargs.get("dataFolder", self.projectPath / "outputs" / runName)
         )
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")

@@ -50,6 +50,14 @@ def _get_args():
     )
 
     parser.add_argument(
+        "-c",
+        "--clean",
+        action="store_true",
+        help="Removes every frame already present in the frames directory.",
+        dest="clean",
+    )
+
+    parser.add_argument(
         "-j",
         "--jobs",
         type=int,
@@ -81,14 +89,6 @@ def _get_args():
         type=int,
         default=1,
         help="Read every Nth output file (N>=1). For example, -e 2 reads every second file.",
-    )
-
-    parser.add_argument(
-        "-c",
-        "--clean",
-        action="store_true",
-        help="Removes every frame already present in the frames directory.",
-        dest="clean",
     )
 
     args = parser.parse_args()

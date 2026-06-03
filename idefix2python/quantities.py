@@ -120,7 +120,7 @@ class MapMovie2D(Data):
                             e.g., ``[1,2]``. Defaults to None.
         :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
-            :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
+            :keyword streamline_kwargs (dict): kwargs that will be passed to streamplot.
             :keyword contours (Sequence[float] | None): Contour levels used to draw contour lines over the pcolormesh for this field. Defaults to None.
             :keyword contour_color (str): Color of the contour lines. Defaults to "green".
         """
@@ -130,7 +130,14 @@ class MapMovie2D(Data):
         super().__init__(key, symbol, plot_coords, **kwargs)
         self.set_norm(norm)
         self.streamlines = streamlines
-        self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
+        default_streamline_kwargs = {
+            "linewidth": 0.2,
+            "arrowstyle": "->",
+            "color": (1, 1, 1, 0.5),
+        }
+        self.streamline_kwargs = kwargs.get(
+            "streamline_kwargs", default_streamline_kwargs
+        )
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids

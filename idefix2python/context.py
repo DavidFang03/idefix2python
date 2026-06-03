@@ -70,7 +70,7 @@ def _get_args():
         "-u",
         "--until",
         type=lambda s: int(s) if s.isdigit() else float(s),
-        default=1,
+        default=1.0,
         help="To exclude the end of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
         dest="until",
     )
@@ -94,7 +94,7 @@ def _get_args():
 
 class OutputTypeInfo:
     """
-    Different types of output: global (vtk), slice (vtk), timevol (dat), particles (vtk)
+    Different types of output: global (vtk), particles (vtk)
     """
 
     def __init__(self, name, files):
@@ -234,12 +234,10 @@ class RunContext:
     def _setup_directories(self):
         self.frameRootFolder = self.projectPath / "frames" / self.frameFolderName
         self.globalFolder = self.frameRootFolder / "global"
-        self.slice1Folder = self.frameRootFolder / "slice1"
         self.videosFolder = self.projectPath / "videos"
 
         for path in [
             self.globalFolder,
-            self.slice1Folder,
             self.videosFolder,
         ]:
             os.makedirs(path, exist_ok=True)
@@ -324,87 +322,68 @@ class RunContext:
         """
         expects a sorted list
         """
-        if not filelist:
-            return -1
-
         after = self.userArgs.after
 
-        if isinstance(after, int):
-            return after
-
-        # Treat floats between 0 and 1 as percentages
-        if isinstance(after, float) and 0.0 <= after <= 1.0:
-            # clip to len(filelist) - 1 to avoid out-of-bounds
-            return min(int(len(filelist) * after), len(filelist) - 1)
-
-        if isinstance(after, float):
-            if not str(filelist[-1]).endswith(".vtk"):
-                raise ValueError(
-                    "Time-based filtering ('after' as timestamp) requires VTK files."
-                )
-
-            tstart = readVTK(filelist[0]).t[0]
-            tend = readVTK(filelist[-1]).t[0]
-
-            if after < tstart:
-                return 0
-            if after > tend:
-                raise Exception(
-                    f"Value of after ({after}) is larger than the last file time ({tend})"
-                )
-
-            firstframe = int((after - tstart) / (tend - tstart) * len(filelist))
-            return min(firstframe + 1, len(filelist) - 1)
-
-        raise TypeError(f"Unsupported type for 'after': {type(after)}")
+        if len(filelist) == 0:
+            firstframe = -1
+        elif isinstance(after, int):
+            firstframe = after
+        elif isinstance(after, float) and 0.0 <= after <= 1.0:
+            firstframe = min(int(len(filelist) * after), len(filelist) - 1)
+        elif isinstance(after, float):
+            if str(filelist[-1]).endswith(".vtk"):
+                tend = readVTK(filelist[-1]).t[0]
+                tstart = readVTK(filelist[0]).t[0]
+                if after < tstart:
+                    firstframe = 0
+                elif after > tend:
+                    raise Exception(
+                        f"Value of after ({after}) is larger than the last file time ({tend})"
+                    )
+                else:
+                    firstframe = int((after - tstart) / (tend - tstart) * len(filelist))
+                    if firstframe + 1 < len(filelist):
+                        firstframe += 1
+        else:
+            raise TypeError(f"Unsupported type for 'after': {type(after)}")
+        return firstframe
 
     def _get_lastfile_to_read(self, filelist):
         """
         expects a sorted list
         """
-        if not filelist:
-            return -1
-
         until = self.userArgs.until
-
-        if isinstance(until, int):
-            return until
-
-        # Treat floats between 0 and 1 as percentages
-        if isinstance(until, float) and 0.0 <= until <= 1.0:
-            return min(int(len(filelist) * until), len(filelist) - 1)
-
-        if isinstance(until, float):
-            if not str(filelist[-1]).endswith(".vtk"):
+        if len(filelist) == 0:
+            lastframe = -1
+        elif isinstance(until, int):
+            lastframe = until
+        elif isinstance(until, float) and 0.0 <= until <= 1.0:
+            lastframe = min(int(len(filelist) * until), len(filelist) - 1)
+        elif isinstance(until, float):
+            if str(filelist[-1]).endswith(".vtk"):
+                tend = readVTK(filelist[-1]).t[0]
+                tstart = readVTK(filelist[0]).t[0]
+                if until > tend:
+                    lastframe = len(filelist) - 1
+                elif until < tstart:
+                    raise Exception(
+                        f"Value of until ({until}) is smaller than the first file time ({tstart})"
+                    )
+                else:
+                    lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
+                    if lastframe + 1 < len(filelist):
+                        lastframe += 1
+            else:
                 raise ValueError(
                     "Time-based filtering ('until' as timestamp) requires VTK files."
                 )
+        else:
+            raise TypeError(f"Unsupported type for 'until': {type(until)}")
 
-            tstart = readVTK(filelist[0]).t[0]
-            tend = readVTK(filelist[-1]).t[0]
-
-            if until > tend:
-                return len(filelist) - 1
-            if until < tstart:
-                raise Exception(
-                    f"Value of until ({until}) is smaller than the first file time ({tstart})"
-                )
-
-            lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
-            return min(lastframe + 1, len(filelist) - 1)
-
-        raise TypeError(f"Unsupported type for 'until': {type(until)}")
+        return lastframe
 
     def get_global_vtkFiles(self):
         pattern = "vtks/data*.vtk"
-        filelist = sorted(self.dataFolder.glob(pattern))
-        firstfile = self._get_firstfile_to_read(filelist)
-        lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[firstfile:lastfile]
-        return filelist[:: self.userArgs.every]
-
-    def get_slice1_vtkFiles(self):
-        pattern = "vtks/slice1*.vtk"
         filelist = sorted(self.dataFolder.glob(pattern))
         firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)

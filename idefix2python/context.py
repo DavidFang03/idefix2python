@@ -94,7 +94,7 @@ def _get_args():
 
 class OutputTypeInfo:
     """
-    Different types of output: global (vtk), particles (vtk)
+    Different types of output: global (vtk), slice (vtk), timevol (dat), particles (vtk)
     """
 
     def __init__(self, name, files):
@@ -234,10 +234,12 @@ class RunContext:
     def _setup_directories(self):
         self.frameRootFolder = self.projectPath / "frames" / self.frameFolderName
         self.globalFolder = self.frameRootFolder / "global"
+        self.slice1Folder = self.frameRootFolder / "slice1"
         self.videosFolder = self.projectPath / "videos"
 
         for path in [
             self.globalFolder,
+            self.slice1Folder,
             self.videosFolder,
         ]:
             os.makedirs(path, exist_ok=True)

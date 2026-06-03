@@ -360,13 +360,13 @@ class RunContext:
         elif isinstance(until, int):
             lastframe = until
         elif isinstance(until, float) and 0.0 <= until <= 1.0:
-            lastframe = min(int(len(filelist) * until), len(filelist) - 1)
+            lastframe = min(int(len(filelist) * until), len(filelist))
         elif isinstance(until, float):
             if str(filelist[-1]).endswith(".vtk"):
                 tend = readVTK(filelist[-1]).t[0]
                 tstart = readVTK(filelist[0]).t[0]
                 if until > tend:
-                    lastframe = len(filelist) - 1
+                    lastframe = len(filelist)
                 elif until < tstart:
                     raise Exception(
                         f"Value of until ({until}) is smaller than the first file time ({tstart})"

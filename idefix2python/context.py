@@ -58,11 +58,20 @@ def _get_args():
     )
 
     parser.add_argument(
+        "-a",
+        "--after",
+        type=lambda s: int(s) if s.isdigit() else float(s),
+        default=0,
+        help="To exclude the beginning of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        dest="after",
+    )
+
+    parser.add_argument(
         "-u",
         "--until",
         type=lambda s: int(s) if s.isdigit() else float(s),
-        default=1,
-        help="To read only a part of the data. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        default=1.0,
+        help="To exclude the end of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
         dest="until",
     )
 
@@ -311,6 +320,36 @@ class RunContext:
             self.particles_nb = 0
             self.all_particles_uids = []
 
+    def _get_firstfile_to_read(self, filelist):
+        """
+        expects a sorted list
+        """
+        after = self.userArgs.after
+
+        if len(filelist) == 0:
+            firstframe = -1
+        elif isinstance(after, int):
+            firstframe = after
+        elif isinstance(after, float) and 0.0 <= after <= 1.0:
+            firstframe = min(int(len(filelist) * after), len(filelist) - 1)
+        elif isinstance(after, float):
+            if str(filelist[-1]).endswith(".vtk"):
+                tend = readVTK(filelist[-1]).t[0]
+                tstart = readVTK(filelist[0]).t[0]
+                if after < tstart:
+                    firstframe = 0
+                elif after > tend:
+                    raise Exception(
+                        f"Value of after ({after}) is larger than the last file time ({tend})"
+                    )
+                else:
+                    firstframe = int((after - tstart) / (tend - tstart) * len(filelist))
+                    if firstframe + 1 < len(filelist):
+                        firstframe += 1
+        else:
+            raise TypeError(f"Unsupported type for 'after': {type(after)}")
+        return firstframe
+
     def _get_lastfile_to_read(self, filelist):
         """
         expects a sorted list
@@ -318,35 +357,47 @@ class RunContext:
         until = self.userArgs.until
         if len(filelist) == 0:
             lastframe = -1
-        elif 0 <= until <= 1:
-            lastframe = int(len(filelist) * until)
         elif isinstance(until, int):
             lastframe = until
+        elif isinstance(until, float) and 0.0 <= until <= 1.0:
+            lastframe = min(int(len(filelist) * until), len(filelist))
         elif isinstance(until, float):
             if str(filelist[-1]).endswith(".vtk"):
                 tend = readVTK(filelist[-1]).t[0]
                 tstart = readVTK(filelist[0]).t[0]
-                if until < tstart:
+                if until > tend:
+                    lastframe = len(filelist)
+                elif until < tstart:
                     raise Exception(
-                        f"Value of until ({until}) is inferior than the first file time"
+                        f"Value of until ({until}) is smaller than the first file time ({tstart})"
                     )
-                lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
-                if lastframe + 1 < len(filelist):
-                    lastframe += 1
+                else:
+                    lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
+                    if lastframe + 1 < len(filelist):
+                        lastframe += 1
+            else:
+                raise ValueError(
+                    "Time-based filtering ('until' as timestamp) requires VTK files."
+                )
+        else:
+            raise TypeError(f"Unsupported type for 'until': {type(until)}")
+
         return lastframe
 
     def get_global_vtkFiles(self):
         pattern = "vtks/data*.vtk"
         filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_slice1_vtkFiles(self):
         pattern = "vtks/slice1*.vtk"
         filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_particles_vtkFiles(self):
@@ -356,8 +407,9 @@ class RunContext:
             pattern = "vtks/part*.vtk"
             filelist = sorted(self.dataFolder.glob(pattern))
 
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
 

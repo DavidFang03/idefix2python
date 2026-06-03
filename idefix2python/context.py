@@ -392,6 +392,14 @@ class RunContext:
         filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
+    def get_slice1_vtkFiles(self):
+        pattern = "vtks/slice1*.vtk"
+        filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
+        lastfile = self._get_lastfile_to_read(filelist)
+        filelist = filelist[firstfile:lastfile]
+        return filelist[:: self.userArgs.every]
+
     def get_particles_vtkFiles(self):
         if self.partFolder is not None:
             filelist = sorted(Path(self.partFolder).glob("part*.vtk"))

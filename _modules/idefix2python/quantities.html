@@ -240,7 +240,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="120"><span class="sd">                            e.g., ``[1,2]``. Defaults to None.</span>
 </span><span data-line="121"><span class="sd">        :type uids: list[int] | Literal[&quot;all&quot;] | None, optional</span>
 </span><span data-line="122"><span class="sd">        :param \**kwargs: Additional rendering options.</span>
-</span><span data-line="123"><span class="sd">            :keyword streamline_color (str): Color of streamline arrows. Defaults to &quot;w&quot;.</span>
+</span><span data-line="123"><span class="sd">            :keyword streamline_kwargs (dict): kwargs that will be passed to streamplot.</span>
 </span><span data-line="124"><span class="sd">            :keyword contours (Sequence[float] | None): Contour levels used to draw contour lines over the pcolormesh for this field. Defaults to None.</span>
 </span><span data-line="125"><span class="sd">            :keyword contour_color (str): Color of the contour lines. Defaults to &quot;green&quot;.</span>
 </span><span data-line="126"><span class="sd">        &quot;&quot;&quot;</span>
@@ -250,177 +250,184 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="130">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </span><span data-line="131">        <span class="bp">self</span><span class="o">.</span><span class="n">set_norm</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
 </span><span data-line="132">        <span class="bp">self</span><span class="o">.</span><span class="n">streamlines</span> <span class="o">=</span> <span class="n">streamlines</span>
-</span><span data-line="133">        <span class="bp">self</span><span class="o">.</span><span class="n">streamline_color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;streamline_color&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
-</span><span data-line="134">        <span class="bp">self</span><span class="o">.</span><span class="n">contours</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contours&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="135">        <span class="bp">self</span><span class="o">.</span><span class="n">contour_color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contour_color&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">)</span>
-</span><span data-line="136">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
-</span><span data-line="137">
-</span><span data-line="138">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="139">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="140">
-</span><span data-line="141">    <span class="k">def</span><span class="w"> </span><span class="nf">set_XYgrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
-</span><span data-line="142"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="143"><span class="sd">        Assign the spatial cartesian grid used for rendering the 2D pcolormesh.</span>
+</span><span data-line="133">        <span class="n">default_streamline_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="134">            <span class="s2">&quot;linewidth&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+</span><span data-line="135">            <span class="s2">&quot;arrowstyle&quot;</span><span class="p">:</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">,</span>
+</span><span data-line="136">            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+</span><span data-line="137">        <span class="p">}</span>
+</span><span data-line="138">        <span class="bp">self</span><span class="o">.</span><span class="n">streamline_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+</span><span data-line="139">            <span class="s2">&quot;streamline_kwargs&quot;</span><span class="p">,</span> <span class="n">default_streamline_kwargs</span>
+</span><span data-line="140">        <span class="p">)</span>
+</span><span data-line="141">        <span class="bp">self</span><span class="o">.</span><span class="n">contours</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contours&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="142">        <span class="bp">self</span><span class="o">.</span><span class="n">contour_color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contour_color&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">)</span>
+</span><span data-line="143">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
 </span><span data-line="144">
-</span><span data-line="145"><span class="sd">        :param X: 2D array of horizontal coordinates.</span>
-</span><span data-line="146"><span class="sd">        :type X: numpy.ndarray</span>
-</span><span data-line="147"><span class="sd">        :param Y: 2D array of vertical coordinates.</span>
-</span><span data-line="148"><span class="sd">        :type Y: numpy.ndarray</span>
-</span><span data-line="149"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="150">        <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y</span> <span class="o">=</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span></div>
-
+</span><span data-line="145">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="146">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="147">
+</span><span data-line="148">    <span class="k">def</span><span class="w"> </span><span class="nf">set_XYgrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+</span><span data-line="149"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="150"><span class="sd">        Assign the spatial cartesian grid used for rendering the 2D pcolormesh.</span>
 </span><span data-line="151">
-</span><span data-line="152">
-</span><span data-line="153"><span class="k">class</span><span class="w"> </span><span class="nc">Field1D</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
-</span><span data-line="154"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="155"><span class="sd">    Base class for 1D fields :math:`f(x, t)`.</span>
-</span><span data-line="156"><span class="sd">    Increments a global counter for indexing in results arrays.</span>
-</span><span data-line="157"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="152"><span class="sd">        :param X: 2D array of horizontal coordinates.</span>
+</span><span data-line="153"><span class="sd">        :type X: numpy.ndarray</span>
+</span><span data-line="154"><span class="sd">        :param Y: 2D array of vertical coordinates.</span>
+</span><span data-line="155"><span class="sd">        :type Y: numpy.ndarray</span>
+</span><span data-line="156"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="157">        <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y</span> <span class="o">=</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span></div>
+
 </span><span data-line="158">
-</span><span data-line="159">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span data-line="160">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="161">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="162">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="163">
-</span><span data-line="164">
+</span><span data-line="159">
+</span><span data-line="160"><span class="k">class</span><span class="w"> </span><span class="nc">Field1D</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
+</span><span data-line="161"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="162"><span class="sd">    Base class for 1D fields :math:`f(x, t)`.</span>
+</span><span data-line="163"><span class="sd">    Increments a global counter for indexing in results arrays.</span>
+</span><span data-line="164"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="165">
+</span><span data-line="166">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span data-line="167">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="168">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="169">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="170">
+</span><span data-line="171">
 <div class="viewcode-block" id="LineMovie1D">
 <a class="viewcode-back" href="../../api.html#idefix2python.LineMovie1D">[docs]</a>
-</span><span data-line="165"><span class="k">class</span><span class="w"> </span><span class="nc">LineMovie1D</span><span class="p">(</span><span class="n">Field1D</span><span class="p">):</span>
-</span><span data-line="166"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="167"><span class="sd">    For :math:`f(x, t)` fields, renders as a line plot :math:`f(x, t)` that updates every frame.</span>
-</span><span data-line="168"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="169">
-</span><span data-line="170">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="171">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="172">        <span class="n">key</span><span class="p">,</span>
-</span><span data-line="173">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span data-line="174">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="175">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="176">        <span class="n">uids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="177">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="178">    <span class="p">):</span>
-</span><span data-line="179">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="180">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
-</span><span data-line="181">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="182">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="183">
-</span><span data-line="184">    <span class="k">def</span><span class="w"> </span><span class="nf">set_localqty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">localqty</span><span class="p">):</span>
-</span><span data-line="185">        <span class="bp">self</span><span class="o">.</span><span class="n">localqty</span> <span class="o">=</span> <span class="n">localqty</span></div>
+</span><span data-line="172"><span class="k">class</span><span class="w"> </span><span class="nc">LineMovie1D</span><span class="p">(</span><span class="n">Field1D</span><span class="p">):</span>
+</span><span data-line="173"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="174"><span class="sd">    For :math:`f(x, t)` fields, renders as a line plot :math:`f(x, t)` that updates every frame.</span>
+</span><span data-line="175"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="176">
+</span><span data-line="177">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="178">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="179">        <span class="n">key</span><span class="p">,</span>
+</span><span data-line="180">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span data-line="181">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="182">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="183">        <span class="n">uids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="184">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="185">    <span class="p">):</span>
+</span><span data-line="186">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="187">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
+</span><span data-line="188">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="189">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="190">
+</span><span data-line="191">    <span class="k">def</span><span class="w"> </span><span class="nf">set_localqty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">localqty</span><span class="p">):</span>
+</span><span data-line="192">        <span class="bp">self</span><span class="o">.</span><span class="n">localqty</span> <span class="o">=</span> <span class="n">localqty</span></div>
 
-</span><span data-line="186">
-</span><span data-line="187">
+</span><span data-line="193">
+</span><span data-line="194">
 <div class="viewcode-block" id="SpaceTimeHeatmap">
 <a class="viewcode-back" href="../../api.html#idefix2python.SpaceTimeHeatmap">[docs]</a>
-</span><span data-line="188"><span class="k">class</span><span class="w"> </span><span class="nc">SpaceTimeHeatmap</span><span class="p">(</span><span class="n">Field1D</span><span class="p">):</span>
-</span><span data-line="189"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="190"><span class="sd">    For :math:`f(x, t)` fields, renders a space-time heatmap.</span>
-</span><span data-line="191">
-</span><span data-line="192"><span class="sd">    :keyword cmap: Colormap for the heatmap.</span>
-</span><span data-line="193"><span class="sd">    :keyword uids: List of particles&#39; uids which trajectories will be displayed.</span>
-</span><span data-line="194"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="195">
-</span><span data-line="196">    <span class="n">instances</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="197">
-</span><span data-line="198">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="199">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="200">        <span class="n">key</span><span class="p">,</span>
-</span><span data-line="201">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span data-line="202">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="203">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="204">        <span class="n">norm</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-</span><span data-line="205">        <span class="n">uids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="206">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="207">    <span class="p">):</span>
-</span><span data-line="208">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="209">        <span class="bp">self</span><span class="o">.</span><span class="n">set_norm</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
-</span><span data-line="210">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
-</span><span data-line="211">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="212">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">False</span></div>
+</span><span data-line="195"><span class="k">class</span><span class="w"> </span><span class="nc">SpaceTimeHeatmap</span><span class="p">(</span><span class="n">Field1D</span><span class="p">):</span>
+</span><span data-line="196"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="197"><span class="sd">    For :math:`f(x, t)` fields, renders a space-time heatmap.</span>
+</span><span data-line="198">
+</span><span data-line="199"><span class="sd">    :keyword cmap: Colormap for the heatmap.</span>
+</span><span data-line="200"><span class="sd">    :keyword uids: List of particles&#39; uids which trajectories will be displayed.</span>
+</span><span data-line="201"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="202">
+</span><span data-line="203">    <span class="n">instances</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="204">
+</span><span data-line="205">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="206">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="207">        <span class="n">key</span><span class="p">,</span>
+</span><span data-line="208">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span data-line="209">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="210">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="211">        <span class="n">norm</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+</span><span data-line="212">        <span class="n">uids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="213">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="214">    <span class="p">):</span>
+</span><span data-line="215">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="216">        <span class="bp">self</span><span class="o">.</span><span class="n">set_norm</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+</span><span data-line="217">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
+</span><span data-line="218">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="219">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-</span><span data-line="213">
-</span><span data-line="214">
-</span><span data-line="215"><span class="k">class</span><span class="w"> </span><span class="nc">OneComponentOneVariable</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
-</span><span data-line="216"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="217"><span class="sd">    A y(x) value where x can be any variable. If xqty is None, that means x is time and the quantity will be treated as a timeline.</span>
-</span><span data-line="218"><span class="sd">    Otherwise, it will be treated as a LineMovie1D.</span>
-</span><span data-line="219">
-</span><span data-line="220"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="220">
 </span><span data-line="221">
-</span><span data-line="222">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="223">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="224">        <span class="n">key</span><span class="p">,</span>
-</span><span data-line="225">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span data-line="226">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="227">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="228">        <span class="n">xqty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="229">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="230">    <span class="p">):</span>
-</span><span data-line="231">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="232">        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uids&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="233">            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-</span><span data-line="234">                <span class="s2">&quot;For uid specific 1C1V quantity, please use PartQuantity instead.&quot;</span>
-</span><span data-line="235">            <span class="p">)</span>
-</span><span data-line="236">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="237">
-</span><span data-line="238">        <span class="bp">self</span><span class="o">.</span><span class="n">xqty</span> <span class="o">=</span> <span class="n">xqty</span>  <span class="c1"># if None, it will be time.</span>
-</span><span data-line="239">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="n">xqty</span> <span class="ow">is</span> <span class="kc">None</span>
-</span><span data-line="240">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="n">xqty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</span><span data-line="241">
-</span><span data-line="242">
+</span><span data-line="222"><span class="k">class</span><span class="w"> </span><span class="nc">OneComponentOneVariable</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
+</span><span data-line="223"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="224"><span class="sd">    A y(x) value where x can be any variable. If xqty is None, that means x is time and the quantity will be treated as a timeline.</span>
+</span><span data-line="225"><span class="sd">    Otherwise, it will be treated as a LineMovie1D.</span>
+</span><span data-line="226">
+</span><span data-line="227"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="228">
+</span><span data-line="229">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="230">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="231">        <span class="n">key</span><span class="p">,</span>
+</span><span data-line="232">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span data-line="233">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="234">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="235">        <span class="n">xqty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="236">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="237">    <span class="p">):</span>
+</span><span data-line="238">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="239">        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uids&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="240">            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+</span><span data-line="241">                <span class="s2">&quot;For uid specific 1C1V quantity, please use PartQuantity instead.&quot;</span>
+</span><span data-line="242">            <span class="p">)</span>
+</span><span data-line="243">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="244">
+</span><span data-line="245">        <span class="bp">self</span><span class="o">.</span><span class="n">xqty</span> <span class="o">=</span> <span class="n">xqty</span>  <span class="c1"># if None, it will be time.</span>
+</span><span data-line="246">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="n">xqty</span> <span class="ow">is</span> <span class="kc">None</span>
+</span><span data-line="247">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="n">xqty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span data-line="248">
+</span><span data-line="249">
 <div class="viewcode-block" id="PartQuantity">
 <a class="viewcode-back" href="../../api.html#idefix2python.PartQuantity">[docs]</a>
-</span><span data-line="243"><span class="k">class</span><span class="w"> </span><span class="nc">PartQuantity</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
-</span><span data-line="244"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="245"><span class="sd">    Particular case of OneComponentOneVariable when the variable is time and that there is one value per particle (so not really one component but rather Npart components...)</span>
-</span><span data-line="246"><span class="sd">    Tracks Lagrangian particle properties over time.</span>
-</span><span data-line="247">
-</span><span data-line="248"><span class="sd">    :keyword: uids (optional) the ids of the particles wanted.</span>
-</span><span data-line="249"><span class="sd">        Defaults to &quot;all&quot; (all particles)</span>
-</span><span data-line="250"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="251">
-</span><span data-line="252">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="253">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="254">        <span class="n">key</span><span class="p">,</span>
-</span><span data-line="255">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span data-line="256">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="257">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="258">        <span class="n">uids</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
-</span><span data-line="259">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="260">    <span class="p">):</span>
-</span><span data-line="261">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="262">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
-</span><span data-line="263">        <span class="bp">self</span><span class="o">.</span><span class="n">is_global</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_global&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-</span><span data-line="264">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="265">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">False</span></div>
+</span><span data-line="250"><span class="k">class</span><span class="w"> </span><span class="nc">PartQuantity</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
+</span><span data-line="251"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="252"><span class="sd">    Particular case of OneComponentOneVariable when the variable is time and that there is one value per particle (so not really one component but rather Npart components...)</span>
+</span><span data-line="253"><span class="sd">    Tracks Lagrangian particle properties over time.</span>
+</span><span data-line="254">
+</span><span data-line="255"><span class="sd">    :keyword: uids (optional) the ids of the particles wanted.</span>
+</span><span data-line="256"><span class="sd">        Defaults to &quot;all&quot; (all particles)</span>
+</span><span data-line="257"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="258">
+</span><span data-line="259">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="260">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="261">        <span class="n">key</span><span class="p">,</span>
+</span><span data-line="262">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span data-line="263">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="264">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="265">        <span class="n">uids</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+</span><span data-line="266">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="267">    <span class="p">):</span>
+</span><span data-line="268">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="269">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
+</span><span data-line="270">        <span class="bp">self</span><span class="o">.</span><span class="n">is_global</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_global&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</span><span data-line="271">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="272">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-</span><span data-line="266">
-</span><span data-line="267">
-</span><span data-line="268"><span class="k">class</span><span class="w"> </span><span class="nc">LocalQuantity</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
-</span><span data-line="269"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="270"><span class="sd">    Particle case of PartQuantity.</span>
-</span><span data-line="271"><span class="sd">    To access the quantity of the cell on which the particle is (No interpolation atm)</span>
-</span><span data-line="272"><span class="sd">    :keyword: uids (optional) the ids of the particles wanted.</span>
-</span><span data-line="273"><span class="sd">        Defaults to &quot;all&quot; (all particles)</span>
-</span><span data-line="274"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="275">
-</span><span data-line="276">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="277">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="278">        <span class="n">key</span><span class="p">,</span>
-</span><span data-line="279">        <span class="n">localkey</span><span class="p">,</span>
-</span><span data-line="280">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span data-line="281">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="282">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="283">        <span class="n">uids</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
-</span><span data-line="284">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="285">    <span class="p">):</span>
-</span><span data-line="286">        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compute&quot;</span><span class="p">):</span>
-</span><span data-line="287">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;compute is not allwed for LocalQuantity&quot;</span><span class="p">)</span>
-</span><span data-line="288">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="289">        <span class="bp">self</span><span class="o">.</span><span class="n">localkey</span> <span class="o">=</span> <span class="n">localkey</span>
-</span><span data-line="290">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
-</span><span data-line="291">        <span class="bp">self</span><span class="o">.</span><span class="n">is_global</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_global&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-</span><span data-line="292">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="293">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="273">
+</span><span data-line="274">
+</span><span data-line="275"><span class="k">class</span><span class="w"> </span><span class="nc">LocalQuantity</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
+</span><span data-line="276"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="277"><span class="sd">    Particle case of PartQuantity.</span>
+</span><span data-line="278"><span class="sd">    To access the quantity of the cell on which the particle is (No interpolation atm)</span>
+</span><span data-line="279"><span class="sd">    :keyword: uids (optional) the ids of the particles wanted.</span>
+</span><span data-line="280"><span class="sd">        Defaults to &quot;all&quot; (all particles)</span>
+</span><span data-line="281"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="282">
+</span><span data-line="283">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="284">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="285">        <span class="n">key</span><span class="p">,</span>
+</span><span data-line="286">        <span class="n">localkey</span><span class="p">,</span>
+</span><span data-line="287">        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span data-line="288">        <span class="n">plot_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="289">        <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="290">        <span class="n">uids</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+</span><span data-line="291">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="292">    <span class="p">):</span>
+</span><span data-line="293">        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compute&quot;</span><span class="p">):</span>
+</span><span data-line="294">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;compute is not allwed for LocalQuantity&quot;</span><span class="p">)</span>
+</span><span data-line="295">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">plot_coords</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="296">        <span class="bp">self</span><span class="o">.</span><span class="n">localkey</span> <span class="o">=</span> <span class="n">localkey</span>
+</span><span data-line="297">        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="n">uids</span>
+</span><span data-line="298">        <span class="bp">self</span><span class="o">.</span><span class="n">is_global</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_global&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</span><span data-line="299">        <span class="bp">self</span><span class="o">.</span><span class="n">is_timeline</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="300">        <span class="bp">self</span><span class="o">.</span><span class="n">is_movie</span> <span class="o">=</span> <span class="kc">False</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

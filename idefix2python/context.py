@@ -83,6 +83,14 @@ def _get_args():
         help="Read every Nth output file (N>=1). For example, -e 2 reads every second file.",
     )
 
+    parser.add_argument(
+        "-c",
+        "--clean",
+        action="store_true",
+        help="Removes every frame already present in the frames directory.",
+        dest="clean",
+    )
+
     args = parser.parse_args()
     if args.doOnlyFrames is None:
         args.doOnlyFrames = False
@@ -241,20 +249,23 @@ class RunContext:
             self.globalFolder,
             self.slice1Folder,
             self.videosFolder,
+            self.frameRootFolder,
         ]:
             os.makedirs(path, exist_ok=True)
-            # except OSError as _:
-            # pass
-            # subfolder = os.path.basename(path)
-            # content = glob.glob(f"{path}/*")
-            # user_agree = input(
-            #     f"Will overwrite the {subfolder} folder ({len(content)} files) [o/r/n] (overwrite, remove, no)"
-            # )
-            # if user_agree == "r":
-            #     for f in content:
-            #         os.remove(f)
-            # elif user_agree == "n":
-            #     exit()
+
+        print(self.userArgs.clean)
+        if self.userArgs.clean:
+            for frames_dir in self.frameRootFolder.iterdir():
+                if frames_dir.is_dir():
+                    file_count = sum(
+                        1 for item in frames_dir.iterdir() if item.is_file()
+                    )
+                    if file_count > 0:
+                        LOG(f"Removing {file_count} frames from {frames_dir}")
+                        for item in frames_dir.iterdir():
+                            if item.is_file() or item.is_symlink():
+                                print(item)
+                                item.unlink()
 
     def _check_data(self):
         "Show fields in every kind of data and detect is there are Pressure, B, Dust or Particles fields. Also detects the geometry. Also detect t_start and t_end"

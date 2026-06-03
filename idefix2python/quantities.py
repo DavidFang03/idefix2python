@@ -131,9 +131,9 @@ class MapMovie2D(Data):
         self.set_norm(norm)
         self.streamlines = streamlines
         default_streamline_kwargs = {
-            "lw_streamline": 0.2,
-            "arrowstyle_streamline": "->",
-            "color_streamline": (1, 1, 1, 0.5),
+            "linewidth": 0.2,
+            "arrowstyle": "->",
+            "color": (1, 1, 1, 0.5),
         }
         self.streamline_kwargs = kwargs.get(
             "streamline_kwargs", default_streamline_kwargs

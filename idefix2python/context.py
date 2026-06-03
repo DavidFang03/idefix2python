@@ -163,6 +163,7 @@ class RunContext:
         **kwargs: Additional optional parameters:
 
             * configPath (str | Path): Path to a specific configuration file.
+            * dataFolder (str): Folder path containing the data.
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
@@ -192,7 +193,9 @@ class RunContext:
             LOG(f"config.json file requested: {configPath}")
             self.config = tools.process_configs(configPath)
 
-        self.dataPath = self.projectPath / "outputs" / runName
+        self.dataFolder = Path(
+            kwargs.get("dataFolder", self.projectPath / "outputs" / runName)
+        )
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
@@ -334,14 +337,14 @@ class RunContext:
 
     def get_global_vtkFiles(self):
         pattern = "vtks/data*.vtk"
-        filelist = sorted(self.dataPath.glob(pattern))
+        filelist = sorted(self.dataFolder.glob(pattern))
         lastfile = self._get_lastfile_to_read(filelist)
         filelist = filelist[:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_slice1_vtkFiles(self):
         pattern = "vtks/slice1*.vtk"
-        filelist = sorted(self.dataPath.glob(pattern))
+        filelist = sorted(self.dataFolder.glob(pattern))
         lastfile = self._get_lastfile_to_read(filelist)
         filelist = filelist[:lastfile]
         return filelist[:: self.userArgs.every]
@@ -351,7 +354,7 @@ class RunContext:
             filelist = sorted(Path(self.partFolder).glob("part*.vtk"))
         else:
             pattern = "vtks/part*.vtk"
-            filelist = sorted(self.dataPath.glob(pattern))
+            filelist = sorted(self.dataFolder.glob(pattern))
 
         lastfile = self._get_lastfile_to_read(filelist)
         filelist = filelist[:lastfile]

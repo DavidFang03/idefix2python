@@ -130,6 +130,11 @@ class MapMovie2D(Data):
         super().__init__(key, symbol, plot_coords, **kwargs)
         self.set_norm(norm)
         self.streamlines = streamlines
+        if streamlines is not None:
+            if not isinstance(streamlines, (list, tuple)) or not len(streamlines) == 2:
+                raise Exception(
+                    f"Invalid streamline configuration: {streamlines}. Expected a list/tuple of length 2."
+                )
         default_streamline_kwargs = {
             "linewidth": 0.2,
             "arrowstyle": "->",

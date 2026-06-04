@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
+from scipy.interpolate import RegularGridInterpolator
 
 # from matplotlib.ticker as ticker
 import numpy as np
@@ -289,40 +290,62 @@ class SliceRenderer:
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
-        if (
-            isinstance(qtyInfo.streamlines, (list, tuple))
-            and len(qtyInfo.streamlines) == 2
-        ):
-            u_key1, u_key2 = qtyInfo.streamlines
-            mask1 = self.gridInfo.mask1
-            mask2 = self.gridInfo.mask2
-            if u_key1 in data and u_key2 in data:
-                ux, uz = tools.convertVector_toXZ(
-                    data[u_key1][mask2][:, mask1],
-                    data[u_key2][mask2][:, mask1],
-                    self.gridInfo.X1_toshow,
-                    self.gridInfo.X2_toshow,
-                    self.context.geometry,
-                )
-                x_coords, z_coords, Ux_uni, Uy_uni = tools.get_streamplot_data(
-                    self.gridInfo.X1Line_toshow,
-                    self.gridInfo.X2Line_toshow,
-                    ux,
-                    uz,
-                    self.context.geometry,
-                )
-                figure.axes[*qtyInfo.plot_coords].ax.streamplot(
-                    x_coords,
-                    z_coords,
-                    Ux_uni,
-                    Uy_uni,
-                    **qtyInfo.streamline_kwargs,
-                )
+        mask1 = self.gridInfo.mask1
+        mask2 = self.gridInfo.mask2
+        u_x1 = data[qtyInfo.streamlines[0]][mask2][:, mask1]
+        u_x2 = data[qtyInfo.streamlines[1]][mask2][:, mask1]
 
-        else:
-            raise Exception(
-                f"Invalid streamline configuration: {qtyInfo.streamlines}. Expected a list/tuple of length 2."
-            )
+        X1Line, X2Line = self.gridInfo.X1Line_toshow, self.gridInfo.X2Line_toshow
+        X2 = self.gridInfo.X2_toshow
+
+        xmin, xmax = self.gridInfo.xmin, self.gridInfo.xmax
+        ymin, ymax = self.gridInfo.ymin, self.gridInfo.ymax
+
+        resolution = 200
+        method = "linear"
+
+        xcoords = xmin + np.arange(resolution) * ((xmax - xmin) / (resolution - 1))
+        ycoords = ymin + np.arange(resolution) * ((ymax - ymin) / (resolution - 1))
+        Xuni, Yuni = np.meshgrid(xcoords, ycoords)
+
+        match self.context.geometry:
+            case "cartesian":
+                ux, uy = u_x1, u_x2
+                pts = np.stack((Xuni, Yuni), axis=-1)
+            case "cylindric":
+                ux, uy = u_x1, u_x2
+                pts = np.stack((Xuni, Yuni), axis=-1)
+            case "polar":
+                raise NotImplementedError("POLAR geometry not implemented yet")
+            case "spherical":
+                ux = np.sin(X2) * u_x1 + np.cos(X2) * u_x2
+                uy = np.cos(X2) * u_x1 - np.sin(X2) * u_x2
+                R_fromuni = np.sqrt(Xuni**2 + Yuni**2)
+                Theta_fromuni = np.arctan2(Xuni, Yuni)
+                pts = np.stack((R_fromuni, Theta_fromuni), axis=-1)
+
+        Ux_interp = RegularGridInterpolator(
+            (X1Line, X2Line),
+            ux.T,
+            fill_value=np.nan,
+            method=method,
+            bounds_error=False,
+        )
+        Uy_interp = RegularGridInterpolator(
+            (X1Line, X2Line),
+            uy.T,
+            fill_value=np.nan,
+            method=method,
+            bounds_error=False,
+        )
+
+        figure.axes[*qtyInfo.plot_coords].ax.streamplot(
+            xcoords,
+            ycoords,
+            Ux_interp(pts),
+            Uy_interp(pts),
+            **qtyInfo.streamline_kwargs,
+        )
 
     def _draw_contours(self, figure, qtyInfo, data_mesh, cbar):
         if getattr(qtyInfo, "contours", None) is None:

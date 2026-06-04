@@ -423,12 +423,7 @@ class SliceRenderer:
                 ax.show_time_indicator = False
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, commonvtk, frame_nb=-1):
-        ax = figure.axes[*sptime.plot_coords].ax
-
         self._draw_pcolormesh(figure, sptime)
-
-        self._plot_reference(ax, sptime)
-
         self.do_timeline_stuff(figure, sptime, frame_nb)
 
     def _render_TimeSeries(self, figure, timeseries, commonvtk, frame_nb=-1):

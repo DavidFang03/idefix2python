@@ -107,6 +107,8 @@ class Ax:
         self.norm = "linear"  # for heatmap only
         self.xscale = "linear"
         self.yscale = "linear"
+        self.xlabel = None
+        self.ylabel = None
         self.title = None
         self.qtytitles_list = []  # discarded if title is not None
         self.quantities = []
@@ -138,7 +140,7 @@ class Ax:
                         np.nanmax([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
 
-        for attr in ["xscale", "yscale"]:
+        for attr in ["xscale", "yscale", "xlabel", "ylabel"]:
             if getattr(qtyInfo, attr) is not None:
                 setattr(self, attr, getattr(qtyInfo, attr))
 
@@ -178,6 +180,8 @@ class Ax:
         title = ", ".join(self.qtytitles_list)
 
         self.ax.set_title(title)
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
 
         if self.doLegend:
             self.ax.legend()

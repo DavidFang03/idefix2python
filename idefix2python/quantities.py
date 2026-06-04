@@ -26,8 +26,10 @@ class Data:
         * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
         * **style_kwargs** (dict): Style options forwarded to plotting calls.
         * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
+        * **parts_color** (callable): Optional callable `parts_color(commonvtk)` returning a sequence of colors.
         * **ref_function** (callable): Analytical function for comparison.
         * **compute** (callable): Custom function to calculate new fields on the fly.
+        * **customize** (callable): If really what you want is not implemented, customize(ax, vtk) will do whatver you want on the corresponding ax.
     """
 
     def __init__(self, key, symbol="", plot_coords=None, bounds=None, **kwargs):
@@ -58,6 +60,7 @@ class Data:
 
         self.style_kwargs = kwargs.get("style_kwargs", {})
         self.parts_kwargs = kwargs.get("parts_kwargs", {})
+        self.parts_color = kwargs.get("parts_color", None)
 
         self.points = []
         self.values = []
@@ -67,6 +70,7 @@ class Data:
         self.valuesRef = []
 
         self.compute = kwargs.get("compute", None)
+        self.customize = kwargs.get("customize", None)
 
         self.label_func = kwargs.get("label_func", None)
         label = kwargs.get("label", False)
@@ -130,7 +134,7 @@ class MapMovie2D(Data):
                             e.g., ``[1,2]``. Defaults to None.
         :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
-            :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
+            :keyword streamline_kwargs (dict): kwargs that will be passed to streamplot.
             :keyword contours (Sequence[float] | None): Contour levels used to draw contour lines over the pcolormesh for this field. Defaults to None.
             :keyword contour_color (str): Color of the contour lines. Defaults to "green".
         """
@@ -140,7 +144,20 @@ class MapMovie2D(Data):
         super().__init__(key, symbol, plot_coords, **kwargs)
         self.set_norm(norm)
         self.streamlines = streamlines
-        self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
+        if streamlines is not None:
+            if not isinstance(streamlines, (list, tuple)) or not len(streamlines) == 2:
+                raise Exception(
+                    f"Invalid streamline configuration: {streamlines}. Expected a list/tuple of length 2."
+                )
+        default_streamline_kwargs = {
+            "linewidth": 0.2,
+            "arrowstyle": "->",
+            "color": (1, 1, 1, 0.5),
+            "density": 2,
+        }
+        self.streamline_kwargs = kwargs.get(
+            "streamline_kwargs", default_streamline_kwargs
+        )
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids

@@ -50,6 +50,14 @@ def _get_args():
     )
 
     parser.add_argument(
+        "-c",
+        "--clean",
+        action="store_true",
+        help="Removes every frame already present in the frames directory.",
+        dest="clean",
+    )
+
+    parser.add_argument(
         "-j",
         "--jobs",
         type=int,
@@ -58,11 +66,20 @@ def _get_args():
     )
 
     parser.add_argument(
+        "-a",
+        "--after",
+        type=lambda s: int(s) if s.isdigit() else float(s),
+        default=0,
+        help="To exclude the beginning of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        dest="after",
+    )
+
+    parser.add_argument(
         "-u",
         "--until",
         type=lambda s: int(s) if s.isdigit() else float(s),
-        default=1,
-        help="To read only a part of the data. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        default=1.0,
+        help="To exclude the end of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
         dest="until",
     )
 
@@ -163,6 +180,7 @@ class RunContext:
         **kwargs: Additional optional parameters:
 
             * configPath (str | Path): Path to a specific configuration file.
+            * dataFolder (str): Folder path containing the data.
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
@@ -192,7 +210,9 @@ class RunContext:
             LOG(f"config.json file requested: {configPath}")
             self.config = tools.process_configs(configPath)
 
-        self.dataPath = self.projectPath / "outputs" / runName
+        self.dataFolder = Path(
+            kwargs.get("dataFolder", self.projectPath / "outputs" / runName)
+        )
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
@@ -229,20 +249,21 @@ class RunContext:
             self.globalFolder,
             self.slice1Folder,
             self.videosFolder,
+            self.frameRootFolder,
         ]:
             os.makedirs(path, exist_ok=True)
-            # except OSError as _:
-            # pass
-            # subfolder = os.path.basename(path)
-            # content = glob.glob(f"{path}/*")
-            # user_agree = input(
-            #     f"Will overwrite the {subfolder} folder ({len(content)} files) [o/r/n] (overwrite, remove, no)"
-            # )
-            # if user_agree == "r":
-            #     for f in content:
-            #         os.remove(f)
-            # elif user_agree == "n":
-            #     exit()
+
+        if self.userArgs.clean:
+            for frames_dir in self.frameRootFolder.iterdir():
+                if frames_dir.is_dir():
+                    file_count = sum(
+                        1 for item in frames_dir.iterdir() if item.is_file()
+                    )
+                    if file_count > 0:
+                        LOG(f"Removing {file_count} frames from {frames_dir}")
+                        for item in frames_dir.iterdir():
+                            if item.is_file() or item.is_symlink():
+                                item.unlink()
 
     def _check_data(self):
         "Show fields in every kind of data and detect is there are Pressure, B, Dust or Particles fields. Also detects the geometry. Also detect t_start and t_end"
@@ -308,6 +329,36 @@ class RunContext:
             self.particles_nb = 0
             self.all_particles_uids = []
 
+    def _get_firstfile_to_read(self, filelist):
+        """
+        expects a sorted list
+        """
+        after = self.userArgs.after
+
+        if len(filelist) == 0:
+            firstframe = -1
+        elif isinstance(after, int):
+            firstframe = after
+        elif isinstance(after, float) and 0.0 <= after <= 1.0:
+            firstframe = min(int(len(filelist) * after), len(filelist) - 1)
+        elif isinstance(after, float):
+            if str(filelist[-1]).endswith(".vtk"):
+                tend = readVTK(filelist[-1]).t[0]
+                tstart = readVTK(filelist[0]).t[0]
+                if after < tstart:
+                    firstframe = 0
+                elif after > tend:
+                    raise Exception(
+                        f"Value of after ({after}) is larger than the last file time ({tend})"
+                    )
+                else:
+                    firstframe = int((after - tstart) / (tend - tstart) * len(filelist))
+                    if firstframe + 1 < len(filelist):
+                        firstframe += 1
+        else:
+            raise TypeError(f"Unsupported type for 'after': {type(after)}")
+        return firstframe
+
     def _get_lastfile_to_read(self, filelist):
         """
         expects a sorted list
@@ -315,35 +366,47 @@ class RunContext:
         until = self.userArgs.until
         if len(filelist) == 0:
             lastframe = -1
-        elif 0 <= until <= 1:
-            lastframe = int(len(filelist) * until)
         elif isinstance(until, int):
             lastframe = until
+        elif isinstance(until, float) and 0.0 <= until <= 1.0:
+            lastframe = min(int(len(filelist) * until), len(filelist))
         elif isinstance(until, float):
             if str(filelist[-1]).endswith(".vtk"):
                 tend = readVTK(filelist[-1]).t[0]
                 tstart = readVTK(filelist[0]).t[0]
-                if until < tstart:
+                if until > tend:
+                    lastframe = len(filelist)
+                elif until < tstart:
                     raise Exception(
-                        f"Value of until ({until}) is inferior than the first file time"
+                        f"Value of until ({until}) is smaller than the first file time ({tstart})"
                     )
-                lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
-                if lastframe + 1 < len(filelist):
-                    lastframe += 1
+                else:
+                    lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
+                    if lastframe + 1 < len(filelist):
+                        lastframe += 1
+            else:
+                raise ValueError(
+                    "Time-based filtering ('until' as timestamp) requires VTK files."
+                )
+        else:
+            raise TypeError(f"Unsupported type for 'until': {type(until)}")
+
         return lastframe
 
     def get_global_vtkFiles(self):
         pattern = "vtks/data*.vtk"
-        filelist = sorted(self.dataPath.glob(pattern))
+        filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_slice1_vtkFiles(self):
         pattern = "vtks/slice1*.vtk"
-        filelist = sorted(self.dataPath.glob(pattern))
+        filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_particles_vtkFiles(self):
@@ -351,10 +414,11 @@ class RunContext:
             filelist = sorted(Path(self.partFolder).glob("part*.vtk"))
         else:
             pattern = "vtks/part*.vtk"
-            filelist = sorted(self.dataPath.glob(pattern))
+            filelist = sorted(self.dataFolder.glob(pattern))
 
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
 
@@ -373,11 +437,20 @@ class GridInfo:
             Lines = [
                 tools.get_Position(vtk, self.context.geometry, dir) for dir in range(3)
             ]
+            LinesL = [
+                tools.get_PositionL(vtk, self.context.geometry, dir) for dir in range(3)
+            ]
             self.X1Line = Lines[active_dirs[0]]
+            self.X1LineL = LinesL[active_dirs[0]]
+            self.dX1 = np.diff(self.X1LineL)
             if len(active_dirs) == 1:
                 self.X2Line = Lines[1]  # will not be used anyway
+                self.X2LineL = LinesL[1]
+
             else:
                 self.X2Line = Lines[active_dirs[1]]
+                self.X2LineL = LinesL[active_dirs[1]]
+            self.dX2 = np.diff(self.X2LineL)
 
             # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
             self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
@@ -385,8 +458,6 @@ class GridInfo:
                 *Lines, self.context.geometry
             )
 
-            # self.X1 = np.squeeze(self.X1)  # if it's 1D
-            # self.shape = np.shape(self.X1)
         else:
             self.active = False
 
@@ -431,3 +502,27 @@ class GridInfo:
         self.xmax = np.max(self.grid1_toshow)
         self.ymin = np.min(self.grid2_toshow)
         self.ymax = np.max(self.grid2_toshow)
+
+    def get_uniform_cartesian_grid(self):
+        resolution = 400
+
+        # for streamplot, we need a uniformly spaced cartesian grid
+        xmin, xmax = self.xmin, self.xmax
+        ymin, ymax = self.ymin, self.ymax
+
+        self.x_uniLine = xmin + np.arange(resolution) * (
+            (xmax - xmin) / (resolution - 1)
+        )
+        self.y_uniLine = ymin + np.arange(resolution) * (
+            (ymax - ymin) / (resolution - 1)
+        )
+        Xuni, Yuni = np.meshgrid(self.x_uniLine, self.y_uniLine)
+
+        match self.context.geometry:
+            case "cartesian":
+                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+            case "cylindric":
+                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+            case "spherical":
+                self.X1_fromuni = np.sqrt(Xuni**2 + Yuni**2)
+                self.X2_fromuni = np.arctan2(Xuni, Yuni)

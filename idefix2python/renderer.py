@@ -255,6 +255,7 @@ class SliceRenderer:
             )
 
     def render_Frame(self, frame_nb=None, vtkPath=None, partPath=None):
+        commonvtk = None
         if vtkPath is not None:  # that means it's a movie
             figures_to_render = self.figsMovie
             VTK = readVTK(vtkPath)

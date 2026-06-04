@@ -290,6 +290,13 @@ class SliceRenderer:
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
+        resolution = 200
+        method = "linear"
+
+        # To use streamplot we need
+        # - A uniformly spaced cartesian grid (xcoords, ycoords)
+        # - Vector components (ux, uy) evaluated on that same grid (by linear interpolation)
+
         mask1 = self.gridInfo.mask1
         mask2 = self.gridInfo.mask2
         u_x1 = data[qtyInfo.streamlines[0]][mask2][:, mask1]
@@ -300,9 +307,6 @@ class SliceRenderer:
 
         xmin, xmax = self.gridInfo.xmin, self.gridInfo.xmax
         ymin, ymax = self.gridInfo.ymin, self.gridInfo.ymax
-
-        resolution = 200
-        method = "linear"
 
         xcoords = xmin + np.arange(resolution) * ((xmax - xmin) / (resolution - 1))
         ycoords = ymin + np.arange(resolution) * ((ymax - ymin) / (resolution - 1))

@@ -219,6 +219,10 @@ class SliceRenderer:
         partList = self.context.get_particles_vtkFiles()
         # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
         vtkList = slice1_list if len(slice1_list) > 0 else vtkList
+        # if no part files, send an dummy list
+        if len(partList) == 0:
+            partList = [None for _ in vtkList]
+
         if len(self.figsMovie) > 0:
             if self.userArgs.doOnlyFrames:
                 framenb_list = []
@@ -229,7 +233,7 @@ class SliceRenderer:
                         framenb_list.append(frame_nb)
 
             else:
-                framenb_list = list(range(0, len(vtkList), self.userArgs.every))
+                framenb_list = list(range(0, len(vtkList)))
 
             render_args = zip(
                 framenb_list,
@@ -256,9 +260,9 @@ class SliceRenderer:
         if vtkPath is not None:  # that means it's a movie
             figures_to_render = self.figsMovie
             VTK = readVTK(vtkPath)
-            commonvtk = self.processor.process(
-                datavtk=readVTK(vtkPath), partvtk=readVTK(partPath)
-            )
+            datavtk = None if vtkPath is None else readVTK(vtkPath)
+            partvtk = None if partPath is None else readVTK(partPath)
+            commonvtk = self.processor.process(datavtk=datavtk, partvtk=partvtk)
             custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
 
         else:

@@ -215,26 +215,30 @@ class SliceRenderer:
 
         # Then render Movies frame by frame
         slice1_list = self.context.get_slice1_vtkFiles()
-        self.vtkList = self.context.get_global_vtkFiles()
+        vtkList = self.context.get_global_vtkFiles()
+        partList = self.context.get_particles_vtkFiles()
+        # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
+        vtkList = slice1_list if len(slice1_list) > 0 else vtkList
         if len(self.figsMovie) > 0:
-            # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
-            render_list = slice1_list if len(slice1_list) > 0 else self.vtkList
-
             if self.userArgs.doOnlyFrames:
                 framenb_list = []
                 for frame_nb in self.userArgs.doOnlyFrames:
                     if frame_nb < 0:
-                        framenb_list.append(len(render_list) + frame_nb)
+                        framenb_list.append(len(vtkList) + frame_nb)
                     else:
                         framenb_list.append(frame_nb)
-                render_args = zip(
-                    framenb_list, [render_list[i] for i in self.userArgs.doOnlyFrames]
-                )
+
             elif self.userArgs.every:
-                framenb_list = list(range(0, len(render_list), self.userArgs.every))
-                render_args = zip(framenb_list, render_list)
+                framenb_list = list(range(0, len(vtkList), self.userArgs.every))
+
             else:
-                framenb_list = enumerate(render_list)
+                framenb_list = enumerate(vtkList)
+
+            render_args = zip(
+                framenb_list,
+                [vtkList[i] for i in framenb_list],
+                [partList[i] for i in framenb_list],
+            )
             with Pool(self.userArgs.jobs) as pool:
                 pool.starmap(self.render_Frame, render_args)
 
@@ -250,12 +254,13 @@ class SliceRenderer:
                 movie_path=self.framesPaths.get_movie_path(figMovie.name),
             )
 
-    def render_Frame(self, frame_nb=None, vtkPath=None):
-        # partvtk is not necessary I think from here. Except if I implement LineMovie1D later.
+    def render_Frame(self, frame_nb=None, vtkPath=None, partPath=None):
         if vtkPath is not None:  # that means it's a movie
             figures_to_render = self.figsMovie
             VTK = readVTK(vtkPath)
-            commonvtk = self.processor.process(datavtk=VTK)
+            commonvtk = self.processor.process(
+                datavtk=readVTK(vtkPath), partvtk=readVTK(partPath)
+            )
             custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
 
         else:
@@ -267,17 +272,39 @@ class SliceRenderer:
             figure.generate_figure(custom_suptitle=custom_suptitle)
             for qtyInfo in figure.quantities:
                 if isinstance(qtyInfo, MapMovie2D):
-                    self._render_2D(figure, qtyInfo, commonvtk.data, frame_nb)
+                    self._render_2D(figure, qtyInfo, commonvtk, frame_nb)
+                    self.draw_particles(
+                        figure,
+                        part_qty=self.partsInfo.parts_Z,
+                        back_qty=qtyInfo,
+                        commonvtk=commonvtk,
+                        frame_nb=frame_nb,
+                    )
                 elif isinstance(qtyInfo, LineMovie1D):
-                    self._render_1D(figure, qtyInfo, commonvtk.data, frame_nb)
+                    self._render_1D(figure, qtyInfo, commonvtk, frame_nb)
+                    self.draw_particles(
+                        figure,
+                        part_qty=self.partsInfo.parts_X1,
+                        back_qty=qtyInfo,
+                        commonvtk=commonvtk,
+                        frame_nb=frame_nb,
+                    )
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
-                    self._render_SpaceTimeHeatmap(figure, qtyInfo, frame_nb)
+                    self._render_SpaceTimeHeatmap(figure, qtyInfo, commonvtk, frame_nb)
+                    self.draw_particles(
+                        figure,
+                        part_qty=self.partsInfo.parts_X1,
+                        back_qty=qtyInfo,
+                        commonvtk=commonvtk,
+                    )
                 elif isinstance(qtyInfo, PartQuantity) or isinstance(
                     qtyInfo, LocalQuantity
                 ):
-                    self._render_TimeSeries(figure, qtyInfo, frame_nb)
+                    self._render_TimeSeries(figure, qtyInfo, commonvtk, frame_nb)
+                    self.draw_particles(figure, part_qty=qtyInfo, commonvtk=commonvtk)
+
                 elif isinstance(qtyInfo, OneComponentOneVariable):
-                    self._render_1C1V(figure, qtyInfo, frame_nb)
+                    self._render_1C1V(figure, qtyInfo, commonvtk, frame_nb)
                 else:
                     raise ValueError("Quantity type not supported")
 
@@ -357,18 +384,11 @@ class SliceRenderer:
         )
         cbar.add_lines(levels)
 
-    def _render_1D(self, figure, qty1DInfo, data, frame_nb):
+    def _render_1D(self, figure, qty1DInfo, commonvtk, frame_nb):
 
         ax = figure.axes[*qty1DInfo.plot_coords].ax
 
-        ax.plot(self.gridInfo.X1Line, data[qty1DInfo.key])
-
-        self.draw_particles(
-            figure,
-            part_qty=self.partsInfo.parts_X1,
-            back_qty=qty1DInfo,
-            frame_nb=frame_nb,
-        )
+        ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
 
         # To remove?
         if len(qty1DInfo.pointsRef) > 0:
@@ -383,14 +403,8 @@ class SliceRenderer:
             *qty1DInfo.bounds
         )  # TODO bounds will be more properly handled in later PR
 
-    def _render_2D(self, figure, qtyInfo, data, frame_nb):
-        self._draw_pcolormesh(figure, qtyInfo, data)
-        self.draw_particles(
-            figure,
-            part_qty=self.partsInfo.parts_Z,
-            back_qty=qtyInfo,
-            frame_nb=frame_nb,
-        )
+    def _render_2D(self, figure, qtyInfo, commonvtk, frame_nb):
+        self._draw_pcolormesh(figure, qtyInfo, commonvtk.data)
 
     def do_timeline_stuff(self, figure, timeline, frame_nb=-1):
         """
@@ -402,16 +416,10 @@ class SliceRenderer:
                 ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
                 ax.show_time_indicator = False
 
-    def _render_SpaceTimeHeatmap(self, figure, sptime, frame_nb=-1):
+    def _render_SpaceTimeHeatmap(self, figure, sptime, commonvtk, frame_nb=-1):
         ax = figure.axes[*sptime.plot_coords].ax
 
         self._draw_pcolormesh(figure, sptime)
-
-        self.draw_particles(
-            figure,
-            part_qty=self.partsInfo.parts_X1,
-            back_qty=sptime,
-        )
 
         has_legend_items = False
         if len(sptime.pointsRef) > 0:
@@ -433,35 +441,32 @@ class SliceRenderer:
 
         self.do_timeline_stuff(figure, sptime, frame_nb)
 
-    def _render_TimeSeries(self, figure, timeseries, frame_nb=-1):
+    def _render_TimeSeries(self, figure, timeseries, commonvtk, frame_nb=-1):
         ax = figure.axes[*timeseries.plot_coords].ax
         if isinstance(timeseries, PartQuantity) and timeseries.is_global:
             return
 
-        if isinstance(timeseries, PartQuantity) or isinstance(
+        if not isinstance(timeseries, PartQuantity) and not isinstance(
             timeseries, LocalQuantity
         ):
-            self.draw_particles(
-                figure,
-                part_qty=timeseries,
-            )
-        else:
             raise NotImplementedError("only part here")
             return  # TODO some room for timevol.dat here
 
         ax.grid(alpha=GRID_OPACITY)
         self.do_timeline_stuff(figure, timeseries, frame_nb)
 
-    def _render_1C1V(self, figure, onec_onev, frame_nb=-1):
+    def _render_1C1V(self, figure, onec_onev, commonvtk, frame_nb=-1):
         ax = figure.axes[*onec_onev.plot_coords].ax
 
         ax.plot(onec_onev.points, onec_onev.values)
         if onec_onev.xqty is None:  # that means it's a timeline
             self.do_timeline_stuff(figure, onec_onev, frame_nb)
 
-    def draw_particles(self, figure, part_qty, back_qty=None, frame_nb=None):
+    def draw_particles(
+        self, figure, part_qty, back_qty=None, commonvtk=None, frame_nb=None
+    ):
         """
-        back_qty is the background. If back_qty.uids are accounted if back_qty is not None. Otherwise, part_qty.uids
+        back_qty is the background. back_qty.uids are considered if back_qty is not None. Otherwise, part_qty.uids
         """
         if back_qty is None:
             ax = figure.axes[*part_qty.plot_coords].ax
@@ -473,9 +478,17 @@ class SliceRenderer:
         if uids is None or len(uids) == 0:
             return
 
+        parts_color = None
+        if back_qty is not None and back_qty.parts_color is not None:
+            parts_color = back_qty.parts_color
+        elif part_qty is not None and part_qty.parts_color is not None:
+            parts_color = part_qty.parts_color
+
         if self.options.get("scatter_particles", False) and isinstance(
             back_qty, MapMovie2D
         ):
+            if parts_color is not None:
+                colors = parts_color(commonvtk)
             points = part_qty.points[frame_nb, uids]
             values = part_qty.values[frame_nb, uids]
             alpha = 1
@@ -483,6 +496,7 @@ class SliceRenderer:
             ax.scatter(
                 points,
                 values,
+                c=colors,
                 marker="x",
                 s=1,
                 linewidths=0.3,
@@ -497,11 +511,11 @@ class SliceRenderer:
                 else:
                     label = uid
 
-                # TODO Make this part applicable to any kwargs, not just color/label
-                if back_qty is not None and "color" in back_qty.parts_kwargs:
+                if parts_color is not None:
+                    color = parts_color(commonvtk)[ii]
+
+                elif back_qty is not None and "color" in back_qty.parts_kwargs:
                     color = back_qty.parts_kwargs["color"]
-                elif hasattr(part_qty, "colors") and ii < len(part_qty.colors):
-                    color = part_qty.colors[ii]
                 else:
                     color = parts_cmap(ii / max(1, len(uids) - 1))
 

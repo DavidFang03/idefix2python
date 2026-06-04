@@ -26,6 +26,7 @@ class Data:
         * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
         * **style_kwargs** (dict): Style options forwarded to plotting calls.
         * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
+        * **parts_color** (callable): Every particle color will be parts_color(vtk, uid)
         * **ref_function** (callable): Analytical function for comparison.
         * **compute** (callable): Custom function to calculate new fields on the fly.
         * **customize** (callable): If really what you want is not implemented, customize(ax, vtk) will do whatver you want on the corresponding ax.
@@ -59,6 +60,7 @@ class Data:
 
         self.style_kwargs = kwargs.get("style_kwargs", {})
         self.parts_kwargs = kwargs.get("parts_kwargs", {})
+        self.parts_color = kwargs.get("parts_color", None)
 
         self.points = []
         self.values = []

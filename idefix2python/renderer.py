@@ -390,7 +390,7 @@ class SliceRenderer:
 
         ax = figure.axes[*qty1DInfo.plot_coords].ax
 
-        (line,) = ax.plot(self.gridInfo.X1Line, data[qty1DInfo.key])
+        (line,) = ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
         if qty1DInfo.label:
             line.set_label(qty1DInfo.label)
             figure.axes[*qty1DInfo.plot_coords].set_doLegend()

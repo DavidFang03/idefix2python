@@ -26,7 +26,7 @@ class Data:
         * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
         * **style_kwargs** (dict): Style options forwarded to plotting calls.
         * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
-        * **parts_color** (callable): Every particle color will be parts_color(vtk, uid)
+        * **parts_color** (callable): Optional callable `parts_color(commonvtk)` returning a sequence of colors.
         * **ref_function** (callable): Analytical function for comparison.
         * **compute** (callable): Custom function to calculate new fields on the fly.
         * **customize** (callable): If really what you want is not implemented, customize(ax, vtk) will do whatver you want on the corresponding ax.

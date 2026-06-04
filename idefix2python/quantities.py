@@ -24,6 +24,8 @@ class Data:
         * **ymax** (float): Maximum y-axis bound.
         * **xscale** (str): X-axis scaling type, e.g., 'linear' or 'log'.
         * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
+        * **xlabel** (str): X-axis label.
+        * **ylabel** (str): Y-axis label.
         * **style_kwargs** (dict): Style options forwarded to plotting calls.
         * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
         * **parts_color** (callable): Optional callable `parts_color(commonvtk)` returning a sequence of colors.
@@ -58,8 +60,15 @@ class Data:
         self.yscale = kwargs.get("yscale", "linear")
         # heatmaps have a `norm` attribute
 
+        self.xlabel = kwargs.get("xlabel", None)
+        self.ylabel = kwargs.get("ylabel", None)
+
         self.style_kwargs = kwargs.get("style_kwargs", {})
-        self.parts_kwargs = kwargs.get("parts_kwargs", {})
+
+        default_parts_kwargs = {"marker": "x", "markersize": 0.2}
+        self.parts_kwargs = merge_default_to_dict(
+            default_parts_kwargs, kwargs.get("parts_kwargs", {})
+        )
         self.parts_color = kwargs.get("parts_color", None)
 
         self.points = []
@@ -68,9 +77,18 @@ class Data:
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
+        default_ref_plot_kwargs = {"zorder": 3, "ls": "--", "lw": 2}
+        if self.ref_function is not None:
+            if not hasattr(self.ref_function, "plot_kwargs"):
+                self.ref_function.plot_kwargs = {}
+            self.ref_function.plot_kwargs = merge_default_to_dict(
+                default_ref_plot_kwargs, self.ref_function.plot_kwargs
+            )
 
         self.compute = kwargs.get("compute", None)
         self.customize = kwargs.get("customize", None)
+
+        self.label_func = kwargs.get("label_func", None)
 
     def set_bounds(self, bounds):
         self.bounds = bounds
@@ -90,6 +108,14 @@ class Data:
             raise Exception(
                 f"{norm} not implemented. Supported norms: {supported_norms}"
             )
+
+    def set_default_xlabel(self, xlabel):
+        if self.xlabel is None:
+            self.xlabel = xlabel
+
+    def set_default_ylabel(self, ylabel):
+        if self.ylabel is None:
+            self.ylabel = ylabel
 
     def __str__(self):
         return self.key
@@ -145,9 +171,10 @@ class MapMovie2D(Data):
             "color": (1, 1, 1, 0.5),
             "density": 2,
         }
-        self.streamline_kwargs = kwargs.get(
-            "streamline_kwargs", default_streamline_kwargs
+        self.streamline_kwargs = merge_default_to_dict(
+            default_streamline_kwargs, kwargs.get("streamline_kwargs", {})
         )
+
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
@@ -280,6 +307,7 @@ class PartQuantity(Data):
         self.is_global = kwargs.get("is_global", False)
         self.is_timeline = True
         self.is_movie = False
+        self.colors = kwargs.get("colors", [])
 
 
 class LocalQuantity(Data):
@@ -308,3 +336,11 @@ class LocalQuantity(Data):
         self.is_global = kwargs.get("is_global", False)
         self.is_timeline = True
         self.is_movie = False
+        self.colors = kwargs.get("colors", [])
+
+
+def merge_default_to_dict(default_dict, final_dict):
+    for key, value in default_dict.items():
+        if key not in final_dict:
+            final_dict[key] = value
+    return final_dict

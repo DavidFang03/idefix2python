@@ -26,9 +26,9 @@ from .tools import LOG
 matplotlib.use("Agg")
 
 LABEL_FONTSIZE = 16
-parts_cmap = plt.get_cmap("YlOrRd")
+PARTS_CMAP = plt.get_cmap("Pastel2")
 
-timeindicator_kwargs = {"lw": 1, "ls": "--", "alpha": 0.8}
+TIMEINDICATOR_KWARGS = {"lw": 1, "ls": "--", "alpha": 0.8}
 GRID_OPACITY = 0.1
 
 plt.style.use("dark_background")
@@ -143,12 +143,12 @@ class SliceRenderer:
                             else getattr(self.gridInfo, attr)
                         )
                         setattr(qtyInfo, attr, value)
-                    qtyInfo.xlabel = self.gridInfo.grid_name_1
-                    qtyInfo.ylabel = self.gridInfo.grid_name_2
+                    qtyInfo.set_default_xlabel(self.gridInfo.grid_name_1)
+                    qtyInfo.set_default_ylabel(self.gridInfo.grid_name_2)
 
                 elif isinstance(qtyInfo, LineMovie1D):
-                    qtyInfo.ylabel = qtyInfo.symbol
-                    qtyInfo.ylabel = self.gridInfo.axis_name_1
+                    qtyInfo.set_default_xlabel(self.gridInfo.axis_name_1)
+                    qtyInfo.set_default_ylabel(qtyInfo.symbol)
 
                 elif isinstance(qtyInfo, SpaceTimeHeatmap):
                     qtyInfo.points = (
@@ -174,12 +174,12 @@ class SliceRenderer:
                         if qtyInfo.ymax is not None
                         else np.nanmax(qtyInfo.points)
                     )
-                    qtyInfo.xlabel = r"$t$"
-                    qtyInfo.ylabel = self.gridInfo.axis_name_1
+                    qtyInfo.set_default_xlabel(r"$t$")
+                    qtyInfo.set_default_ylabel(self.gridInfo.axis_name_1)
 
                 elif isinstance(qtyInfo, PartQuantity):
-                    qtyInfo.xlabel = r"$t$"
-                    qtyInfo.ylabel = qtyInfo.symbol
+                    qtyInfo.set_default_xlabel(r"$t$")
+                    qtyInfo.set_default_ylabel(qtyInfo.symbol)
 
                 if qtyInfo.ref_function is not None:
                     vtktimes = (
@@ -197,14 +197,6 @@ class SliceRenderer:
                 if qtyInfo.is_timeline:
                     vtktimes = self.processor.vtktimes
                     qtyInfo.points = vtktimes
-
-                # if isinstance(qtyInfo, MapMovie2D) or isinstance(
-                #     qtyInfo, SpaceTimeHeatmap
-                # ):
-                #     if qtyInfo.uids is not None and "alpha" not in qtyInfo.style_kwargs:
-                #         qtyInfo.style_kwargs["alpha"] = 0.20
-                #     elif "alpha" not in qtyInfo.style_kwargs:
-                #         qtyInfo.style_kwargs["alpha"] = 1
 
             fig.init()
 
@@ -310,8 +302,14 @@ class SliceRenderer:
                 else:
                     raise ValueError("Quantity type not supported")
 
+                Ax_container = figure.axes[*qtyInfo.plot_coords]
                 if qtyInfo.customize is not None:
-                    qtyInfo.customize(figure.axes[*qtyInfo.plot_coords].ax, commonvtk)
+                    qtyInfo.customize(Ax_container.ax, commonvtk)
+
+                if "label" in qtyInfo.style_kwargs:
+                    Ax_container.set_doLegend()
+
+                self._plot_reference(Ax_container, qtyInfo)
 
             if vtkPath is not None:  # that means it's a movie
                 png_path = self.framesPaths.get_movieframe_path(
@@ -386,21 +384,27 @@ class SliceRenderer:
         )
         cbar.add_lines(levels)
 
+    def _plot_reference(self, Ax_container, qtyInfo):
+        if len(qtyInfo.pointsRef) > 0:
+            Ax_container.ax.plot(
+                qtyInfo.pointsRef,
+                qtyInfo.valuesRef,
+                **qtyInfo.ref_function.plot_kwargs,
+            )
+            Ax_container.set_doLegend()
+
     def _render_1D(self, figure, qty1DInfo, commonvtk, frame_nb):
 
         ax = figure.axes[*qty1DInfo.plot_coords].ax
 
-        ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
+        (line,) = ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
 
-        # To remove?
-        if len(qty1DInfo.pointsRef) > 0:
-            ax.plot(
-                qty1DInfo.pointsRef,
-                qty1DInfo.valuesRef,
-                ls="--",
-                label="Analytical",
-            )
-            ax.legend()
+        ax.plot(
+            self.gridInfo.X1Line,
+            commonvtk.data[qty1DInfo.key],
+            **qty1DInfo.style_kwargs,
+        )
+
         ax.set_ylim(
             *qty1DInfo.bounds
         )  # TODO bounds will be more properly handled in later PR
@@ -415,32 +419,11 @@ class SliceRenderer:
         ax = figure.axes[*timeline.plot_coords].ax
         if getattr(ax, "show_time_indicator", True):
             if frame_nb > 0:
-                ax.axvline(x=self.processor.vtktimes[frame_nb], **timeindicator_kwargs)
+                ax.axvline(x=self.processor.vtktimes[frame_nb], **TIMEINDICATOR_KWARGS)
                 ax.show_time_indicator = False
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, commonvtk, frame_nb=-1):
-        ax = figure.axes[*sptime.plot_coords].ax
-
         self._draw_pcolormesh(figure, sptime)
-
-        has_legend_items = False
-        if len(sptime.pointsRef) > 0:
-            plot_kwargs = {}
-            if hasattr(sptime.ref_function, "plot_kwargs"):
-                plot_kwargs = sptime.ref_function.plot_kwargs
-                if "zorder" not in plot_kwargs:
-                    plot_kwargs["zorder"] = 3
-                if "label" in plot_kwargs:
-                    has_legend_items = True
-            ax.plot(
-                sptime.pointsRef,
-                sptime.valuesRef,
-                **plot_kwargs,
-            )
-
-        if has_legend_items:
-            ax.legend()
-
         self.do_timeline_stuff(figure, sptime, frame_nb)
 
     def _render_TimeSeries(self, figure, timeseries, commonvtk, frame_nb=-1):
@@ -471,11 +454,12 @@ class SliceRenderer:
         back_qty is the background. back_qty.uids are considered if back_qty is not None. Otherwise, part_qty.uids
         """
         if back_qty is None:
-            ax = figure.axes[*part_qty.plot_coords].ax
+            Ax_container = figure.axes[*part_qty.plot_coords]
             uids = part_qty.uids
         else:
-            ax = figure.axes[*back_qty.plot_coords].ax
+            Ax_container = figure.axes[*back_qty.plot_coords]
             uids = back_qty.uids
+        ax = Ax_container.ax
 
         if uids is None or len(uids) == 0:
             return
@@ -486,13 +470,15 @@ class SliceRenderer:
         elif part_qty is not None and part_qty.parts_color is not None:
             parts_colors = part_qty.parts_color(commonvtk)
 
+        style_kwargs = (
+            part_qty.style_kwargs if back_qty is None else back_qty.parts_kwargs
+        )
+
         if self.options.get("scatter_particles", False) and isinstance(
             back_qty, MapMovie2D
         ):
             points = part_qty.points[frame_nb, uids]
             values = part_qty.values[frame_nb, uids]
-            alpha = 1
-            lw = 0.5
             ax.scatter(
                 points,
                 values,
@@ -504,26 +490,18 @@ class SliceRenderer:
 
         else:
             for ii, uid in enumerate(uids):
-                lw = 1
-                alpha = 1
-                if hasattr(part_qty, "labels") and ii < len(part_qty.labels):
-                    label = part_qty.labels[ii]
-                else:
-                    label = uid
-
                 if parts_colors is not None:
                     color = parts_colors[ii]
-
-                elif back_qty is not None and "color" in back_qty.parts_kwargs:
-                    color = back_qty.parts_kwargs["color"]
                 else:
-                    color = parts_cmap(ii / max(1, len(uids) - 1))
+                    color = PARTS_CMAP(ii / max(1, len(uids) - 1))
+                if "color" not in style_kwargs:
+                    style_kwargs["color"] = color
 
                 if isinstance(back_qty, MapMovie2D):
                     points = part_qty.points[: frame_nb + 1, uid]
                     values = part_qty.values[: frame_nb + 1, uid]
-                    alpha = 1
-                    lw = 0.5
+                    if "lw" not in style_kwargs:
+                        style_kwargs["lw"] = 0.5
                     ax.scatter(
                         points[-1],
                         values[-1],
@@ -539,26 +517,25 @@ class SliceRenderer:
                 elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
                     points = self.processor.vtktimes  # pre_render doesn't initialize global partquantities so part_qty.points would be empty here
                     values = np.asarray(part_qty.values)[:, uid]
-                    alpha = 1
-                    lw = 1
                 else:
                     raise NotImplementedError(f"{back_qty} doesn't support particles")
 
-                ax.plot(
+                (line,) = ax.plot(
                     points,
                     values,
-                    label=label,  # TODO Show this label. Later PR.
-                    color=color,
-                    lw=lw,
-                    alpha=alpha,
-                    marker="8",
-                    markersize=0.2,
+                    **style_kwargs,
                 )
 
-        if len(part_qty.pointsRef) > 0:
-            ax.plot(
-                part_qty.pointsRef, part_qty.valuesRef, ls="--", lw=2, label="Predicted"
-            )
+                label = None
+                if part_qty.label_func is not None:
+                    label = part_qty.label_func(uid, commonvtk)
+                if back_qty is not None:
+                    if back_qty.label_func is not None:
+                        label = back_qty.label_func(uid, commonvtk)
+
+                if label is not None:
+                    line.set_label(label)
+                    Ax_container.set_doLegend()
 
     def _draw_pcolormesh(self, figure, qtyInfo, data=None):
         """

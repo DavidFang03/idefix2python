@@ -83,15 +83,18 @@ The three others are not accessible to the user:
 
 ## Roadmap to v1.0 (!!)
 
-* Better zoom API (ongoing)
-* Automatic labeling (already partially supported through `config.json` file.)
-* Reintroduce `timevol.dat` (timevol) for global quantities.
+* pdf mode
+* Invisible quantities
+* Allowing to customize the remaining default parameters
+* Automatic labelling (already partially supported through `config.json` file.)
+* Add a big example
 * twinx
 
 ### Known issues
 * `POLAR` geometry in more than 2 dimensions is not supported.
 
 ### Not a priority
+* Reintroduce `timevol.dat` (timevol) for global quantities.
 * Support multiple pipelines
 * Support mixed outputs (e.g `data*.vtk` + `slice1*.vtk`)
 * Add a `discard` option to replace non-physical values (e.g., $<0$) with `NaN`

@@ -26,7 +26,7 @@ from .tools import LOG
 matplotlib.use("Agg")
 
 LABEL_FONTSIZE = 16
-parts_cmap = plt.get_cmap("Pastel1")
+parts_cmap = plt.get_cmap("YlOrRd")
 
 timeindicator_kwargs = {"lw": 1, "ls": "--", "alpha": 0.8}
 GRID_OPACITY = 0.1
@@ -280,6 +280,9 @@ class SliceRenderer:
                     self._render_1C1V(figure, qtyInfo, frame_nb)
                 else:
                     raise ValueError("Quantity type not supported")
+
+                if qtyInfo.customize is not None:
+                    qtyInfo.customize(figure.axes[*qtyInfo.plot_coords].ax, commonvtk)
 
             if vtkPath is not None:  # that means it's a movie
                 png_path = self.framesPaths.get_movieframe_path(

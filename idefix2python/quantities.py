@@ -28,6 +28,7 @@ class Data:
         * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
         * **ref_function** (callable): Analytical function for comparison.
         * **compute** (callable): Custom function to calculate new fields on the fly.
+        * **customize** (callable): If really what you want is not implemented, customize(ax, vtk) will do whatver you want on the corresponding ax.
     """
 
     def __init__(self, key, symbol="", plot_coords=None, bounds=None, **kwargs):
@@ -67,6 +68,7 @@ class Data:
         self.valuesRef = []
 
         self.compute = kwargs.get("compute", None)
+        self.customize = kwargs.get("customize", None)
 
     def set_bounds(self, bounds):
         self.bounds = bounds

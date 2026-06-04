@@ -478,17 +478,15 @@ class SliceRenderer:
         if uids is None or len(uids) == 0:
             return
 
-        parts_color = None
+        parts_colors = None
         if back_qty is not None and back_qty.parts_color is not None:
-            parts_color = back_qty.parts_color
+            parts_colors = back_qty.parts_color(commonvtk)
         elif part_qty is not None and part_qty.parts_color is not None:
-            parts_color = part_qty.parts_color
+            parts_colors = part_qty.parts_color(commonvtk)
 
         if self.options.get("scatter_particles", False) and isinstance(
             back_qty, MapMovie2D
         ):
-            if parts_color is not None:
-                colors = parts_color(commonvtk)
             points = part_qty.points[frame_nb, uids]
             values = part_qty.values[frame_nb, uids]
             alpha = 1
@@ -496,7 +494,7 @@ class SliceRenderer:
             ax.scatter(
                 points,
                 values,
-                c=colors,
+                c=parts_colors,
                 marker="x",
                 s=1,
                 linewidths=0.3,
@@ -511,8 +509,8 @@ class SliceRenderer:
                 else:
                     label = uid
 
-                if parts_color is not None:
-                    color = parts_color(commonvtk)[ii]
+                if parts_colors is not None:
+                    color = parts_colors[ii]
 
                 elif back_qty is not None and "color" in back_qty.parts_kwargs:
                     color = back_qty.parts_kwargs["color"]

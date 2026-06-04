@@ -313,6 +313,9 @@ class SliceRenderer:
                 if qtyInfo.customize is not None:
                     qtyInfo.customize(figure.axes[*qtyInfo.plot_coords].ax, commonvtk)
 
+                if "label" in qtyInfo.style_kwargs:
+                    figure.axes[*qtyInfo.plot_coords].set_doLegend()
+
             if vtkPath is not None:  # that means it's a movie
                 png_path = self.framesPaths.get_movieframe_path(
                     figure.name, vtkPath.name[-8:-4]
@@ -391,11 +394,12 @@ class SliceRenderer:
         ax = figure.axes[*qty1DInfo.plot_coords].ax
 
         (line,) = ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
-        if qty1DInfo.label:
-            line.set_label(qty1DInfo.label)
-            figure.axes[*qty1DInfo.plot_coords].set_doLegend()
 
-        ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
+        ax.plot(
+            self.gridInfo.X1Line,
+            commonvtk.data[qty1DInfo.key],
+            **qty1DInfo.style_kwargs,
+        )
 
         # To remove?
         if len(qty1DInfo.pointsRef) > 0:
@@ -405,6 +409,8 @@ class SliceRenderer:
                 ls="--",
                 label="Reference",
             )
+            figure.axes[*qty1DInfo.plot_coords].set_doLegend()
+
         ax.set_ylim(
             *qty1DInfo.bounds
         )  # TODO bounds will be more properly handled in later PR
@@ -550,15 +556,11 @@ class SliceRenderer:
                 )
 
                 label = None
-                if part_qty.label:
-                    label = part_qty.label
                 if part_qty.label_func is not None:
-                    label = part_qty.label_func(uid)
+                    label = part_qty.label_func(uid, commonvtk)
                 if back_qty is not None:
-                    if back_qty.label:
-                        label = back_qty.label
                     if back_qty.label_func is not None:
-                        label = back_qty.label_func(uid)
+                        label = back_qty.label_func(uid, commonvtk)
 
                 if label is not None:
                     line.set_label(label)
@@ -568,6 +570,7 @@ class SliceRenderer:
             ax.plot(
                 part_qty.pointsRef, part_qty.valuesRef, ls="--", lw=2, label="Reference"
             )
+            Ax_container.set_doLegend()
 
     def _draw_pcolormesh(self, figure, qtyInfo, data=None):
         """

@@ -73,14 +73,6 @@ class Data:
         self.customize = kwargs.get("customize", None)
 
         self.label_func = kwargs.get("label_func", None)
-        label = kwargs.get("label", False)
-        if isinstance(label, bool):
-            if label:
-                self.label = str(self.symbol)
-            else:
-                self.label = label
-        else:
-            self.label = str(label)
 
     def set_bounds(self, bounds):
         self.bounds = bounds
@@ -274,7 +266,6 @@ class PartQuantity(Data):
 
     :keyword: uids (optional) the ids of the particles wanted.
         Defaults to "all" (all particles)
-    :keyword: label_func (optional, callable). label_func(uid) will be used as label.
     """
 
     def __init__(
@@ -300,7 +291,6 @@ class LocalQuantity(Data):
     To access the quantity of the cell on which the particle is (No interpolation atm)
     :keyword: uids (optional) the ids of the particles wanted.
         Defaults to "all" (all particles)
-    :keyword: label_func (optional, callable). label_func(uid) will be used as label.
     """
 
     def __init__(

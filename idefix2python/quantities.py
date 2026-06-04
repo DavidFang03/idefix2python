@@ -139,6 +139,7 @@ class MapMovie2D(Data):
             "linewidth": 0.2,
             "arrowstyle": "->",
             "color": (1, 1, 1, 0.5),
+            "density": 2,
         }
         self.streamline_kwargs = kwargs.get(
             "streamline_kwargs", default_streamline_kwargs

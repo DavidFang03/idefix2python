@@ -119,6 +119,7 @@ class SliceRenderer:
             self.gridInfo.apply_zoom(
                 options.get("zoom", None)
             )  # initialize gridInfo.*_toshow
+            self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
 
     def set_infos(self, partsInfo):
         self.partsInfo = partsInfo
@@ -290,7 +291,6 @@ class SliceRenderer:
             figure.save_and_close(png_path)
 
     def _draw_streamlines(self, figure, qtyInfo, data):
-        resolution = 200
         method = "linear"
 
         # To use streamplot we need
@@ -302,32 +302,19 @@ class SliceRenderer:
         u_x1 = data[qtyInfo.streamlines[0]][mask2][:, mask1]
         u_x2 = data[qtyInfo.streamlines[1]][mask2][:, mask1]
 
-        X1Line, X2Line = self.gridInfo.X1Line_toshow, self.gridInfo.X2Line_toshow
-        X2 = self.gridInfo.X2_toshow
-
-        xmin, xmax = self.gridInfo.xmin, self.gridInfo.xmax
-        ymin, ymax = self.gridInfo.ymin, self.gridInfo.ymax
-
-        xcoords = xmin + np.arange(resolution) * ((xmax - xmin) / (resolution - 1))
-        ycoords = ymin + np.arange(resolution) * ((ymax - ymin) / (resolution - 1))
-        Xuni, Yuni = np.meshgrid(xcoords, ycoords)
-
         match self.context.geometry:
             case "cartesian":
                 ux, uy = u_x1, u_x2
-                pts = np.stack((Xuni, Yuni), axis=-1)
             case "cylindric":
                 ux, uy = u_x1, u_x2
-                pts = np.stack((Xuni, Yuni), axis=-1)
             case "polar":
                 raise NotImplementedError("POLAR geometry not implemented yet")
             case "spherical":
-                ux = np.sin(X2) * u_x1 + np.cos(X2) * u_x2
-                uy = np.cos(X2) * u_x1 - np.sin(X2) * u_x2
-                R_fromuni = np.sqrt(Xuni**2 + Yuni**2)
-                Theta_fromuni = np.arctan2(Xuni, Yuni)
-                pts = np.stack((R_fromuni, Theta_fromuni), axis=-1)
+                Theta = self.gridInfo.X2_toshow
+                ux = np.sin(Theta) * u_x1 + np.cos(Theta) * u_x2
+                uy = np.cos(Theta) * u_x1 - np.sin(Theta) * u_x2
 
+        X1Line, X2Line = self.gridInfo.X1Line_toshow, self.gridInfo.X2Line_toshow
         Ux_interp = RegularGridInterpolator(
             (X1Line, X2Line),
             ux.T,
@@ -342,10 +329,11 @@ class SliceRenderer:
             method=method,
             bounds_error=False,
         )
+        pts = np.stack((self.gridInfo.X1_fromuni, self.gridInfo.X2_fromuni), axis=-1)
 
         figure.axes[*qtyInfo.plot_coords].ax.streamplot(
-            xcoords,
-            ycoords,
+            self.gridInfo.x_uniLine,
+            self.gridInfo.y_uniLine,
             Ux_interp(pts),
             Uy_interp(pts),
             **qtyInfo.streamline_kwargs,

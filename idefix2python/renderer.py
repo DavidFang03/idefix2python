@@ -228,11 +228,8 @@ class SliceRenderer:
                     else:
                         framenb_list.append(frame_nb)
 
-            elif self.userArgs.every:
-                framenb_list = list(range(0, len(vtkList), self.userArgs.every))
-
             else:
-                framenb_list = enumerate(vtkList)
+                framenb_list = list(range(0, len(vtkList), self.userArgs.every))
 
             render_args = zip(
                 framenb_list,

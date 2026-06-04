@@ -502,3 +502,27 @@ class GridInfo:
         self.xmax = np.max(self.grid1_toshow)
         self.ymin = np.min(self.grid2_toshow)
         self.ymax = np.max(self.grid2_toshow)
+
+    def get_uniform_cartesian_grid(self):
+        resolution = 400
+
+        # for streamplot, we need a uniformly spaced cartesian grid
+        xmin, xmax = self.xmin, self.xmax
+        ymin, ymax = self.ymin, self.ymax
+
+        self.x_uniLine = xmin + np.arange(resolution) * (
+            (xmax - xmin) / (resolution - 1)
+        )
+        self.y_uniLine = ymin + np.arange(resolution) * (
+            (ymax - ymin) / (resolution - 1)
+        )
+        Xuni, Yuni = np.meshgrid(self.x_uniLine, self.y_uniLine)
+
+        match self.context.geometry:
+            case "cartesian":
+                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+            case "cylindric":
+                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+            case "spherical":
+                self.X1_fromuni = np.sqrt(Xuni**2 + Yuni**2)
+                self.X2_fromuni = np.arctan2(Xuni, Yuni)

@@ -55,6 +55,9 @@ class Pipeline:
         self.particles_requested = False
 
         self.options = options
+        if self.context.pdfmode:
+            self.options["no_movie"] = True
+
         for fig in figs:
             for qtyInfo in fig.quantities:
                 if isinstance(qtyInfo, PartQuantity):

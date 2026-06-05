@@ -31,8 +31,6 @@ PARTS_CMAP = plt.get_cmap("Pastel2")
 TIMEINDICATOR_KWARGS = {"lw": 1, "ls": "--", "alpha": 0.8}
 GRID_OPACITY = 0.1
 
-plt.style.use("dark_background")
-
 
 # Check if latex is in the system PATH
 if shutil.which("latex"):
@@ -79,10 +77,14 @@ class FramesPaths:
 
     def get_movieframe_path(self, figname, frame_nb):
         filepath = self.get_movieframe_pattern(figname).replace("*", f"{frame_nb:04}")
+        if self.context.pdfmode:
+            filepath = filepath[:-4] + ".pdf"
         return filepath
 
     def get_timeline_path(self, figname):
         filename = "_".join([self.basename] + [figname] + self.userargsinfos) + ".png"
+        if self.context.pdfmode:
+            filename = filename[:-4] + ".pdf"
         return str(self.context.frameRootFolder / filename)
 
     def get_movie_path(self, figname):
@@ -120,6 +122,9 @@ class SliceRenderer:
                 options.get("zoom", None)
             )  # initialize gridInfo.*_toshow
             self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
+
+        if not self.context.pdfmode:
+            plt.style.use("dark_background")
 
     def set_infos(self, partsInfo):
         self.partsInfo = partsInfo
@@ -262,6 +267,9 @@ class SliceRenderer:
             custom_suptitle = None
             figures_to_render = self.figsTimeline
             frame_nb = -1
+
+        if self.context.pdfmode:
+            custom_suptitle = None  # a bit agressive but anyway
 
         for figure in figures_to_render:
             figure.generate_figure(custom_suptitle=custom_suptitle)
@@ -417,6 +425,8 @@ class SliceRenderer:
         """
         Draw a vertical line to show current time
         """
+        if self.context.pdfmode:
+            return
         ax = figure.axes[*timeline.plot_coords].ax
         if getattr(ax, "show_time_indicator", True):
             if frame_nb > 0:

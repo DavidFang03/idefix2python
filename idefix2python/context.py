@@ -189,6 +189,7 @@ class RunContext:
                 Defaults to False.
             * iniPath (Path): Custom path to the .ini input file. The .ini content is accessible as a dict through context.inidata. Defaults to
               `projectPath/inputs/{runName}.ini`.
+            * pdf_mode (bool): pdf mode for clean plots. No movie will be produced, with light mode and no time indicator on timelines. If -f is not specified, last frame will be showed.
 
     Note:
         The expected location for the .vtk files is `projectPath/outputs/runName/vtks`.
@@ -203,6 +204,11 @@ class RunContext:
         self.show_ini = kwargs.get("show_ini", False)
 
         self.userArgs = kwargs.get("args", _get_args())
+
+        self.pdfmode = kwargs.get("pdf_mode", False)
+        if self.pdfmode:
+            if self.userArgs.doOnlyFrames is None:
+                self.userArgs.doOnlyFrames = -1
 
         self.config = {}
         configPath = kwargs.get("configPath", None)

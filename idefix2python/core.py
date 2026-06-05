@@ -1,6 +1,5 @@
 from multiprocessing import Pool
 from itertools import repeat
-
 from .tools import LOG
 from .renderer import SliceRenderer
 from .processor import PhysicsProcessor, PartsInfo
@@ -10,6 +9,7 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     OneComponentOneVariable,
+    LocalQuantity,
 )
 from .tools import convertGrid_toXZ
 
@@ -19,7 +19,6 @@ class Pipeline:
         self,
         Context,
         figs,
-        zoom=0,
         streamLines=None,
         **options,
     ):
@@ -29,12 +28,12 @@ class Pipeline:
         :type Context: RunContext
         :param figs: `Figure` instances.
         :type figs: list[Figure]
-        :param zoom: Zoom level for the rendering view (for 2D only currently).
-        :type zoom: float, optional
         :param streamLines: Configuration for streamlines overlays.
         :type streamLines: StreamlineConfig, optional
         **options: Additional optional parameters:
             * scatter_particles (bool): only scatter particles positions instead of the whole trajectory on MapMovie2D
+            * zoom (callable): To show only a limited part of the domain.
+            * no_movie (bool): No movie will be produced.
         """
         self.context = Context
         self.userArgs = self.context.userArgs
@@ -49,9 +48,10 @@ class Pipeline:
         self.spaceTimeHeatmaps = []
         self.oneC_oneVs = []
         self.partQuantities = []
+        self.localQuantities = []
         self.quantities = []
 
-        qty_tocompute = []
+        waitlist = []
         self.particles_requested = False
 
         self.options = options
@@ -67,16 +67,26 @@ class Pipeline:
                     self.mapmovies2D.append(qtyInfo)
                 elif isinstance(qtyInfo, OneComponentOneVariable):
                     self.oneC_oneVs.append(qtyInfo)
+                elif isinstance(qtyInfo, LocalQuantity):
+                    self.localQuantities.append(qtyInfo)
                 self.quantities.append(qtyInfo)
 
-                if qtyInfo.compute is not None:
+                if qtyInfo.compute is not None or isinstance(qtyInfo, LocalQuantity):
                     # TODO add safeguard in case two identical keys with differents compute.
-                    qty_tocompute.append(qtyInfo)
+                    waitlist.append(qtyInfo)
 
                 if qtyInfo.uids is not None:
                     self.particles_requested = True
                     if qtyInfo.uids == "all":
                         qtyInfo.uids = self.context.all_particles_uids
+
+                if isinstance(qtyInfo, LineMovie1D) and qtyInfo.uids is not None:
+                    lq = LocalQuantity(
+                        f"{qtyInfo.key}_local", qtyInfo.key, is_global=True
+                    )
+                    self.localQuantities.append(lq)
+                    waitlist.append(lq)
+                    qtyInfo.set_localqty(lq)
 
         self.processor.partsInfo = PartsInfo(
             self.context.active_directions
@@ -85,8 +95,9 @@ class Pipeline:
         if self.particles_requested:
             self.partQuantities += self.processor.partsInfo.global_partsqty_togather
 
-        self.processor.set_qty_tocompute(qty_tocompute)
+        self.processor.set_waitlist(waitlist)
         self.processor.set_partQuantities(self.partQuantities)
+        self.processor.set_localQuantities(self.localQuantities)
 
         self._name_frames()
 
@@ -137,7 +148,6 @@ class Pipeline:
         """
         Pray.
         """
-
         self.renderer = SliceRenderer(
             self.context,
             self.processor,
@@ -161,17 +171,21 @@ class Pipeline:
         # Gather data will be stored in a dict. Each key correspond to
         # one given quantity.
         vtktimes = None
-        keys_togather = set()
+        quantities_togather = []
         keys_tobound = remaining_fields_tobound
         for qty in self.oneC_oneVs:
             if qty.xqty is not None:
-                keys_togather.add(qty.xqty)
+                quantities_togather.append(qty.xqty)
 
         for qty in self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs:
-            if qty.key not in keys_togather:
-                keys_togather.add(qty)
+            if qty.key not in quantities_togather:
+                quantities_togather.append(qty)
 
-        if len(keys_togather) > 0 or len(keys_tobound) > 0:
+        for qty in self.localQuantities:
+            quantities_togather.append(qty)
+
+        # redistribute bounds
+        if len(quantities_togather) > 0 or len(keys_tobound) > 0:
             LOG("Gathering data and/or bounds, please wait...")
             files_diff = len(self.vtkList) - len(self.partList)
             if files_diff > 0:
@@ -190,7 +204,7 @@ class Pipeline:
                     zip(
                         vtkList_extended,
                         partList_extended,
-                        repeat(keys_togather),
+                        repeat(quantities_togather),
                         repeat(keys_tobound),
                     ),
                 )
@@ -207,7 +221,10 @@ class Pipeline:
 
                 # redistribute data
                 for qty in (
-                    self.partQuantities + self.spaceTimeHeatmaps + self.oneC_oneVs
+                    self.partQuantities
+                    + self.spaceTimeHeatmaps
+                    + self.oneC_oneVs
+                    + self.localQuantities
                 ):
                     key = qty.key
                     qty.values.append(data[key])
@@ -215,8 +232,6 @@ class Pipeline:
                     if getattr(qty, "xqty", None) is not None:
                         qty.points.append(data[qty.xqty.key])
 
-                # redistribute bounds
-                computed_bounds = {}  # for LOG only
                 if not self.userArgs.noBounds and ii > 5:
                     for qty in self.all_movies:
                         if qty.key in bounds:
@@ -225,14 +240,13 @@ class Pipeline:
                                 qty.bounds[0] = bound_low
                             if qty.bounds[1] is None or bound_up > qty.bounds[1]:
                                 qty.bounds[1] = bound_up
-                            computed_bounds[qty.key] = qty.bounds
 
-            if len(computed_bounds) > 0:
+            if len(keys_tobound) > 0:
                 LOG("Bounds computed:")
-                for key in computed_bounds:
-                    LOG(
-                        f"{key:>10}: {computed_bounds[key][0]:.1e} {computed_bounds[key][1]:.1e}"
-                    )
+                for qty in self.all_movies:
+                    if qty.key in keys_tobound:
+                        LOG(f"{qty.key:>10}: {qty.bounds[0]:.1e} {qty.bounds[1]:.1e}")
+
             LOG("Final Bounds:")
             for qtyInfo in self.all_movies:
                 b1 = None if qtyInfo.bounds[0] is None else f"{qtyInfo.bounds[0]:.1e}"
@@ -252,7 +266,7 @@ class Pipeline:
                 )
 
         # delegate the render of all this stuff to the Renderer
-        self.renderer.set_infos(self.processor.gridInfo, self.processor.partsInfo)
+        self.renderer.set_infos(self.processor.partsInfo)
         self.renderer.render()
 
     def _name_frames(self):
@@ -271,7 +285,6 @@ class Pipeline:
         self.all_movies = all_movies
         config = self.context.config
 
-        LOG(f"config.json file requested: {config}")
         remaining_fields_tobound = set()
 
         if not self.userArgs.noBounds:

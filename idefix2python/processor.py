@@ -1,7 +1,34 @@
 from .vtk_io import readVTK
 from . import tools
 import numpy as np
-from .quantities import PartQuantity
+from .quantities import PartQuantity, LocalQuantity
+
+
+def pos_to_gridTSC(gridInfo, commonvtk):
+    def get_nonuniform_tsc(pos_array, x, xl, dx):
+        ci = np.searchsorted(xl, pos_array) - 1
+        ci = np.clip(ci, 1, len(x) - 2)
+
+        # d = (x - xl) / dx
+        d = (pos_array - xl[ci]) / dx[ci]
+
+        w_left = 0.5 * (1.0 - d) ** 2
+        w_center = 0.75 - (d - 0.5) ** 2
+        w_right = 0.5 * d**2
+
+        return ci, (w_left, w_center, w_right)
+
+    ci, weights_x1 = get_nonuniform_tsc(
+        commonvtk.data["PART_X1"], gridInfo.X1Line, gridInfo.X1LineL, gridInfo.dX1
+    )
+
+    if len(gridInfo.X2Line) > 1:
+        cj, weights_x2 = get_nonuniform_tsc(
+            commonvtk.data["PART_X2"], gridInfo.X2Line, gridInfo.X2LineL, gridInfo.dX2
+        )
+        return (ci, weights_x1), (cj, weights_x2)
+    else:
+        return (ci, weights_x1), None
 
 
 class PhysicsProcessor:
@@ -10,10 +37,11 @@ class PhysicsProcessor:
         self.userArgs = userArgs
         self.streamLines = streamLines
 
-        self.gridInfo = self.context.gridInfo
+    def set_waitlist(self, waitlist):
+        self.waitlist = waitlist
 
-    def set_qty_tocompute(self, qty_tocompute):
-        self.qty_tocompute = qty_tocompute
+    def set_localQuantities(self, localQuantities):
+        self.localQuantities = localQuantities
 
     def set_partQuantities(self, partQuantities):
         self.partQuantities = partQuantities
@@ -32,9 +60,6 @@ class PhysicsProcessor:
             for qt in datavtk.data:
                 if self.context.dimensions == 2:
                     datavtk.data[qt] = np.transpose(np.squeeze(datavtk.data[qt]))
-                    datavtk.data[qt] = np.where(
-                        self.gridInfo.mask, datavtk.data[qt], np.nan
-                    )
 
                 elif (
                     self.context.dimensions == 1
@@ -70,9 +95,33 @@ class PhysicsProcessor:
                         commonvtk.data[key] = partvtk.data[key]
 
         ## Custom computing. Now everything is stored in commonvtk
-        for qtyInfo in self.qty_tocompute:
-            if (
-                not isinstance(qtyInfo, PartQuantity) or partvtk is not None
+        for qtyInfo in self.waitlist:
+            if isinstance(qtyInfo, LocalQuantity) and partvtk is not None:
+                tsc_x1, tsc_x2 = pos_to_gridTSC(self.context.gridInfo, commonvtk)
+
+                ci, (w1_l, w1_c, w1_r) = tsc_x1
+                fluid_field = commonvtk.data[qtyInfo.localkey]
+
+                if tsc_x2 is not None:
+                    cj, (w2_l, w2_c, w2_r) = tsc_x2
+                    interpolated_values = np.zeros(len(ci))
+
+                    for dj, wj in zip([-1, 0, 1], [w2_l, w2_c, w2_r]):
+                        for di, wi in zip([-1, 0, 1], [w1_l, w1_c, w1_r]):
+                            fluid_vals = fluid_field[cj + dj, ci + di]
+                            interpolated_values += (wj * wi) * fluid_vals
+
+                    commonvtk.data[qtyInfo.key] = interpolated_values
+
+                else:
+                    interpolated_values = np.zeros(len(ci))
+                    for di, wi in zip([-1, 0, 1], [w1_l, w1_c, w1_r]):
+                        interpolated_values += wi * fluid_field[ci + di]
+
+                    commonvtk.data[qtyInfo.key] = interpolated_values
+            elif (
+                (not isinstance(qtyInfo, PartQuantity) or partvtk is not None)
+                and qtyInfo.compute is not None
             ):  # in the renderer there is no need to compute the partquantities again as they are already gathered
                 commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
                 # do not squeeze
@@ -86,6 +135,8 @@ class PhysicsProcessor:
             # elif isinstance(qtyInfo, SpaceTimeHeatmap)
             # else:
             #     expected_shape = None
+            ## Local quantities
+
         return commonvtk
 
     def gather_1Cquantities(
@@ -107,7 +158,7 @@ class PhysicsProcessor:
 
         for qtyInfo in quantities_togather:
             key = qtyInfo.key
-            if isinstance(qtyInfo, PartQuantity):
+            if isinstance(qtyInfo, PartQuantity) or isinstance(qtyInfo, LocalQuantity):
                 gathered_1Cdata[key] = np.full(self.context.particles_nb, np.nan)
                 for ii, uid in enumerate(commonvtk.data["uid"]):
                     gathered_1Cdata[key][uid] = commonvtk.data[key][ii]

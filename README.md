@@ -46,11 +46,12 @@ One can also plot a particle quantity over a spacetime heatmap or a 2D movie wit
 | Option | Argument | Description |
 | :--- | :--- | :--- |
 | `-j`, `--jobs` | `int` | Number of CPUs for parallel rendering (Default: 1). |
-| `-z`, `--zoom` | `float` | Crops the plots to a specific radius ($r < \mathrm{zoom}$). |
 | `-f`, `--frame` | `int...` | Renders only specific frame indices (e.g., `-f 0 10 -1`). |
 | `--no-bounds` | Flag | Ignores `config.json`. User expects colobar to be different at each frame and to match local data. |
 | `-om` | Flag | Only movie: Skips everything and only renders the movie on existing frames. |
-| `-u`, `--until` | `float` or `int` | To read only a part of the data. `float` between 0 and 1 is interpreted as a fraction, `int` as an output number, and a `float` > 1 as a time. |
+| `-c`, `--clean` | Flag | Removes every frame already present in the frames directory. |
+| `-a`, `--after` | `float` or `int` | To exclude the beginning of the simulation. `float` between 0 and 1 is interpreted as a fraction, `int` as an output number, and a `float` > 1 as a time. |
+| `-u`, `--until` | `float` or `int` | To exclude the end of the simulation. `float` between 0 and 1 is interpreted as a fraction, `int` as an output number, and a `float` > 1 as a time. |
 | `-e`, `--every` | `int` | Read every Nth output file (N>=1) . For example `-e 2` will read every second file. |
 
 
@@ -82,17 +83,18 @@ The three others are not accessible to the user:
 
 ## Roadmap to v1.0 (!!)
 
-* More flexibility on plot parameters (linestyle, color, etc...) (ongoing)
-* `compute` should take both globalvtk and partvtk argument to compute mixed quantities. (ongoing)
-* Automatic labeling (already partially supported through `config.json` file.)
-* Reintroduce `timevol.dat` (timevol) for global quantities.
+* pdf mode
+* Invisible quantities
+* Allowing to customize the remaining default parameters
+* Automatic labelling (already partially supported through `config.json` file.)
+* Add a big example
 * twinx
-* Better zoom API
 
 ### Known issues
-* `-f -1` doesn't show particles trajectories
+* `POLAR` geometry in more than 2 dimensions is not supported.
 
 ### Not a priority
+* Reintroduce `timevol.dat` (timevol) for global quantities.
 * Support multiple pipelines
 * Support mixed outputs (e.g `data*.vtk` + `slice1*.vtk`)
 * Add a `discard` option to replace non-physical values (e.g., $<0$) with `NaN`

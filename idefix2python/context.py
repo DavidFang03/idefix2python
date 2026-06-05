@@ -36,16 +36,6 @@ def _get_args():
     )
 
     parser.add_argument(
-        "-z",
-        "--zoom",
-        nargs="?",
-        const=0,
-        default=0,
-        help="float: will only render r < zoom",
-        type=float,
-    )
-
-    parser.add_argument(
         "--no-bounds",
         action="store_true",
         dest="noBounds",
@@ -61,6 +51,14 @@ def _get_args():
     )
 
     parser.add_argument(
+        "-c",
+        "--clean",
+        action="store_true",
+        help="Removes every frame already present in the frames directory.",
+        dest="clean",
+    )
+
+    parser.add_argument(
         "-j",
         "--jobs",
         type=int,
@@ -69,11 +67,20 @@ def _get_args():
     )
 
     parser.add_argument(
+        "-a",
+        "--after",
+        type=lambda s: int(s) if s.isdigit() else float(s),
+        default=0,
+        help="To exclude the beginning of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        dest="after",
+    )
+
+    parser.add_argument(
         "-u",
         "--until",
         type=lambda s: int(s) if s.isdigit() else float(s),
-        default=1,
-        help="To read only a part of the data. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
+        default=1.0,
+        help="To exclude the end of the simulation. float between 0 and 1 is interpreted as a fraction, int as an output number, and a float > 1 as a time.",
         dest="until",
     )
 
@@ -174,6 +181,7 @@ class RunContext:
         **kwargs: Additional optional parameters:
 
             * configPath (str | Path): Path to a specific configuration file.
+            * dataFolder (str): Folder path containing the data.
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
@@ -200,9 +208,12 @@ class RunContext:
         configPath = kwargs.get("configPath", None)
         self.configPath = configPath
         if configPath is not None:
+            LOG(f"config.json file requested: {configPath}")
             self.config = tools.process_configs(configPath)
 
-        self.dataPath = self.projectPath / "outputs" / runName
+        self.dataFolder = Path(
+            kwargs.get("dataFolder", self.projectPath / "outputs" / runName)
+        )
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
@@ -218,6 +229,7 @@ class RunContext:
             self.initxt = inifix.format_string(self.iniPath.read_text(encoding="utf-8"))
 
         self.partFolder = kwargs.get("partFolder", None)
+        self.framepath_basename = kwargs.get("custom_name", self.runName)
 
         self.frameFolderName = kwargs.get("frameFolder", runName)
         self.active_directions = kwargs.get("active_directions", [])
@@ -228,7 +240,7 @@ class RunContext:
         self._setup_directories()
         self._check_data()
 
-        self.gridInfo = GridInfo(self, self.userArgs.zoom)
+        self.gridInfo = GridInfo(self)
 
     def _setup_directories(self):
         self.frameRootFolder = self.projectPath / "frames" / self.frameFolderName
@@ -240,20 +252,21 @@ class RunContext:
             self.globalFolder,
             self.slice1Folder,
             self.videosFolder,
+            self.frameRootFolder,
         ]:
             os.makedirs(path, exist_ok=True)
-            # except OSError as _:
-            # pass
-            # subfolder = os.path.basename(path)
-            # content = glob.glob(f"{path}/*")
-            # user_agree = input(
-            #     f"Will overwrite the {subfolder} folder ({len(content)} files) [o/r/n] (overwrite, remove, no)"
-            # )
-            # if user_agree == "r":
-            #     for f in content:
-            #         os.remove(f)
-            # elif user_agree == "n":
-            #     exit()
+
+        if self.userArgs.clean:
+            for frames_dir in self.frameRootFolder.iterdir():
+                if frames_dir.is_dir():
+                    file_count = sum(
+                        1 for item in frames_dir.iterdir() if item.is_file()
+                    )
+                    if file_count > 0:
+                        LOG(f"Removing {file_count} frames from {frames_dir}")
+                        for item in frames_dir.iterdir():
+                            if item.is_file() or item.is_symlink():
+                                item.unlink()
 
     def _check_data(self):
         "Show fields in every kind of data and detect is there are Pressure, B, Dust or Particles fields. Also detects the geometry. Also detect t_start and t_end"
@@ -319,6 +332,36 @@ class RunContext:
             self.particles_nb = 0
             self.all_particles_uids = []
 
+    def _get_firstfile_to_read(self, filelist):
+        """
+        expects a sorted list
+        """
+        after = self.userArgs.after
+
+        if len(filelist) == 0:
+            firstframe = -1
+        elif isinstance(after, int):
+            firstframe = after
+        elif isinstance(after, float) and 0.0 <= after <= 1.0:
+            firstframe = min(int(len(filelist) * after), len(filelist) - 1)
+        elif isinstance(after, float):
+            if str(filelist[-1]).endswith(".vtk"):
+                tend = readVTK(filelist[-1]).t[0]
+                tstart = readVTK(filelist[0]).t[0]
+                if after < tstart:
+                    firstframe = 0
+                elif after > tend:
+                    raise Exception(
+                        f"Value of after ({after}) is larger than the last file time ({tend})"
+                    )
+                else:
+                    firstframe = int((after - tstart) / (tend - tstart) * len(filelist))
+                    if firstframe + 1 < len(filelist):
+                        firstframe += 1
+        else:
+            raise TypeError(f"Unsupported type for 'after': {type(after)}")
+        return firstframe
+
     def _get_lastfile_to_read(self, filelist):
         """
         expects a sorted list
@@ -326,35 +369,47 @@ class RunContext:
         until = self.userArgs.until
         if len(filelist) == 0:
             lastframe = -1
-        elif 0 <= until <= 1:
-            lastframe = int(len(filelist) * until)
         elif isinstance(until, int):
             lastframe = until
+        elif isinstance(until, float) and 0.0 <= until <= 1.0:
+            lastframe = min(int(len(filelist) * until), len(filelist))
         elif isinstance(until, float):
             if str(filelist[-1]).endswith(".vtk"):
                 tend = readVTK(filelist[-1]).t[0]
                 tstart = readVTK(filelist[0]).t[0]
-                if until < tstart:
+                if until > tend:
+                    lastframe = len(filelist)
+                elif until < tstart:
                     raise Exception(
-                        f"Value of until ({until}) is inferior than the first file time"
+                        f"Value of until ({until}) is smaller than the first file time ({tstart})"
                     )
-                lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
-                if lastframe + 1 < len(filelist):
-                    lastframe += 1
+                else:
+                    lastframe = int((until - tstart) / (tend - tstart) * len(filelist))
+                    if lastframe + 1 < len(filelist):
+                        lastframe += 1
+            else:
+                raise ValueError(
+                    "Time-based filtering ('until' as timestamp) requires VTK files."
+                )
+        else:
+            raise TypeError(f"Unsupported type for 'until': {type(until)}")
+
         return lastframe
 
     def get_global_vtkFiles(self):
         pattern = "vtks/data*.vtk"
-        filelist = sorted(self.dataPath.glob(pattern))
+        filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_slice1_vtkFiles(self):
         pattern = "vtks/slice1*.vtk"
-        filelist = sorted(self.dataPath.glob(pattern))
+        filelist = sorted(self.dataFolder.glob(pattern))
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
     def get_particles_vtkFiles(self):
@@ -362,15 +417,17 @@ class RunContext:
             filelist = sorted(Path(self.partFolder).glob("part*.vtk"))
         else:
             pattern = "vtks/part*.vtk"
-            filelist = sorted(self.dataPath.glob(pattern))
+            filelist = sorted(self.dataFolder.glob(pattern))
 
+        firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[:lastfile]
+        filelist = filelist[firstfile:lastfile]
         return filelist[:: self.userArgs.every]
 
 
 class GridInfo:
-    def __init__(self, context, zoom=None):
+    def __init__(self, context):
+        self.active = True  # if data*.vtk found
         self.context = context
         self.geometry = context.geometry
         self.dimensions = context.dimensions
@@ -378,33 +435,34 @@ class GridInfo:
         self.axis_name_1, self.axis_name_2 = self.get_native_grid_labels()
         self.shape = None
         if self.context.outputTypes_info["vtk"].status:
-            self.X1Line, self.X2Line = self.get_grid_line_points()
-            if self.context.dimensions == 1:
-                self.xmin = np.min(self.X1Line)
-                self.xmax = np.max(self.X1Line)
-                self.shape = np.shape(self.X1Line)
-            elif self.context.dimensions == 2:
-                # Regardless of the geometry, we need the cartesian grid (X,Y,Z) for pcolormesh
-                self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
-                self.grid1, self.grid2 = tools.convertGrid_toXZ(
-                    self.X1, self.X2, self.context.geometry
-                )
+            active_dirs = self.context.active_directions
+            vtk = self.context.outputTypes_info["vtk"].vtk
+            Lines = [
+                tools.get_Position(vtk, self.context.geometry, dir) for dir in range(3)
+            ]
+            LinesL = [
+                tools.get_PositionL(vtk, self.context.geometry, dir) for dir in range(3)
+            ]
+            self.X1Line = Lines[active_dirs[0]]
+            self.X1LineL = LinesL[active_dirs[0]]
+            self.dX1 = np.diff(self.X1LineL)
+            if len(active_dirs) == 1:
+                self.X2Line = Lines[1]  # will not be used anyway
+                self.X2LineL = LinesL[1]
 
-                if not zoom:
-                    self.mask = np.full(self.grid1.shape, True, dtype=bool)
-                    self.mask = self.grid2 > 0
-                    # )  # TODO hard coded, will be removed in later PR
-                else:
-                    self.mask = (
-                        (self.grid1 < zoom) & (np.abs(self.grid2) < zoom)
-                        # & (np.abs(np.pi / 2 - self.Theta) > np.pi / 12)
-                    )
-                self.xmin = 0  # works good atm
-                self.xmax = np.max(np.where(self.mask, self.grid1, 0))
-                self.ymax = np.max(np.where(self.mask, self.grid2, 0))
-                self.ymin = np.min(np.where(self.mask, self.grid2, 0))
+            else:
+                self.X2Line = Lines[active_dirs[1]]
+                self.X2LineL = LinesL[active_dirs[1]]
+            self.dX2 = np.diff(self.X2LineL)
 
-                self.shape = np.shape(self.X1)
+            # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
+            self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
+            self.grid1, self.grid2 = tools.convertLines_toXZgrid(
+                *Lines, self.context.geometry
+            )
+
+        else:
+            self.active = False
 
     def get_cartesian_grid_labels(self):
         # 2D fields are always showed in cartesian. Thus, the labels should be cartesian.
@@ -424,13 +482,50 @@ class GridInfo:
                 names[i] = DIMENSION_NAMES[self.context.geometry][dir]
         return names
 
-    def get_grid_line_points(self):
-        Lines = [None, None]
+    def apply_zoom(self, zoom):
+        if zoom is None:
+            self.X1Line_toshow, self.X2Line_toshow = self.X1Line, self.X2Line
+            self.mask1 = np.full(self.X1Line.shape, True, dtype=bool)
+            self.mask2 = np.full(self.X2Line.shape, True, dtype=bool)
+            self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
 
-        vtk = self.context.outputTypes_info["vtk"].vtk
-        for i, dir in enumerate(self.context.active_directions):
-            if i < 2:
-                # max 2 dimensions is supported
-                Lines[i] = tools.get_Position(vtk, self.context.geometry, dir)
+        else:
+            self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
+            self.X1Line_toshow = self.X1Line[self.mask1]
+            self.X2Line_toshow = self.X2Line[self.mask2]
+            self.grid1_toshow = self.grid1[self.mask2][:, self.mask1]
+            self.grid2_toshow = self.grid2[self.mask2][:, self.mask1]
+        self.mask = np.logical_and.outer(self.mask2, self.mask1)
+        self.X1_toshow, self.X2_toshow = np.meshgrid(
+            self.X1Line_toshow, self.X2Line_toshow
+        )
+        self.x1min = np.min(self.X1Line_toshow)
+        self.x1max = np.max(self.X1Line_toshow)
+        self.xmin = np.min(self.grid1_toshow)  # or min(X1) if one 1D?
+        self.xmax = np.max(self.grid1_toshow)
+        self.ymin = np.min(self.grid2_toshow)
+        self.ymax = np.max(self.grid2_toshow)
 
-        return Lines
+    def get_uniform_cartesian_grid(self):
+        resolution = 400
+
+        # for streamplot, we need a uniformly spaced cartesian grid
+        xmin, xmax = self.xmin, self.xmax
+        ymin, ymax = self.ymin, self.ymax
+
+        self.x_uniLine = xmin + np.arange(resolution) * (
+            (xmax - xmin) / (resolution - 1)
+        )
+        self.y_uniLine = ymin + np.arange(resolution) * (
+            (ymax - ymin) / (resolution - 1)
+        )
+        Xuni, Yuni = np.meshgrid(self.x_uniLine, self.y_uniLine)
+
+        match self.context.geometry:
+            case "cartesian":
+                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+            case "cylindric":
+                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+            case "spherical":
+                self.X1_fromuni = np.sqrt(Xuni**2 + Yuni**2)
+                self.X2_fromuni = np.arctan2(Xuni, Yuni)

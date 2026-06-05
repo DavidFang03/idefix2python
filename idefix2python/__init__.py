@@ -6,6 +6,7 @@ from .quantities import (
     LineMovie1D,
     OneComponentOneVariable,
     PartQuantity,
+    LocalQuantity,
 )
 from .axes import Fig
 from .vtk_io import readVTK
@@ -20,6 +21,7 @@ __all__ = [
     "LineMovie1D",
     "OneComponentOneVariable",
     "PartQuantity",
+    "LocalQuantity",
     "readVTK",
     "Fig",
 ]

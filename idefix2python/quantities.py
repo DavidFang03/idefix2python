@@ -24,20 +24,22 @@ class Data:
         * **ymax** (float): Maximum y-axis bound.
         * **xscale** (str): X-axis scaling type, e.g., 'linear' or 'log'.
         * **yscale** (str): Y-axis scaling type, e.g., 'linear' or 'log'.
+        * **xlabel** (str): X-axis label.
+        * **ylabel** (str): Y-axis label.
         * **style_kwargs** (dict): Style options forwarded to plotting calls.
         * **parts_kwargs** (dict): Style options forwarded to particles plotting calls.
+        * **parts_color** (callable): Optional callable `parts_color(commonvtk)` returning a sequence of colors.
         * **ref_function** (callable): Analytical function for comparison.
         * **compute** (callable): Custom function to calculate new fields on the fly.
+        * **customize** (callable): If really what you want is not implemented, customize(ax, vtk) will do whatver you want on the corresponding ax.
     """
 
-    def __init__(
-        self, key, symbol="", plot_coords=[0, 0], bounds=[None, None], **kwargs
-    ):
+    def __init__(self, key, symbol="", plot_coords=None, bounds=None, **kwargs):
         self.key = key
         self.symbol = symbol
-        self.plot_coords = plot_coords
-        self.bounds = bounds
-        if bounds[0] is not None or bounds[1] is not None:
+        self.plot_coords = plot_coords if plot_coords else [0, 0]
+        self.bounds = bounds if bounds else [None, None]
+        if self.bounds[0] is not None or self.bounds[1] is not None:
             self.bounds_set = True
         else:
             self.bounds_set = False
@@ -58,8 +60,16 @@ class Data:
         self.yscale = kwargs.get("yscale", "linear")
         # heatmaps have a `norm` attribute
 
+        self.xlabel = kwargs.get("xlabel", None)
+        self.ylabel = kwargs.get("ylabel", None)
+
         self.style_kwargs = kwargs.get("style_kwargs", {})
-        self.parts_kwargs = kwargs.get("parts_kwargs", {})
+
+        default_parts_kwargs = {"marker": "x", "markersize": 0.2}
+        self.parts_kwargs = merge_default_to_dict(
+            default_parts_kwargs, kwargs.get("parts_kwargs", {})
+        )
+        self.parts_color = kwargs.get("parts_color", None)
 
         self.points = []
         self.values = []
@@ -67,8 +77,18 @@ class Data:
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
+        default_ref_plot_kwargs = {"zorder": 3, "ls": "--", "lw": 2}
+        if self.ref_function is not None:
+            if not hasattr(self.ref_function, "plot_kwargs"):
+                self.ref_function.plot_kwargs = {}
+            self.ref_function.plot_kwargs = merge_default_to_dict(
+                default_ref_plot_kwargs, self.ref_function.plot_kwargs
+            )
 
         self.compute = kwargs.get("compute", None)
+        self.customize = kwargs.get("customize", None)
+
+        self.label_func = kwargs.get("label_func", None)
 
     def set_bounds(self, bounds):
         self.bounds = bounds
@@ -89,6 +109,14 @@ class Data:
                 f"{norm} not implemented. Supported norms: {supported_norms}"
             )
 
+    def set_default_xlabel(self, xlabel):
+        if self.xlabel is None:
+            self.xlabel = xlabel
+
+    def set_default_ylabel(self, ylabel):
+        if self.ylabel is None:
+            self.ylabel = ylabel
+
     def __str__(self):
         return self.key
 
@@ -102,7 +130,7 @@ class MapMovie2D(Data):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
+        plot_coords=None,
         norm="linear",
         streamlines=None,
         uids=None,
@@ -122,7 +150,7 @@ class MapMovie2D(Data):
                             e.g., ``[1,2]``. Defaults to None.
         :type uids: list[int] | Literal["all"] | None, optional
         :param \**kwargs: Additional rendering options.
-            :keyword streamline_color (str): Color of streamline arrows. Defaults to "w".
+            :keyword streamline_kwargs (dict): kwargs that will be passed to streamplot.
             :keyword contours (Sequence[float] | None): Contour levels used to draw contour lines over the pcolormesh for this field. Defaults to None.
             :keyword contour_color (str): Color of the contour lines. Defaults to "green".
         """
@@ -132,7 +160,21 @@ class MapMovie2D(Data):
         super().__init__(key, symbol, plot_coords, **kwargs)
         self.set_norm(norm)
         self.streamlines = streamlines
-        self.streamline_color = kwargs.get("streamline_color", (1, 1, 1, 0.5))
+        if streamlines is not None:
+            if not isinstance(streamlines, (list, tuple)) or not len(streamlines) == 2:
+                raise Exception(
+                    f"Invalid streamline configuration: {streamlines}. Expected a list/tuple of length 2."
+                )
+        default_streamline_kwargs = {
+            "linewidth": 0.2,
+            "arrowstyle": "->",
+            "color": (1, 1, 1, 0.5),
+            "density": 2,
+        }
+        self.streamline_kwargs = merge_default_to_dict(
+            default_streamline_kwargs, kwargs.get("streamline_kwargs", {})
+        )
+
         self.contours = kwargs.get("contours", None)
         self.contour_color = kwargs.get("contour_color", "green")
         self.uids = uids
@@ -173,8 +215,8 @@ class LineMovie1D(Field1D):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         uids=None,
         **kwargs,
     ):
@@ -182,6 +224,9 @@ class LineMovie1D(Field1D):
         self.uids = uids
         self.is_movie = True
         self.is_timeline = False
+
+    def set_localqty(self, localqty):
+        self.localqty = localqty
 
 
 class SpaceTimeHeatmap(Field1D):
@@ -198,8 +243,8 @@ class SpaceTimeHeatmap(Field1D):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         norm="linear",
         uids=None,
         **kwargs,
@@ -222,8 +267,8 @@ class OneComponentOneVariable(Data):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         xqty=None,
         **kwargs,
     ):
@@ -252,13 +297,50 @@ class PartQuantity(Data):
         self,
         key,
         symbol="",
-        plot_coords=[0, 0],
-        bounds=[None, None],
+        plot_coords=None,
+        bounds=None,
         uids="all",
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
-        self.is_global = False  # default
+        self.is_global = kwargs.get("is_global", False)
         self.is_timeline = True
         self.is_movie = False
+        self.colors = kwargs.get("colors", [])
+
+
+class LocalQuantity(Data):
+    """
+    Particle case of PartQuantity.
+    To access the quantity of the cell on which the particle is (No interpolation atm)
+    :keyword: uids (optional) the ids of the particles wanted.
+        Defaults to "all" (all particles)
+    """
+
+    def __init__(
+        self,
+        key,
+        localkey,
+        symbol="",
+        plot_coords=None,
+        bounds=None,
+        uids="all",
+        **kwargs,
+    ):
+        if kwargs.get("compute"):
+            raise ValueError("compute is not allwed for LocalQuantity")
+        super().__init__(key, symbol, plot_coords, bounds, **kwargs)
+        self.localkey = localkey
+        self.uids = uids
+        self.is_global = kwargs.get("is_global", False)
+        self.is_timeline = True
+        self.is_movie = False
+        self.colors = kwargs.get("colors", [])
+
+
+def merge_default_to_dict(default_dict, final_dict):
+    for key, value in default_dict.items():
+        if key not in final_dict:
+            final_dict[key] = value
+    return final_dict

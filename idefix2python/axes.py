@@ -3,8 +3,9 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     OneComponentOneVariable,
-    PartQuantity,
     SpaceTimeHeatmap,
+    PartQuantity,
+    LocalQuantity,
 )
 from .tools import LOG
 import numpy as np
@@ -33,19 +34,8 @@ class Fig:
         for qtyInfo in quantities:
             if isinstance(qtyInfo, LineMovie1D) or isinstance(qtyInfo, MapMovie2D):
                 self.movie = True
-                self.axesMovie.append(qtyInfo)
-            elif isinstance(qtyInfo, PartQuantity) or isinstance(
-                qtyInfo, SpaceTimeHeatmap
-            ):
-                self.axesTimeline.append(qtyInfo)
-            elif isinstance(qtyInfo, OneComponentOneVariable):
-                if qtyInfo.is_timeline:
-                    self.axesTimeline.append(qtyInfo)
-                else:
-                    self.axesMovie.append(qtyInfo)
-                    self.movie = True
-            else:
-                raise ValueError("Quantity type not supported")
+            elif isinstance(qtyInfo, OneComponentOneVariable) and qtyInfo.is_movie:
+                self.movie = True
 
             if qtyInfo.plot_coords[0] > self.rows - 1:
                 self.rows = qtyInfo.plot_coords[0] + 1
@@ -129,19 +119,22 @@ class Ax:
         self.norm = "linear"  # for heatmap only
         self.xscale = "linear"
         self.yscale = "linear"
+        self.xlabel = None
+        self.ylabel = None
         self.title = None
         self.qtytitles_list = []  # discarded if title is not None
         self.quantities = []
         self.is_pmesh_grid = False
         self.active = True
+        self.doLegend = False
 
     def add_quantity(self, qtyInfo):
         """
-        These procedures are universal for any kind of qty.
+        For any kind of qty.
         """
         self.quantities.append(qtyInfo)
 
-        # looking for the smallest domain
+        # looking for the largest domain
         for attr in ["xmin", "ymin", "xmax", "ymax"]:
             if getattr(qtyInfo, attr) is not None:
                 if getattr(self, attr) is None:
@@ -150,16 +143,16 @@ class Ax:
                     setattr(
                         self,
                         attr,
-                        np.nanmax([getattr(qtyInfo, attr), getattr(self, attr)]),
+                        np.nanmin([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
                 elif "max" in attr:
                     setattr(
                         self,
                         attr,
-                        np.nanmin([getattr(qtyInfo, attr), getattr(self, attr)]),
+                        np.nanmax([getattr(qtyInfo, attr), getattr(self, attr)]),
                     )
 
-        for attr in ["xscale", "yscale"]:
+        for attr in ["xscale", "yscale", "xlabel", "ylabel"]:
             if getattr(qtyInfo, attr) is not None:
                 setattr(self, attr, getattr(qtyInfo, attr))
 
@@ -199,3 +192,11 @@ class Ax:
         title = ", ".join(self.qtytitles_list)
 
         self.ax.set_title(title)
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
+
+        if self.doLegend:
+            self.ax.legend()
+
+    def set_doLegend(self):
+        self.doLegend = True

@@ -133,6 +133,7 @@ class SliceRenderer:
                 self.figsMovie.append(fig)
             else:
                 self.figsTimeline.append(fig)
+            fig.set_initxt(self.context.initxt)
 
             for qtyInfo in fig.quantities:
                 if isinstance(qtyInfo, MapMovie2D):

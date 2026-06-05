@@ -43,6 +43,7 @@ class Fig:
                 self.columns = qtyInfo.plot_coords[1] + 1
 
         self.axes = np.empty((self.rows, self.columns), dtype="object")
+        self.initxt = None
 
     def init(self):
         """
@@ -76,19 +77,28 @@ class Fig:
         if suptitle is not None:
             fig.suptitle(suptitle)
 
-        # TODO move to renderer? Later PR
-        # if len(self.context.format_inputs_text) > 0:
-        # padding_top = 0.1
-        #     tools.annotateInputs(
-        #         fig, self.context.format_inputs_text, padding_top=padding_top
-        #     )
         self.used_coords = [list(qtyInfo.plot_coords) for qtyInfo in self.quantities]
 
         for i in range(self.rows):
             for j in range(self.columns):
                 self.axes[i, j].generate_ax(self.fig, axs[i, j])
 
+    def set_initxt(self, initxt):
+        self.initxt = initxt
+
     def save_and_close(self, path):
+        if self.initxt:
+            self.fig.text(
+                0.1,
+                1,
+                self.initxt,
+                family="monospace",
+                fontsize=7,
+                va="bottom",
+                ha="left",
+                usetex=False,
+            )
+
         for ax in self.axes.flat:
             ax.last_pimp()
         self.fig.savefig(path, dpi=DPI, bbox_inches="tight")

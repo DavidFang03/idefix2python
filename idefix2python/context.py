@@ -4,6 +4,7 @@ from .tools import LOG
 import argparse
 from . import tools
 from .vtk_io import readVTK
+import inifix
 import numpy as np
 
 CARTESIAN_DIMENSION_NAMES = {
@@ -184,9 +185,9 @@ class RunContext:
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
-            * debug (bool): debug mode will show the .ini file.
+            * show_ini (bool): show_ini mode will show the .ini file content at the top of the frame.
                 Defaults to False.
-            * iniPath (Path): Custom path to the .ini input file. Defaults to
+            * iniPath (Path): Custom path to the .ini input file. The .ini content is accessible as a dict through context.inidata. Defaults to
               `projectPath/inputs/{runName}.ini`.
 
     Note:
@@ -199,7 +200,7 @@ class RunContext:
         self.projectPath = Path(projectPath)
         self.projectPath.resolve(strict=True)
 
-        self.debug = kwargs.get("debug", False)
+        self.show_ini = kwargs.get("show_ini", False)
 
         self.userArgs = kwargs.get("args", _get_args())
 
@@ -216,14 +217,16 @@ class RunContext:
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
-        self.format_inputs_text = ""
-        if self.debug:
-            if self.iniPath.is_file():
-                self.format_inputs_text = tools.formatInputs(self.iniPath)
-            else:
+        self.inidata = None
+        self.initxt = None
+        if self.show_ini:
+            if not self.iniPath.exists():
                 raise FileNotFoundError(
-                    f"debug requested but {self.iniPath} doesn't exist"
+                    f"show_ini requested but {self.iniPath} doesn't exist"
                 )
+            with self.iniPath.open("rb") as fh:
+                self.inidata = inifix.load(fh, sections="require")
+            self.initxt = inifix.format_string(self.iniPath.read_text(encoding="utf-8"))
 
         self.partFolder = kwargs.get("partFolder", None)
         self.framepath_basename = kwargs.get("custom_name", self.runName)

@@ -469,6 +469,11 @@ class SliceRenderer:
             parts_colors = back_qty.parts_color(commonvtk)
         elif part_qty is not None and part_qty.parts_color is not None:
             parts_colors = part_qty.parts_color(commonvtk)
+        if parts_colors is not None:
+            colors = ["white" for _ in range(self.context.particles_nb)]
+            for ii, uid in enumerate(commonvtk.data["uid"]):
+                colors[uid] = parts_colors[ii]
+            parts_colors = np.asarray(colors, dtype="object")
 
         style_kwargs = (
             part_qty.style_kwargs if back_qty is None else back_qty.parts_kwargs
@@ -482,7 +487,7 @@ class SliceRenderer:
             ax.scatter(
                 points,
                 values,
-                c=parts_colors,
+                c=parts_colors[uids],
                 marker="x",
                 s=1,
                 linewidths=0.3,
@@ -490,18 +495,19 @@ class SliceRenderer:
 
         else:
             for ii, uid in enumerate(uids):
+                style_kwargs_copy = style_kwargs.copy()
                 if parts_colors is not None:
-                    color = parts_colors[ii]
+                    color = parts_colors[uid]
                 else:
                     color = PARTS_CMAP(ii / max(1, len(uids) - 1))
                 if "color" not in style_kwargs:
-                    style_kwargs["color"] = color
+                    style_kwargs_copy["color"] = color
 
                 if isinstance(back_qty, MapMovie2D):
                     points = part_qty.points[: frame_nb + 1, uid]
                     values = part_qty.values[: frame_nb + 1, uid]
-                    if "lw" not in style_kwargs:
-                        style_kwargs["lw"] = 0.5
+                    if "lw" not in style_kwargs_copy:
+                        style_kwargs_copy["lw"] = 0.5
                     ax.scatter(
                         points[-1],
                         values[-1],
@@ -523,7 +529,7 @@ class SliceRenderer:
                 (line,) = ax.plot(
                     points,
                     values,
-                    **style_kwargs,
+                    **style_kwargs_copy,
                 )
 
                 label = None

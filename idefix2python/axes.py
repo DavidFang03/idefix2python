@@ -77,8 +77,6 @@ class Fig:
         if suptitle is not None:
             fig.suptitle(suptitle)
 
-        # TODO move to renderer? Later PR
-
         self.used_coords = [list(qtyInfo.plot_coords) for qtyInfo in self.quantities]
 
         for i in range(self.rows):

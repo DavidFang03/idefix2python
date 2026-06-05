@@ -226,7 +226,7 @@ class RunContext:
                 )
             with self.iniPath.open("rb") as fh:
                 self.inidata = inifix.load(fh, sections="require")
-            self.initxt = inifix.format_string(self.iniPath.read_text(encoding="utf-8"))
+            self.initxt = inifix.dumps(self.inidata, skip_validation=True)
 
         self.partFolder = kwargs.get("partFolder", None)
         self.framepath_basename = kwargs.get("custom_name", self.runName)

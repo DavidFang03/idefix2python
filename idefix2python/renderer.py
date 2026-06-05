@@ -615,7 +615,7 @@ def colorbar(mappable, cbformat):
     fig = ax.figure
     loc = "bottom"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="2%", pad=0.5)
+    cax = divider.append_axes(loc, size="2%", pad=1)
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

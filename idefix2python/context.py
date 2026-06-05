@@ -185,9 +185,9 @@ class RunContext:
             * partFolder (str): Folder path containing the particles data.
             * frameFolder (str): Folder name where the rendered frames will be stored.
             * active_directions (list): List of active coordinate directions.
-            * show_ini (bool): show_ini mode will show the .ini file.
+            * show_ini (bool): show_ini mode will show the .ini file content at the top of the frame.
                 Defaults to False.
-            * iniPath (Path): Custom path to the .ini input file. Defaults to
+            * iniPath (Path): Custom path to the .ini input file. The .ini content is accessible as a dict through context.inidata. Defaults to
               `projectPath/inputs/{runName}.ini`.
 
     Note:

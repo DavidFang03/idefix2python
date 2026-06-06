@@ -124,7 +124,7 @@ class SliceRenderer:
             self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
 
         if not self.context.pdfmode:
-            plt.style.use("dark_background")
+            plt.style.use("dark_background")  # doesn't work
 
     def set_infos(self, partsInfo):
         self.partsInfo = partsInfo
@@ -212,9 +212,9 @@ class SliceRenderer:
         self.render_Frame()
 
         # Then render Movies frame by frame
-        slice1_list = self.context.get_slice1_vtkFiles()
-        vtkList = self.context.get_global_vtkFiles()
-        partList = self.context.get_particles_vtkFiles()
+        slice1_list = self.context.outputTypes_info["slice1"].files
+        vtkList = self.context.outputTypes_info["vtk"].files
+        partList = self.context.outputTypes_info["particles"].files
         # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
         vtkList = slice1_list if len(slice1_list) > 0 else vtkList
         # if no part files, send an dummy list
@@ -601,7 +601,8 @@ class SliceRenderer:
             data_mesh,
             norm=norm,
             **qtyInfo.style_kwargs,
-            # shading="gouraud",
+            rasterized=True,
+            shading="gouraud",
             edgecolors="none",
             antialiased=True,
         )
@@ -625,7 +626,7 @@ def colorbar(mappable, cbformat):
     fig = ax.figure
     loc = "bottom"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="2%", pad=0.5)
+    cax = divider.append_axes(loc, size="2%", pad=0.75)
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

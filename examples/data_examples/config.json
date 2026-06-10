@@ -1,0 +1,22 @@
+{
+    "RHO": {
+        "norm": "log",
+        "bounds": [
+            1e-7,
+            1
+        ],
+        "style_kwargs": {
+            "cmap": "inferno"
+        }
+    },
+    "Mach_p": {
+        "bounds": [
+            0.1,
+            20
+        ],
+        "style_kwargs": {
+            "cmap": "cool"
+        },
+        "norm": "log"
+    }
+}

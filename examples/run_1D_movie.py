@@ -1,7 +1,7 @@
 from idefix2python import RunContext, Pipeline, Fig, LineMovie1D
 from pathlib import Path
 
-projectPath = Path(__file__).parent / "data_test"
+projectPath = Path(__file__).parent / "data_examples"
 task = "1D_test"
 # By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
 

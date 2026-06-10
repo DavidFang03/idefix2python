@@ -2,7 +2,7 @@ from idefix2python import RunContext, Pipeline, Fig, PartQuantity, SpaceTimeHeat
 import utilities
 from pathlib import Path
 
-projectPath = Path(__file__).parent / "data_test"
+projectPath = Path(__file__).parent / "data_examples"
 task = "particles_over_test"
 # By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
 # In this example, the vtks/ folder contains both part*.vtk and data*.vtk

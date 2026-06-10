@@ -13,7 +13,7 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :language: python
          :linenos:
       
-      .. video:: ../../../examples/data_test/videos/2D_test_fig0.mp4
+      .. video:: ../../../examples/data_examples/videos/2D_test_fig0.mp4
          :width: 100%
          :autoplay:
          :loop:
@@ -34,12 +34,12 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :language: python
          :linenos:
 
-      .. literalinclude:: ../../../examples/data_test/config.json
+      .. literalinclude:: ../../../examples/data_examples/config.json
          :language: json
          :caption: config.json
          :linenos:
       
-      .. video:: ../../../examples/data_test/videos/2D_test_fig0.mp4
+      .. video:: ../../../examples/data_examples/videos/2D_test_fig0.mp4
          :width: 100%
          :autoplay:
          :loop:
@@ -52,7 +52,7 @@ The data is taken from the AmbipolarWind test setup (https://github.com/idefix-c
          :language: python
          :linenos:
       
-      .. video:: ../../../examples/data_test/videos/2D_test_zoom_fig0.mp4
+      .. video:: ../../../examples/data_examples/videos/2D_test_zoom_fig0.mp4
          :width: 100%
          :autoplay:
          :loop:

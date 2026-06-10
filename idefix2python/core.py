@@ -55,6 +55,9 @@ class Pipeline:
         self.particles_requested = False
 
         self.options = options
+        if self.context.pdfmode:
+            self.options["no_movie"] = True
+
         for fig in figs:
             for qtyInfo in fig.quantities:
                 if isinstance(qtyInfo, PartQuantity):
@@ -232,7 +235,7 @@ class Pipeline:
                     if getattr(qty, "xqty", None) is not None:
                         qty.points.append(data[qty.xqty.key])
 
-                if not self.userArgs.noBounds and ii > 5:
+                if not self.userArgs.noBounds and ii >= min(5, nb_vtks - 1):
                     for qty in self.all_movies:
                         if qty.key in bounds:
                             bound_low, bound_up = bounds[qty.key]
@@ -272,9 +275,9 @@ class Pipeline:
     def _name_frames(self):
         context = self.context
 
-        self.slice1_list = context.get_slice1_vtkFiles()
-        self.vtkList = context.get_global_vtkFiles()
-        self.partList = context.get_particles_vtkFiles()
+        self.slice1_list = context.outputTypes_info["slice1"].files
+        self.vtkList = context.outputTypes_info["vtk"].files
+        self.partList = context.outputTypes_info["particles"].files
 
     def _apply_config(self):
         if self.userArgs.onlyMovie or self.userArgs.onlyAnalysis:

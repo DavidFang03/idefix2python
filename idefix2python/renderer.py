@@ -31,8 +31,6 @@ PARTS_CMAP = plt.get_cmap("Pastel2")
 TIMEINDICATOR_KWARGS = {"lw": 1, "ls": "--", "alpha": 0.8}
 GRID_OPACITY = 0.1
 
-plt.style.use("dark_background")
-
 
 # Check if latex is in the system PATH
 if shutil.which("latex"):
@@ -79,10 +77,14 @@ class FramesPaths:
 
     def get_movieframe_path(self, figname, frame_nb):
         filepath = self.get_movieframe_pattern(figname).replace("*", f"{frame_nb:04}")
+        if self.context.pdfmode:
+            filepath = filepath[:-4] + ".pdf"
         return filepath
 
     def get_timeline_path(self, figname):
         filename = "_".join([self.basename] + [figname] + self.userargsinfos) + ".png"
+        if self.context.pdfmode:
+            filename = filename[:-4] + ".pdf"
         return str(self.context.frameRootFolder / filename)
 
     def get_movie_path(self, figname):
@@ -120,6 +122,9 @@ class SliceRenderer:
                 options.get("zoom", None)
             )  # initialize gridInfo.*_toshow
             self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
+
+        if not self.context.pdfmode:
+            plt.style.use("dark_background")  # doesn't work
 
     def set_infos(self, partsInfo):
         self.partsInfo = partsInfo
@@ -207,9 +212,9 @@ class SliceRenderer:
         self.render_Frame()
 
         # Then render Movies frame by frame
-        slice1_list = self.context.get_slice1_vtkFiles()
-        vtkList = self.context.get_global_vtkFiles()
-        partList = self.context.get_particles_vtkFiles()
+        slice1_list = self.context.outputTypes_info["slice1"].files
+        vtkList = self.context.outputTypes_info["vtk"].files
+        partList = self.context.outputTypes_info["particles"].files
         # If no slice1 files exist (e.g. native 2D run), fallback to global vtkList
         vtkList = slice1_list if len(slice1_list) > 0 else vtkList
         # if no part files, send an dummy list
@@ -262,6 +267,9 @@ class SliceRenderer:
             custom_suptitle = None
             figures_to_render = self.figsTimeline
             frame_nb = -1
+
+        if self.context.pdfmode:
+            custom_suptitle = None  # a bit agressive but anyway
 
         for figure in figures_to_render:
             figure.generate_figure(custom_suptitle=custom_suptitle)
@@ -417,6 +425,8 @@ class SliceRenderer:
         """
         Draw a vertical line to show current time
         """
+        if self.context.pdfmode:
+            return
         ax = figure.axes[*timeline.plot_coords].ax
         if getattr(ax, "show_time_indicator", True):
             if frame_nb > 0:
@@ -591,7 +601,8 @@ class SliceRenderer:
             data_mesh,
             norm=norm,
             **qtyInfo.style_kwargs,
-            # shading="gouraud",
+            rasterized=True,
+            shading="gouraud",
             edgecolors="none",
             antialiased=True,
         )
@@ -615,7 +626,7 @@ def colorbar(mappable, cbformat):
     fig = ax.figure
     loc = "bottom"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="2%", pad=0.5)
+    cax = divider.append_axes(loc, size="2%", pad=0.75)
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

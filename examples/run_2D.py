@@ -2,7 +2,7 @@ from idefix2python import RunContext, Pipeline, Fig, MapMovie2D
 import numpy as np
 from pathlib import Path
 
-projectPath = Path(__file__).parent / "data_test"
+projectPath = Path(__file__).parent / "data_examples"
 task = "2D_test"
 
 

@@ -2,7 +2,7 @@ from idefix2python import RunContext, Pipeline, Fig, PartQuantity, MapMovie2D
 from pathlib import Path
 import numpy as np
 
-projectPath = Path(__file__).parent / "data_test"
+projectPath = Path(__file__).parent / "data_examples"
 task = "multipart_2D"
 configPath = projectPath / "config.json"
 # By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/

@@ -5,7 +5,7 @@ Particle quantities over spacetime heatmap
    :language: python
    :linenos:
 
-.. figure:: ../../../examples/data_test/frames/particles_over_test/particles_over_test_fig0.png
+.. figure:: ../../../examples/data_examples/frames/particles_over_test/particles_over_test_fig0.png
     :width: 80%
     :align: center
     

@@ -189,6 +189,7 @@ class RunContext:
                 Defaults to False.
             * iniPath (Path): Custom path to the .ini input file. The .ini content is accessible as a dict through context.inidata. Defaults to
               `projectPath/inputs/{runName}.ini`.
+            * pdf_mode (bool): pdf mode for clean plots. No movie will be produced, with light mode and no time indicator on timelines. If -f is not specified, last frame will be showed.
 
     Note:
         The expected location for the .vtk files is `projectPath/outputs/runName/vtks`.
@@ -204,6 +205,11 @@ class RunContext:
 
         self.userArgs = kwargs.get("args", _get_args())
 
+        self.pdfmode = kwargs.get("pdf_mode", False)
+        if self.pdfmode:
+            if self.userArgs.doOnlyFrames is None:
+                self.userArgs.doOnlyFrames = -1
+
         self.config = {}
         configPath = kwargs.get("configPath", None)
         self.configPath = configPath
@@ -212,8 +218,10 @@ class RunContext:
             self.config = tools.process_configs(configPath)
 
         self.dataFolder = Path(
-            kwargs.get("dataFolder", self.projectPath / "outputs" / runName)
+            kwargs.get("dataFolder", self.projectPath / "outputs" / runName / "vtks")
         )
+        self.partFolder = Path(kwargs.get("partFolder", self.dataFolder))
+
         self.iniPath = Path(
             kwargs.get("iniPath", self.projectPath / "inputs" / f"{runName}.ini")
         )
@@ -228,7 +236,6 @@ class RunContext:
                 self.inidata = inifix.load(fh, sections="require")
             self.initxt = inifix.dumps(self.inidata, skip_validation=True)
 
-        self.partFolder = kwargs.get("partFolder", None)
         self.framepath_basename = kwargs.get("custom_name", self.runName)
 
         self.frameFolderName = kwargs.get("frameFolder", runName)
@@ -274,25 +281,19 @@ class RunContext:
         # self.outputTypes = ["analysis", "slice1", "vtk", "particles"]
         self.outputTypes = ["slice1", "vtk", "particles"]
         # self.outputTypes_info["analysis"] = OutputTypeInfo(self.analysis_path, "analysis")
-        self.outputTypes_info["vtk"] = OutputTypeInfo("vtk", self.get_global_vtkFiles())
+        self.outputTypes_info["vtk"] = OutputTypeInfo(
+            "vtk", self.get_vtkFiles(pattern="data*.vtk")
+        )
         self.outputTypes_info["slice1"] = OutputTypeInfo(
-            "slice1", self.get_slice1_vtkFiles()
+            "slice1", self.get_vtkFiles(pattern="slice1*.vtk")
         )
         self.outputTypes_info["particles"] = OutputTypeInfo(
-            "particles", self.get_particles_vtkFiles()
+            "particles", self.get_vtkFiles(pattern="part*.vtk")
         )
         self.outputTypes_info["particles"].dimensions = self.outputTypes_info[
             "vtk"
         ].dimensions
         # There's no way to deduce the number of dimensions from the part*.vtk files but it has to be the same as in the global vtk
-
-        if (
-            self.partFolder is not None
-            and not self.outputTypes_info["particles"].status
-        ):
-            raise FileNotFoundError(
-                f"the folder {self.partFolder} doesn't seem to contain any part*vtk"
-            )
 
         ## Everything is deduced from the global vtk
         vtkInfo = self.outputTypes_info["vtk"]
@@ -302,7 +303,7 @@ class RunContext:
         elif partInfo.status:
             geometry = partInfo.geometry
         else:
-            raise Exception("No vtk files were found?")
+            raise Exception(f"No vtk files were found in {self.dataFolder}")
 
         if len(self.active_directions) == 0:
             if not vtkInfo.status:
@@ -396,29 +397,8 @@ class RunContext:
 
         return lastframe
 
-    def get_global_vtkFiles(self):
-        pattern = "vtks/data*.vtk"
+    def get_vtkFiles(self, pattern):
         filelist = sorted(self.dataFolder.glob(pattern))
-        firstfile = self._get_firstfile_to_read(filelist)
-        lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[firstfile:lastfile]
-        return filelist[:: self.userArgs.every]
-
-    def get_slice1_vtkFiles(self):
-        pattern = "vtks/slice1*.vtk"
-        filelist = sorted(self.dataFolder.glob(pattern))
-        firstfile = self._get_firstfile_to_read(filelist)
-        lastfile = self._get_lastfile_to_read(filelist)
-        filelist = filelist[firstfile:lastfile]
-        return filelist[:: self.userArgs.every]
-
-    def get_particles_vtkFiles(self):
-        if self.partFolder is not None:
-            filelist = sorted(Path(self.partFolder).glob("part*.vtk"))
-        else:
-            pattern = "vtks/part*.vtk"
-            filelist = sorted(self.dataFolder.glob(pattern))
-
         firstfile = self._get_firstfile_to_read(filelist)
         lastfile = self._get_lastfile_to_read(filelist)
         filelist = filelist[firstfile:lastfile]

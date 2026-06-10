@@ -13,7 +13,7 @@ import numpy as np
 from . import tools
 
 # No data should appear in Fig, Ax: they are sent by Renderer.
-DPI = 550
+DPI = 300
 
 
 class Fig:
@@ -57,14 +57,14 @@ class Fig:
             self.axes[*qtyInfo.plot_coords].add_quantity(qtyInfo)
 
     def generate_figure(self, custom_suptitle=None):
-        fig_width = max(8, 5 * self.columns)  # minimum width of 8
-        fig_height = max(10, 5 * self.rows)  # minimum height of 10
+        fig_width = max(4, 6 * self.columns)  # minimum width of 8
+        fig_height = max(6, 6 * self.rows)  # minimum height of 10
         fig, axs = plt.subplots(
             self.rows,
             self.columns,
             figsize=(fig_width, fig_height),
             squeeze=False,
-            tight_layout=True,
+            # tight_layout=True,
         )
         self.fig = fig
 
@@ -161,7 +161,7 @@ class Ax:
         if getattr(qtyInfo, "streamlines", None):
             stream_name = tools.get_streamline_name(qtyInfo.streamlines[0])
             title = f"{title} \\textbar{{}} {stream_name} $\\nearrow$"
-        if title is not None:
+        if title is not None and len(title) > 0:
             self.qtytitles_list.append(title)
 
         if isinstance(qtyInfo, MapMovie2D):

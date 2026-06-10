@@ -1,15 +1,16 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "idefix2python"
 version = "0.1.0"
 dependencies = [
-    "numpy",
-    "matplotlib",
-    "inifix>=5.1.0",
+  "inifix>=5.1.0",
+  "matplotlib",
+  "numpy",
+  "scipy",
 ]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]

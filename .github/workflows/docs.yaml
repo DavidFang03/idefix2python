@@ -28,8 +28,8 @@ jobs:
 
       - name: Run test script
         run: |
-          chmod +x test/run_tests.sh
-          ./test/run_tests.sh
+          chmod +x tests/run_tests.sh
+          ./tests/run_tests.sh
 
   build-and-deploy:
     runs-on: ubuntu-latest

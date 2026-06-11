@@ -77,7 +77,12 @@ class Data:
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
-        default_ref_plot_kwargs = {"zorder": 3, "ls": "--", "lw": 2}
+        default_ref_plot_kwargs = {
+            "zorder": 3,
+            "ls": "--",
+            "lw": 2,
+            "label": "Reference",
+        }
         if self.ref_function is not None:
             if not hasattr(self.ref_function, "plot_kwargs"):
                 self.ref_function.plot_kwargs = {}

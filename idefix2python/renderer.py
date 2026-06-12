@@ -138,7 +138,8 @@ class SliceRenderer:
                 self.figsMovie.append(fig)
             else:
                 self.figsTimeline.append(fig)
-            fig.set_initxt(self.context.initxt)
+            if self.context.show_ini:
+                fig.set_initxt(self.context.initxt)
 
             for qtyInfo in fig.quantities:
                 if isinstance(qtyInfo, MapMovie2D):
@@ -404,19 +405,13 @@ class SliceRenderer:
 
     def _render_1D(self, figure, qty1DInfo, commonvtk, frame_nb):
 
-        ax = figure.axes[*qty1DInfo.plot_coords].ax
+        Ax_container = figure.axes[*qty1DInfo.plot_coords]
 
-        (line,) = ax.plot(self.gridInfo.X1Line, commonvtk.data[qty1DInfo.key])
-
-        ax.plot(
+        (line,) = Ax_container.ax.plot(
             self.gridInfo.X1Line,
             commonvtk.data[qty1DInfo.key],
             **qty1DInfo.style_kwargs,
         )
-
-        ax.set_ylim(
-            *qty1DInfo.bounds
-        )  # TODO bounds will be more properly handled in later PR
 
     def _render_2D(self, figure, qtyInfo, commonvtk, frame_nb):
         self._draw_pcolormesh(figure, qtyInfo, commonvtk.data)
@@ -569,6 +564,8 @@ class SliceRenderer:
                 np.asarray(self.processor.vtktimes),
                 np.asarray(self.gridInfo.X1Line),
             )
+            print(np.shape(np.transpose(qtyInfo.values)))
+            print(np.shape(self.gridInfo.mask1))
             data_mesh = np.transpose(qtyInfo.values)[self.gridInfo.mask1]
         vmin, vmax = qtyInfo.bounds
         if vmin is None or self.userArgs.noBounds:

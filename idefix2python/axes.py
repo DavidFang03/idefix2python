@@ -14,6 +14,8 @@ from . import tools
 
 # No data should appear in Fig, Ax: they are sent by Renderer.
 DPI = 300
+COLUMN_WIDTH = 6
+ROW_HEIGHT = 4
 
 
 class Fig:
@@ -57,13 +59,14 @@ class Fig:
             self.axes[*qtyInfo.plot_coords].add_quantity(qtyInfo)
 
     def generate_figure(self, custom_suptitle=None):
-        fig_width = max(4, 6 * self.columns)  # minimum width of 8
-        fig_height = max(6, 6 * self.rows)  # minimum height of 10
+        fig_width = max(6, COLUMN_WIDTH * self.columns)  # minimum width of 6
+        fig_height = max(4, ROW_HEIGHT * self.rows)  # minimum height of 4
         fig, axs = plt.subplots(
             self.rows,
             self.columns,
             figsize=(fig_width, fig_height),
             squeeze=False,
+            layout="constrained",
             # tight_layout=True,
         )
         self.fig = fig

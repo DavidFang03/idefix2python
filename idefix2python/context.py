@@ -209,6 +209,7 @@ class RunContext:
         if self.pdfmode:
             if self.userArgs.doOnlyFrames is None:
                 self.userArgs.doOnlyFrames = -1
+            self.show_ini = False
 
         self.config = {}
         configPath = kwargs.get("configPath", None)
@@ -227,14 +228,14 @@ class RunContext:
         )
         self.inidata = None
         self.initxt = None
-        if self.show_ini:
-            if not self.iniPath.exists():
-                raise FileNotFoundError(
-                    f"show_ini requested but {self.iniPath} doesn't exist"
-                )
+        if self.iniPath.exists():
             with self.iniPath.open("rb") as fh:
                 self.inidata = inifix.load(fh, sections="require")
             self.initxt = inifix.dumps(self.inidata, skip_validation=True)
+        elif self.show_ini:
+            raise FileNotFoundError(
+                f"show_ini requested but {self.iniPath} doesn't exist"
+            )
 
         self.framepath_basename = kwargs.get("custom_name", self.runName)
 

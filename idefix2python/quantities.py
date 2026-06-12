@@ -80,7 +80,9 @@ class Data:
         default_ref_plot_kwargs = {
             "zorder": 3,
             "ls": "--",
-            "lw": 2,
+            "lw": 1,
+            "alpha": 0.8,
+            "color": "limegreen",
             "label": "Reference",
         }
         if self.ref_function is not None:

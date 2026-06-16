@@ -304,8 +304,17 @@ class SliceRenderer:
                 elif isinstance(qtyInfo, PartQuantity) or isinstance(
                     qtyInfo, LocalQuantity
                 ):
-                    self._render_TimeSeries(figure, qtyInfo, commonvtk, frame_nb)
-                    self.draw_particles(figure, part_qty=qtyInfo, commonvtk=commonvtk)
+                    if getattr(qtyInfo, "xqty", None) is None:
+                        self._render_TimeSeries(figure, qtyInfo, commonvtk, frame_nb)
+                        self.draw_particles(
+                            figure, part_qty=qtyInfo, commonvtk=commonvtk
+                        )
+                    else:
+                        ax = figure.axes[*qtyInfo.plot_coords].ax
+                        ax.scatter(
+                            qtyInfo.points[frame_nb], qtyInfo.values[frame_nb], s=1
+                        )
+                        ax.set_ylim(qtyInfo.bounds)
 
                 elif isinstance(qtyInfo, OneComponentOneVariable):
                     self._render_1C1V(figure, qtyInfo, commonvtk, frame_nb)
@@ -358,16 +367,12 @@ class SliceRenderer:
         Ux_interp = RegularGridInterpolator(
             (X1Line, X2Line),
             ux.T,
-            fill_value=np.nan,
             method=method,
-            bounds_error=False,
         )
         Uy_interp = RegularGridInterpolator(
             (X1Line, X2Line),
             uy.T,
-            fill_value=np.nan,
             method=method,
-            bounds_error=False,
         )
         pts = np.stack((self.gridInfo.X1_fromuni, self.gridInfo.X2_fromuni), axis=-1)
 

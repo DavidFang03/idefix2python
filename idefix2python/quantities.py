@@ -306,14 +306,16 @@ class PartQuantity(Data):
         symbol="",
         plot_coords=None,
         bounds=None,
+        xqty=None,
         uids="all",
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
         self.is_global = kwargs.get("is_global", False)
-        self.is_timeline = True
-        self.is_movie = False
+        self.xqty = xqty  # if None, it will be time.
+        self.is_timeline = xqty is None
+        self.is_movie = not self.is_timeline
         self.colors = kwargs.get("colors", [])
 
 

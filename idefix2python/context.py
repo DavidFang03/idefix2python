@@ -512,9 +512,6 @@ class GridInfo:
                 r_coords = np.sqrt(Xuni**2 + Yuni**2)
                 theta_coords = np.arctan2(Xuni, Yuni)
 
-                self.X1_fromuni = r_coords
-                self.X2_fromuni = theta_coords
-
                 # Clip the radius so it never exceeds the maximum and minimum native grid radius
                 r_min = np.min(self.X1Line_toshow)
                 r_max = np.max(self.X1Line_toshow)

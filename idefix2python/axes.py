@@ -3,9 +3,7 @@ from .quantities import (
     MapMovie2D,
     LineMovie1D,
     OneComponentOneVariable,
-    SpaceTimeHeatmap,
     PartQuantity,
-    LocalQuantity,
 )
 from .tools import LOG
 import numpy as np

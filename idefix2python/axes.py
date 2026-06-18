@@ -69,7 +69,6 @@ class Fig:
             figsize=(fig_width, fig_height),
             squeeze=False,
             layout="constrained",
-            # tight_layout=True,
         )
         self.fig = fig
 

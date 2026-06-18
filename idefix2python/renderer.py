@@ -342,10 +342,6 @@ class SliceRenderer:
     def _draw_streamlines(self, figure, qtyInfo, data):
         method = "linear"
 
-        # To use streamplot we need
-        # - A uniformly spaced cartesian grid (xcoords, ycoords)
-        # - Vector components (ux, uy) evaluated on that same grid (by linear interpolation)
-
         mask1 = self.gridInfo.mask1
         mask2 = self.gridInfo.mask2
         u_x1 = data[qtyInfo.streamlines[0]][mask2][:, mask1]
@@ -364,25 +360,63 @@ class SliceRenderer:
                 uy = np.cos(Theta) * u_x1 - np.sin(Theta) * u_x2
 
         X1Line, X2Line = self.gridInfo.X1Line_toshow, self.gridInfo.X2Line_toshow
+
         Ux_interp = RegularGridInterpolator(
-            (X1Line, X2Line),
-            ux.T,
-            method=method,
+            (X1Line, X2Line), ux.T, method=method, bounds_error=False, fill_value=np.nan
         )
         Uy_interp = RegularGridInterpolator(
-            (X1Line, X2Line),
-            uy.T,
-            method=method,
+            (X1Line, X2Line), uy.T, method=method, bounds_error=False, fill_value=np.nan
         )
         pts = np.stack((self.gridInfo.X1_fromuni, self.gridInfo.X2_fromuni), axis=-1)
+        Ux_vals = Ux_interp(pts)
+        Uy_vals = Uy_interp(pts)
 
-        figure.axes[*qtyInfo.plot_coords].ax.streamplot(
+        ax = figure.axes[*qtyInfo.plot_coords].ax
+        ax.streamplot(
             self.gridInfo.x_uniLine,
             self.gridInfo.y_uniLine,
-            Ux_interp(pts),
-            Uy_interp(pts),
+            Ux_vals,
+            Uy_vals,
             **qtyInfo.streamline_kwargs,
         )
+
+        import matplotlib.colors as mcolors
+
+        if self.context.geometry == "spherical":
+            # 1. Recreate the uniform grid coordinates that streamplot uses
+            Xuni, Yuni = np.meshgrid(self.gridInfo.x_uniLine, self.gridInfo.y_uniLine)
+
+            # 2. Map the uniform grid points to spherical coordinates (r, theta)
+            r_grid = np.sqrt(Xuni**2 + Yuni**2)
+            theta_grid = np.arctan2(Xuni, Yuni)
+
+            # 3. Get boundaries from the native grid limits
+            r_min = self.gridInfo.X1Line_toshow.min()
+            r_max = self.gridInfo.X1Line_toshow.max()
+            theta_min = self.gridInfo.X2Line_toshow.min()
+            theta_max = self.gridInfo.X2Line_toshow.max()
+
+            # 4. Find everything outside BOTH the radial and angular limits
+            outside = (
+                (r_grid < r_min)
+                | (r_grid > r_max)
+                | (theta_grid < theta_min)
+                | (theta_grid > theta_max)
+            )
+
+            # 5. Build the mask (1.0 where outside, nan where inside)
+            dummy = np.where(outside, 1.0, np.nan)
+
+            # 6. Paint over the background using the uniform grid lines
+            bg_cmap = mcolors.ListedColormap([ax.get_facecolor()])
+            ax.pcolormesh(
+                self.gridInfo.x_uniLine,
+                self.gridInfo.y_uniLine,
+                dummy,
+                cmap=bg_cmap,
+                zorder=5,  # Places mask on top of streamlines
+                shading="nearest",
+            )
 
     def _draw_contours(self, figure, qtyInfo, data_mesh, cbar):
         if getattr(qtyInfo, "contours", None) is None:
@@ -626,9 +660,9 @@ def colorbar(mappable, cbformat):
     last_axes = plt.gca()
     ax = mappable.axes
     fig = ax.figure
-    loc = "bottom"
+    loc = "right"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="2%", pad=0.75)
+    cax = divider.append_axes(loc, size="4%")
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

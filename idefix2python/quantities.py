@@ -175,7 +175,8 @@ class MapMovie2D(Data):
         default_streamline_kwargs = {
             "linewidth": 0.2,
             "arrowstyle": "->",
-            "color": (1, 1, 1, 0.5),
+            "color": "#d3d3d3",
+            # "color": (1, 1, 1, 0.5),
             "density": 2,
         }
         self.streamline_kwargs = merge_default_to_dict(

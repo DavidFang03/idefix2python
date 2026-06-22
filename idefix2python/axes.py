@@ -16,17 +16,19 @@ from . import tools
 DPI = 300
 COLUMN_WIDTH = 6
 ROW_HEIGHT = 6
+# ROW_HEIGHT = 2
 
 
 class Fig:
     counter = -1
 
-    def __init__(self, quantities, suptitle=None):
+    def __init__(self, quantities, suptitle=None, suptitle_kwargs=None, **kwargs):
         Fig.counter += 1
         self.name = f"fig{Fig.counter}"
         self.quantities = quantities
 
         self.suptitle = suptitle
+        self.suptitle_kwargs = {} if suptitle_kwargs is None else suptitle_kwargs
 
         self.axesMovie = []
         self.axesTimeline = []
@@ -49,6 +51,8 @@ class Fig:
         self.axes = np.empty((self.rows, self.columns), dtype="object")
         self.initxt = None
 
+        self.kwargs = kwargs  # will be passed to subplots
+
     def init(self):
         """
         Only after Renderer._pre_render()
@@ -69,6 +73,7 @@ class Fig:
             figsize=(fig_width, fig_height),
             squeeze=False,
             layout="constrained",
+            **self.kwargs,
         )
         self.fig = fig
 
@@ -79,7 +84,7 @@ class Fig:
         else:
             suptitle = custom_suptitle
         if suptitle is not None:
-            fig.suptitle(suptitle)
+            fig.suptitle(suptitle, **self.suptitle_kwargs)
 
         self.used_coords = [list(qtyInfo.plot_coords) for qtyInfo in self.quantities]
 

@@ -15,7 +15,7 @@ from . import tools
 # No data should appear in Fig, Ax: they are sent by Renderer.
 DPI = 300
 COLUMN_WIDTH = 6
-ROW_HEIGHT = 4
+ROW_HEIGHT = 6
 
 
 class Fig:
@@ -37,6 +37,8 @@ class Fig:
             if isinstance(qtyInfo, LineMovie1D) or isinstance(qtyInfo, MapMovie2D):
                 self.movie = True
             elif isinstance(qtyInfo, OneComponentOneVariable) and qtyInfo.is_movie:
+                self.movie = True
+            elif isinstance(qtyInfo, PartQuantity) and qtyInfo.is_movie:
                 self.movie = True
 
             if qtyInfo.plot_coords[0] > self.rows - 1:
@@ -67,7 +69,6 @@ class Fig:
             figsize=(fig_width, fig_height),
             squeeze=False,
             layout="constrained",
-            # tight_layout=True,
         )
         self.fig = fig
 

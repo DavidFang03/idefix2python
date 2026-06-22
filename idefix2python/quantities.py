@@ -175,7 +175,8 @@ class MapMovie2D(Data):
         default_streamline_kwargs = {
             "linewidth": 0.2,
             "arrowstyle": "->",
-            "color": (1, 1, 1, 0.5),
+            "color": "#d3d3d3",
+            # "color": (1, 1, 1, 0.5),
             "density": 2,
         }
         self.streamline_kwargs = merge_default_to_dict(
@@ -306,14 +307,16 @@ class PartQuantity(Data):
         symbol="",
         plot_coords=None,
         bounds=None,
+        xqty=None,
         uids="all",
         **kwargs,
     ):
         super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.uids = uids
         self.is_global = kwargs.get("is_global", False)
-        self.is_timeline = True
-        self.is_movie = False
+        self.xqty = xqty  # if None, it will be time.
+        self.is_timeline = xqty is None
+        self.is_movie = not self.is_timeline
         self.colors = kwargs.get("colors", [])
 
 

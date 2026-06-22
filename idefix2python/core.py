@@ -176,7 +176,7 @@ class Pipeline:
         vtktimes = None
         quantities_togather = []
         keys_tobound = remaining_fields_tobound
-        for qty in self.oneC_oneVs:
+        for qty in self.oneC_oneVs + self.partQuantities:
             if qty.xqty is not None:
                 quantities_togather.append(qty.xqty)
 

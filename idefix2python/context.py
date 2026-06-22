@@ -452,6 +452,7 @@ class GridInfo:
             if i < 2:
                 # max 2 dimensions is supported
                 names[i] = CARTESIAN_DIMENSION_NAMES[self.context.geometry][dir]
+                names[i] += " [au]"
 
         return names
 
@@ -508,5 +509,18 @@ class GridInfo:
             case "cylindric":
                 self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
             case "spherical":
-                self.X1_fromuni = np.sqrt(Xuni**2 + Yuni**2)
-                self.X2_fromuni = np.arctan2(Xuni, Yuni)
+                r_coords = np.sqrt(Xuni**2 + Yuni**2)
+                theta_coords = np.arctan2(Xuni, Yuni)
+
+                self.X1_fromuni = r_coords
+                self.X2_fromuni = theta_coords
+
+                # Clip the radius so it never exceeds the maximum and minimum native grid radius
+                r_min = np.min(self.X1Line_toshow)
+                r_max = np.max(self.X1Line_toshow)
+                self.X1_fromuni = np.clip(r_coords, r_min, r_max)
+
+                # same for theta
+                theta_min = np.min(self.X2Line_toshow)
+                theta_max = np.max(self.X2Line_toshow)
+                self.X2_fromuni = np.clip(theta_coords, theta_min, theta_max)

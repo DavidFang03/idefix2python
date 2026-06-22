@@ -12,7 +12,6 @@ from .quantities import (
     LocalQuantity,
 )
 from .tools import convertGrid_toXZ
-import numpy as np
 
 
 class Pipeline:

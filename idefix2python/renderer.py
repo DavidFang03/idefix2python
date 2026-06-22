@@ -699,9 +699,9 @@ class SliceRenderer:
             norm=norm,
             **qtyInfo.style_kwargs,
             rasterized=True,
-            shading="gouraud",
+            # shading="gouraud",
             edgecolors="none",
-            antialiased=True,
+            # antialiased=True,
         )
 
         cbar = None
@@ -722,9 +722,9 @@ def colorbar(mappable, cbformat):
     last_axes = plt.gca()
     ax = mappable.axes
     fig = ax.figure
-    loc = "right"
+    loc = "top"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="4%")
+    cax = divider.append_axes(loc, size="4%", pad=0)
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

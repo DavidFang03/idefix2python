@@ -164,12 +164,12 @@ class SliceRenderer:
                     qtyInfo.xmin = (
                         qtyInfo.xmin
                         if qtyInfo.xmin is not None
-                        else np.min(self.processor.vtktimes)
+                        else np.min(self.processor.years)
                     )
                     qtyInfo.xmax = (
                         qtyInfo.xmax
                         if qtyInfo.xmax is not None
-                        else np.max(self.processor.vtktimes)
+                        else np.max(self.processor.years)
                     )
                     qtyInfo.ymin = (
                         qtyInfo.ymin
@@ -181,29 +181,31 @@ class SliceRenderer:
                         if qtyInfo.ymax is not None
                         else np.nanmax(qtyInfo.points)
                     )
-                    qtyInfo.set_default_xlabel(r"$t$")
+                    qtyInfo.set_default_xlabel(r"$t$ [yr]")
                     qtyInfo.set_default_ylabel(self.gridInfo.axis_name_1)
 
                 elif isinstance(qtyInfo, PartQuantity):
-                    qtyInfo.set_default_xlabel(r"$t$")
+                    qtyInfo.set_default_xlabel(r"$t$ [yr]")
                     qtyInfo.set_default_ylabel(qtyInfo.symbol)
 
                 if qtyInfo.ref_function is not None:
-                    vtktimes = (
-                        self.processor.vtktimes
-                    )  # TODO recover only tstart and tend from context instead
-                    t_smooth = np.linspace(np.min(vtktimes), np.max(vtktimes), 10000)
+                    # TODO recover only tstart and tend from context instead
+                    t_smooth = np.linspace(
+                        np.min(self.processor.vtktimes),
+                        np.max(self.processor.vtktimes),
+                        10000,
+                    )
+                    years_smooth = t_smooth / (2 * np.pi)
                     try:
                         predicted_values = qtyInfo.ref_function(t_smooth)
-                        qtyInfo.set_ref_data(t_smooth, predicted_values)
+                        qtyInfo.set_ref_data(years_smooth, predicted_values)
                     except Exception as e:
                         LOG(
                             f"Warning: Failed to compute ref_function for {qtyInfo.key}. Error: {e}"
                         )
 
                 if qtyInfo.is_timeline:
-                    vtktimes = self.processor.vtktimes
-                    qtyInfo.points = vtktimes
+                    qtyInfo.points = self.processor.years
 
             fig.init()
 
@@ -323,7 +325,12 @@ class SliceRenderer:
 
                 Ax_container = figure.axes[*qtyInfo.plot_coords]
                 if qtyInfo.customize is not None:
-                    qtyInfo.customize(Ax_container.ax, commonvtk)
+                    vtk_for_customize = (
+                        self.context.outputTypes_info["particles"].vtk
+                        if commonvtk is None
+                        else commonvtk
+                    )
+                    qtyInfo.customize(Ax_container.ax, vtk_for_customize)
 
                 if "label" in qtyInfo.style_kwargs:
                     Ax_container.set_doLegend()
@@ -372,31 +379,31 @@ class SliceRenderer:
         Uy_vals = Uy_interp(pts)
 
         ax = figure.axes[*qtyInfo.plot_coords].ax
-        ax.streamplot(
+        stream = ax.streamplot(
             self.gridInfo.x_uniLine,
             self.gridInfo.y_uniLine,
             Ux_vals,
             Uy_vals,
             **qtyInfo.streamline_kwargs,
         )
+        # Rasterize the arrows as well
+        stream.lines.set_rasterized(True)
+        if hasattr(stream, "arrows") and stream.arrows is not None:
+            stream.arrows.set_rasterized(True)
 
         import matplotlib.colors as mcolors
 
         if self.context.geometry == "spherical":
-            # 1. Recreate the uniform grid coordinates that streamplot uses
             Xuni, Yuni = np.meshgrid(self.gridInfo.x_uniLine, self.gridInfo.y_uniLine)
 
-            # 2. Map the uniform grid points to spherical coordinates (r, theta)
             r_grid = np.sqrt(Xuni**2 + Yuni**2)
             theta_grid = np.arctan2(Xuni, Yuni)
 
-            # 3. Get boundaries from the native grid limits
             r_min = self.gridInfo.X1Line_toshow.min()
             r_max = self.gridInfo.X1Line_toshow.max()
             theta_min = self.gridInfo.X2Line_toshow.min()
             theta_max = self.gridInfo.X2Line_toshow.max()
 
-            # 4. Find everything outside BOTH the radial and angular limits
             outside = (
                 (r_grid < r_min)
                 | (r_grid > r_max)
@@ -404,18 +411,18 @@ class SliceRenderer:
                 | (theta_grid > theta_max)
             )
 
-            # 5. Build the mask (1.0 where outside, nan where inside)
             dummy = np.where(outside, 1.0, np.nan)
 
-            # 6. Paint over the background using the uniform grid lines
+            # Paint over the background using the uniform grid lines
             bg_cmap = mcolors.ListedColormap([ax.get_facecolor()])
             ax.pcolormesh(
                 self.gridInfo.x_uniLine,
                 self.gridInfo.y_uniLine,
                 dummy,
                 cmap=bg_cmap,
-                zorder=5,  # Places mask on top of streamlines
+                zorder=5,
                 shading="nearest",
+                rasterized=True,
             )
 
     def _draw_contours(self, figure, qtyInfo, data_mesh, cbar):
@@ -464,7 +471,10 @@ class SliceRenderer:
         ax = figure.axes[*timeline.plot_coords].ax
         if getattr(ax, "show_time_indicator", True):
             if frame_nb > 0:
-                ax.axvline(x=self.processor.vtktimes[frame_nb], **TIMEINDICATOR_KWARGS)
+                ax.axvline(
+                    x=self.processor.years[frame_nb],
+                    **TIMEINDICATOR_KWARGS,
+                )
                 ax.show_time_indicator = False
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, commonvtk, frame_nb=-1):
@@ -510,13 +520,26 @@ class SliceRenderer:
             return
 
         parts_colors = None
+        vtk_for_colors = (
+            self.context.outputTypes_info["particles"].vtk
+            if commonvtk is None
+            else commonvtk
+        )  # In the case of a timeseries there is only single frame so we'll choose the first vtk.
+
         if back_qty is not None and back_qty.parts_color is not None:
-            parts_colors = back_qty.parts_color(commonvtk)
+            parts_colors = back_qty.parts_color(vtk_for_colors)
+            colors = back_qty.parts_color(
+                self.context.outputTypes_info["particles"].vtk
+            )
         elif part_qty is not None and part_qty.parts_color is not None:
-            parts_colors = part_qty.parts_color(commonvtk)
+            parts_colors = part_qty.parts_color(vtk_for_colors)
+            colors = part_qty.parts_color(
+                self.context.outputTypes_info["particles"].vtk
+            )
+
         if parts_colors is not None:
-            colors = ["white" for _ in range(self.context.particles_nb)]
-            for ii, uid in enumerate(commonvtk.data["uid"]):
+            # colors = ["white" for _ in range(self.context.particles_nb)]
+            for ii, uid in enumerate(vtk_for_colors.data["uid"]):
                 colors[uid] = parts_colors[ii]
             parts_colors = np.asarray(colors, dtype="object")
 
@@ -566,7 +589,7 @@ class SliceRenderer:
                     values = np.asarray(back_qty.localqty.values)[: frame_nb + 1, uid]
                     ax.scatter(points[-1], values[-1], color=color, marker="x")
                 elif back_qty is None or isinstance(back_qty, SpaceTimeHeatmap):
-                    points = self.processor.vtktimes  # pre_render doesn't initialize global partquantities so part_qty.points would be empty here
+                    points = self.processor.years  # pre_render doesn't initialize global partquantities so part_qty.points would be empty here
                     values = np.asarray(part_qty.values)[:, uid]
                 else:
                     raise NotImplementedError(f"{back_qty} doesn't support particles")
@@ -600,7 +623,7 @@ class SliceRenderer:
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
             grid1, grid2 = np.meshgrid(
-                np.asarray(self.processor.vtktimes),
+                np.asarray(self.processor.years),
                 np.asarray(self.gridInfo.X1Line),
             )
             print(np.shape(np.transpose(qtyInfo.values)))
@@ -643,6 +666,7 @@ class SliceRenderer:
             antialiased=True,
         )
 
+        cbar = None
         cbar = colorbar(cmesh, cbformat)
         cbar.ax.set_title(qtyInfo.symbol)
 
@@ -660,7 +684,7 @@ def colorbar(mappable, cbformat):
     last_axes = plt.gca()
     ax = mappable.axes
     fig = ax.figure
-    loc = "right"
+    loc = "left"
     divider = make_axes_locatable(ax)
     cax = divider.append_axes(loc, size="4%")
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)

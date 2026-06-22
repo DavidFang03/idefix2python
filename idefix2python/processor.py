@@ -48,6 +48,7 @@ class PhysicsProcessor:
 
     def set_vtktimes(self, vtktimes):
         self.vtktimes = vtktimes
+        self.years = np.asarray(vtktimes) / (2 * np.pi)
 
     def process(self, datavtk=None, partvtk=None):
         """

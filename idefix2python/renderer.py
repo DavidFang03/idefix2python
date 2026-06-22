@@ -498,7 +498,7 @@ class SliceRenderer:
     def _render_1C1V(self, figure, onec_onev, commonvtk, frame_nb=-1):
         ax = figure.axes[*onec_onev.plot_coords].ax
 
-        ax.plot(onec_onev.points, onec_onev.values)
+        ax.plot(onec_onev.points, onec_onev.values, **onec_onev.style_kwargs)
         if onec_onev.xqty is None:  # that means it's a timeline
             self.do_timeline_stuff(figure, onec_onev, frame_nb)
 

@@ -425,6 +425,44 @@ class SliceRenderer:
                 rasterized=True,
             )
 
+        import matplotlib.colors as mcolors
+
+        if self.context.geometry == "spherical":
+            # 1. Recreate the uniform grid coordinates that streamplot uses
+            Xuni, Yuni = np.meshgrid(self.gridInfo.x_uniLine, self.gridInfo.y_uniLine)
+
+            # 2. Map the uniform grid points to spherical coordinates (r, theta)
+            r_grid = np.sqrt(Xuni**2 + Yuni**2)
+            theta_grid = np.arctan2(Xuni, Yuni)
+
+            # 3. Get boundaries from the native grid limits
+            r_min = self.gridInfo.X1Line_toshow.min()
+            r_max = self.gridInfo.X1Line_toshow.max()
+            theta_min = self.gridInfo.X2Line_toshow.min()
+            theta_max = self.gridInfo.X2Line_toshow.max()
+
+            # 4. Find everything outside BOTH the radial and angular limits
+            outside = (
+                (r_grid < r_min)
+                | (r_grid > r_max)
+                | (theta_grid < theta_min)
+                | (theta_grid > theta_max)
+            )
+
+            # 5. Build the mask (1.0 where outside, nan where inside)
+            dummy = np.where(outside, 1.0, np.nan)
+
+            # 6. Paint over the background using the uniform grid lines
+            bg_cmap = mcolors.ListedColormap([ax.get_facecolor()])
+            ax.pcolormesh(
+                self.gridInfo.x_uniLine,
+                self.gridInfo.y_uniLine,
+                dummy,
+                cmap=bg_cmap,
+                zorder=5,  # Places mask on top of streamlines
+                shading="nearest",
+            )
+
     def _draw_contours(self, figure, qtyInfo, data_mesh, cbar):
         if getattr(qtyInfo, "contours", None) is None:
             return
@@ -661,9 +699,9 @@ class SliceRenderer:
             norm=norm,
             **qtyInfo.style_kwargs,
             rasterized=True,
-            shading="gouraud",
+            # shading="gouraud",
             edgecolors="none",
-            antialiased=True,
+            # antialiased=True,
         )
 
         cbar = None
@@ -684,11 +722,9 @@ def colorbar(mappable, cbformat):
     last_axes = plt.gca()
     ax = mappable.axes
     fig = ax.figure
-    # loc = "left"
-    loc = "bottom"
+    loc = "top"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="2%", pad=0.75)
-    # cax = divider.append_axes(loc, size="4%")
+    cax = divider.append_axes(loc, size="4%", pad=0)
     cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
     plt.sca(last_axes)
     return cbar

@@ -161,26 +161,26 @@ class SliceRenderer:
                     qtyInfo.points = (
                         self.gridInfo.X1Line
                     )  # TODO to change if user wants custom xqty
-                    qtyInfo.xmin = (
-                        qtyInfo.xmin
-                        if qtyInfo.xmin is not None
-                        else np.min(self.processor.years)
-                    )
-                    qtyInfo.xmax = (
-                        qtyInfo.xmax
-                        if qtyInfo.xmax is not None
-                        else np.max(self.processor.years)
-                    )
-                    qtyInfo.ymin = (
-                        qtyInfo.ymin
-                        if qtyInfo.ymin is not None
-                        else np.nanmin(qtyInfo.points)
-                    )
-                    qtyInfo.ymax = (
-                        qtyInfo.ymax
-                        if qtyInfo.ymax is not None
-                        else np.nanmax(qtyInfo.points)
-                    )
+                    # qtyInfo.xmin = (
+                    #     qtyInfo.xmin
+                    #     if qtyInfo.xmin is not None
+                    #     else np.min(self.processor.years)
+                    # )
+                    # qtyInfo.xmax = (
+                    #     qtyInfo.xmax
+                    #     if qtyInfo.xmax is not None
+                    #     else np.max(self.processor.years)
+                    # )
+                    # qtyInfo.ymin = (
+                    #     qtyInfo.ymin
+                    #     if qtyInfo.ymin is not None
+                    #     else np.nanmin(qtyInfo.points)
+                    # )
+                    # qtyInfo.ymax = (
+                    #     qtyInfo.ymax
+                    #     if qtyInfo.ymax is not None
+                    #     else np.nanmax(qtyInfo.points)
+                    # )
                     qtyInfo.set_default_xlabel(r"$t$ [yr]")
                     qtyInfo.set_default_ylabel(self.gridInfo.axis_name_1)
 
@@ -265,6 +265,7 @@ class SliceRenderer:
             partvtk = None if partPath is None else readVTK(partPath)
             commonvtk = self.processor.process(datavtk=datavtk, partvtk=partvtk)
             custom_suptitle = f"{self.context.runName}\n{Path(*vtkPath.parts[-4:])}\n$t={VTK.t[0]:.1e}$"
+            custom_suptitle = rf"$t={VTK.t[0] / (2 * np.pi):.1e}\,\mathrm{{yr}}$"
 
         else:
             custom_suptitle = None
@@ -471,10 +472,16 @@ class SliceRenderer:
         ax = figure.axes[*timeline.plot_coords].ax
         if getattr(ax, "show_time_indicator", True):
             if frame_nb > 0:
-                ax.axvline(
-                    x=self.processor.years[frame_nb],
-                    **TIMEINDICATOR_KWARGS,
-                )
+                if getattr(timeline, "rotate", None):
+                    ax.axhline(
+                        y=self.processor.years[frame_nb],
+                        **TIMEINDICATOR_KWARGS,
+                    )
+                else:
+                    ax.axvline(
+                        x=self.processor.years[frame_nb],
+                        **TIMEINDICATOR_KWARGS,
+                    )
                 ax.show_time_indicator = False
 
     def _render_SpaceTimeHeatmap(self, figure, sptime, commonvtk, frame_nb=-1):
@@ -626,8 +633,6 @@ class SliceRenderer:
                 np.asarray(self.processor.years),
                 np.asarray(self.gridInfo.X1Line),
             )
-            print(np.shape(np.transpose(qtyInfo.values)))
-            print(np.shape(self.gridInfo.mask1))
             data_mesh = np.transpose(qtyInfo.values)[self.gridInfo.mask1]
         vmin, vmax = qtyInfo.bounds
         if vmin is None or self.userArgs.noBounds:
@@ -654,16 +659,13 @@ class SliceRenderer:
 
         ax = figure.axes[*qtyInfo.plot_coords].ax
 
+        is_rotated = getattr(qtyInfo, "rotate", False)
         cmesh = ax.pcolormesh(
-            grid1,
-            grid2,
-            data_mesh,
+            grid2.T if is_rotated else grid1,
+            grid1.T if is_rotated else grid2,
+            data_mesh.T if is_rotated else data_mesh,
             norm=norm,
             **qtyInfo.style_kwargs,
-            rasterized=True,
-            shading="gouraud",
-            edgecolors="none",
-            antialiased=True,
         )
 
         cbar = None
@@ -681,14 +683,37 @@ class SliceRenderer:
 
 
 def colorbar(mappable, cbformat):
+    loc = "bottom"
     last_axes = plt.gca()
     ax = mappable.axes
     fig = ax.figure
+
+    cbar = fig.colorbar(mappable, ax=ax, location=loc, format=cbformat)
+
+    return cbar
     # loc = "left"
-    loc = "bottom"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(loc, size="2%", pad=0.75)
+    # cax = divider.append_axes(
+    #     loc,
+    #     size="2%",
+    # )
+    pos = ax.get_position()
+
+    # Define how far below the plot you want it (y-offset)
+    # Increase this value to push the colorbar lower down
+    gap = 0.2
+
+    # Define colorbar dimensions relative to the main plot
+    cb_height = 0.02
+    cb_width = pos.width  # Make it 80% of the plot's width
+
+    # Center it horizontally under the main plot
+    cb_left = pos.x0 + (pos.width - 0.57) / 2
+    cb_bottom = pos.y0 - gap
+
+    # Create the isolated axis
+    cax = fig.add_axes([cb_left, cb_bottom, cb_width, cb_height])
     # cax = divider.append_axes(loc, size="4%")
-    cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat)
+    cbar = fig.colorbar(mappable, cax=cax, location=loc, format=cbformat, pad="1000%")
     plt.sca(last_axes)
     return cbar

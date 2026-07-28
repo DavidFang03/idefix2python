@@ -1,5 +1,30 @@
 from itertools import count
 
+default_pmesh_kwargs = {
+    "rasterized": True,
+    "edgecolors": None,
+    "antialiased": True,
+}
+
+default_streamline_kwargs = {
+    "linewidth": 0.2,
+    "arrowstyle": "->",
+    "color": "#d3d3d3",
+    # "color": (1, 1, 1, 0.5),
+    "density": 2,
+}
+
+default_parts_kwargs = {"marker": "x", "markersize": 0.2}
+
+default_ref_plot_kwargs = {
+    "zorder": 3,
+    "ls": "--",
+    "lw": 1,
+    "alpha": 0.8,
+    "color": "limegreen",
+    "label": "Reference",
+}
+
 
 class Data:
     """
@@ -65,7 +90,6 @@ class Data:
 
         self.style_kwargs = kwargs.get("style_kwargs", {})
 
-        default_parts_kwargs = {"marker": "x", "markersize": 0.2}
         self.parts_kwargs = merge_default_to_dict(
             default_parts_kwargs, kwargs.get("parts_kwargs", {})
         )
@@ -77,14 +101,7 @@ class Data:
         self.ref_function = kwargs.get("ref_function", None)
         self.pointsRef = []
         self.valuesRef = []
-        default_ref_plot_kwargs = {
-            "zorder": 3,
-            "ls": "--",
-            "lw": 1,
-            "alpha": 0.8,
-            "color": "limegreen",
-            "label": "Reference",
-        }
+
         if self.ref_function is not None:
             if not hasattr(self.ref_function, "plot_kwargs"):
                 self.ref_function.plot_kwargs = {}
@@ -172,13 +189,7 @@ class MapMovie2D(Data):
                 raise Exception(
                     f"Invalid streamline configuration: {streamlines}. Expected a list/tuple of length 2."
                 )
-        default_streamline_kwargs = {
-            "linewidth": 0.2,
-            "arrowstyle": "->",
-            "color": "#d3d3d3",
-            # "color": (1, 1, 1, 0.5),
-            "density": 2,
-        }
+
         self.streamline_kwargs = merge_default_to_dict(
             default_streamline_kwargs, kwargs.get("streamline_kwargs", {})
         )
@@ -255,8 +266,14 @@ class SpaceTimeHeatmap(Field1D):
         bounds=None,
         norm="linear",
         uids=None,
+        rotate=False,
         **kwargs,
     ):
+        self.rotate = rotate
+        self.style_kwargs = merge_default_to_dict(
+            default_pmesh_kwargs,
+            kwargs.get("style_kwargs", {}),
+        )
         super().__init__(key, symbol, plot_coords, bounds, **kwargs)
         self.set_norm(norm)
         self.uids = uids

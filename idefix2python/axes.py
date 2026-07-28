@@ -14,15 +14,21 @@ from . import tools
 
 # No data should appear in Fig, Ax: they are sent by Renderer.
 DPI = 300
-COLUMN_WIDTH = 6
-ROW_HEIGHT = 6
-# ROW_HEIGHT = 2
+plt.rcParams.update({"font.size": 16})
 
 
 class Fig:
     counter = -1
 
-    def __init__(self, quantities, suptitle=None, suptitle_kwargs=None, **kwargs):
+    def __init__(
+        self,
+        quantities,
+        suptitle=None,
+        suptitle_kwargs=None,
+        column_width=6,
+        row_height=6,
+        **kwargs,
+    ):
         Fig.counter += 1
         self.name = f"fig{Fig.counter}"
         self.quantities = quantities
@@ -33,6 +39,8 @@ class Fig:
         self.axesMovie = []
         self.axesTimeline = []
         self.movie = False
+        self.column_width = column_width
+        self.row_height = row_height
         self.rows = 1
         self.columns = 1
         for qtyInfo in quantities:
@@ -65,14 +73,15 @@ class Fig:
             self.axes[*qtyInfo.plot_coords].add_quantity(qtyInfo)
 
     def generate_figure(self, custom_suptitle=None):
-        fig_width = max(6, COLUMN_WIDTH * self.columns)  # minimum width of 6
-        fig_height = max(4, ROW_HEIGHT * self.rows)  # minimum height of 4
+        fig_width = max(6, self.column_width * self.columns)  # minimum width of 6
+        fig_height = max(4, self.row_height * self.rows)  # minimum height of 4
         fig, axs = plt.subplots(
             self.rows,
             self.columns,
             figsize=(fig_width, fig_height),
             squeeze=False,
-            layout="constrained",
+            # layout="constrained",
+            layout="compressed",
             **self.kwargs,
         )
         self.fig = fig

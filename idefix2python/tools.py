@@ -61,7 +61,7 @@ def movie(pattern_png, movie_path, fps=10):
     print(movie_path, "from", pattern_png)
     ffmpeg.input(pattern_png, pattern_type="glob", framerate=fps).filter(
         "scale",
-        3840,
+        1920,
         "-2",  # TODO More flexible
     ).output(
         str(movie_path),

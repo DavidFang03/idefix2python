@@ -203,6 +203,8 @@ class SliceRenderer:
                         LOG(
                             f"Warning: Failed to compute ref_function for {qtyInfo.key}. Error: {e}"
                         )
+                if getattr(qtyInfo, "rotate", None):
+                    qtyInfo.switch_labels()
 
                 if qtyInfo.is_timeline:
                     qtyInfo.points = self.processor.years

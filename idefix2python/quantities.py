@@ -141,6 +141,9 @@ class Data:
         if self.ylabel is None:
             self.ylabel = ylabel
 
+    def switch_labels(self):
+        self.xlabel, self.ylabel = self.ylabel, self.xlabel
+
     def __str__(self):
         return self.key
 

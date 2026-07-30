@@ -184,7 +184,9 @@ class SliceRenderer:
                     qtyInfo.set_default_xlabel(r"$t$ [yr]")
                     qtyInfo.set_default_ylabel(self.gridInfo.axis_name_1)
 
-                elif isinstance(qtyInfo, PartQuantity):
+                elif isinstance(qtyInfo, PartQuantity) or isinstance(
+                    qtyInfo, OneComponentOneVariable
+                ):
                     qtyInfo.set_default_xlabel(r"$t$ [yr]")
                     qtyInfo.set_default_ylabel(qtyInfo.symbol)
 

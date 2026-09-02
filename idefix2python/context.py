@@ -92,6 +92,13 @@ def _get_args():
         help="Read every Nth output file (N>=1). For example, -e 2 reads every second file.",
     )
 
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=10,
+        help="fps of the movie",
+    )
+
     args = parser.parse_args()
     if args.doOnlyFrames is None:
         args.doOnlyFrames = False

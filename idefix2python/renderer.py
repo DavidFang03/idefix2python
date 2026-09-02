@@ -258,6 +258,7 @@ class SliceRenderer:
                     figMovie.name
                 ),  # TODO should take only the generated frames. Later PR.
                 movie_path=self.framesPaths.get_movie_path(figMovie.name),
+                fps=self.userArgs.fps,
             )
 
     def render_Frame(self, frame_nb=None, vtkPath=None, partPath=None):

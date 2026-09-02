@@ -55,7 +55,7 @@ def applyOperation_discardingNone(op, array):
     # return op(array, out=np.full(array.shape, None), where=array != None)
 
 
-def movie(pattern_png, movie_path, fps=10):
+def movie(pattern_png, movie_path, fps):
     import ffmpeg
 
     print(movie_path, "from", pattern_png)

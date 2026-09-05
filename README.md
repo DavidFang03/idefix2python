@@ -77,7 +77,7 @@ Three of them are accessible to the user:
 +  **`RunContext`**: Handles data location and directory creation. Detects simulation geometry, dimensions, and available fields.
 +  **`Quantities`**: Defines all the different types of data and ways to visualize them.
 The three others are not accessible to the user:
-+  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), applies zooms, and computes derived quantities.
++  **`PhysicsProcessor`**: Performs mathematical transformations. Handles grid conversions (e.g., converting internal coordinates to Cartesian $x, z$ for plotting), and computes derived quantities.
 +  **`SliceRenderer`**: Matplotlib engine. Manages multi-panel layouts, colorbars (Log, Linear, TwoSlope), streamlines, contours.
 +  **`Axes`**: Defines `Fig` and `Ax` that are basic containers for plotting graphs.
 

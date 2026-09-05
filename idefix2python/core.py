@@ -32,7 +32,6 @@ class Pipeline:
         :type streamLines: StreamlineConfig, optional
         **options: Additional optional parameters:
             * scatter_particles (bool): only scatter particles positions instead of the whole trajectory on MapMovie2D
-            * zoom (callable): To show only a limited part of the domain.
             * no_movie (bool): No movie will be produced.
         """
         self.context = Context

@@ -118,9 +118,6 @@ class SliceRenderer:
 
         self.gridInfo = self.context.gridInfo
         if self.gridInfo.active:
-            self.gridInfo.apply_zoom(
-                options.get("zoom", None)
-            )  # initialize gridInfo.*_toshow
             self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
 
         if not self.context.pdfmode:
@@ -355,10 +352,8 @@ class SliceRenderer:
     def _draw_streamlines(self, figure, qtyInfo, data):
         method = "linear"
 
-        mask1 = self.gridInfo.mask1
-        mask2 = self.gridInfo.mask2
-        u_x1 = data[qtyInfo.streamlines[0]][mask2][:, mask1]
-        u_x2 = data[qtyInfo.streamlines[1]][mask2][:, mask1]
+        u_x1 = data[qtyInfo.streamlines[0]]
+        u_x2 = data[qtyInfo.streamlines[1]]
 
         match self.context.geometry:
             case "cartesian":
@@ -368,11 +363,11 @@ class SliceRenderer:
             case "polar":
                 raise NotImplementedError("POLAR geometry not implemented yet")
             case "spherical":
-                Theta = self.gridInfo.X2_toshow
+                Theta = self.gridInfo.X2
                 ux = np.sin(Theta) * u_x1 + np.cos(Theta) * u_x2
                 uy = np.cos(Theta) * u_x1 - np.sin(Theta) * u_x2
 
-        X1Line, X2Line = self.gridInfo.X1Line_toshow, self.gridInfo.X2Line_toshow
+        X1Line, X2Line = self.gridInfo.X1Line, self.gridInfo.X2Line
 
         Ux_interp = RegularGridInterpolator(
             (X1Line, X2Line), ux.T, method=method, bounds_error=False, fill_value=np.nan
@@ -405,10 +400,10 @@ class SliceRenderer:
             r_grid = np.sqrt(Xuni**2 + Yuni**2)
             theta_grid = np.arctan2(Xuni, Yuni)
 
-            r_min = self.gridInfo.X1Line_toshow.min()
-            r_max = self.gridInfo.X1Line_toshow.max()
-            theta_min = self.gridInfo.X2Line_toshow.min()
-            theta_max = self.gridInfo.X2Line_toshow.max()
+            r_min = self.gridInfo.X1Line.min()
+            r_max = self.gridInfo.X1Line.max()
+            theta_min = self.gridInfo.X2Line.min()
+            theta_max = self.gridInfo.X2Line.max()
 
             outside = (
                 (r_grid < r_min)
@@ -629,16 +624,16 @@ class SliceRenderer:
         """
 
         if isinstance(qtyInfo, MapMovie2D):
-            grid1 = self.gridInfo.grid1_toshow
-            grid2 = self.gridInfo.grid2_toshow
-            data_mesh = data[qtyInfo.key][self.gridInfo.mask2][:, self.gridInfo.mask1]
+            grid1 = self.gridInfo.grid1
+            grid2 = self.gridInfo.grid2
+            data_mesh = data[qtyInfo.key]
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
             grid1, grid2 = np.meshgrid(
                 np.asarray(self.processor.years),
                 np.asarray(self.gridInfo.X1Line),
             )
-            data_mesh = np.transpose(qtyInfo.values)[self.gridInfo.mask1]
+            data_mesh = np.transpose(qtyInfo.values)
         vmin, vmax = qtyInfo.bounds
         if vmin is None or self.userArgs.noBounds:
             vmin = np.nanmin(data_mesh)

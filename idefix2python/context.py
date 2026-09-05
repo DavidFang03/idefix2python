@@ -448,6 +448,8 @@ class GridInfo:
             self.grid1, self.grid2 = tools.convertLines_toXZgrid(
                 *Lines, self.context.geometry
             )
+            self.xmin, self.xmax = self.grid1.min(), self.grid1.max()
+            self.ymin, self.ymax = self.grid2.min(), self.grid2.max()
 
         else:
             self.active = False
@@ -471,29 +473,12 @@ class GridInfo:
                 names[i] = DIMENSION_NAMES[self.context.geometry][dir]
         return names
 
-    def apply_zoom(self, zoom):
-        if zoom is None:
-            self.X1Line_toshow, self.X2Line_toshow = self.X1Line, self.X2Line
-            self.mask1 = np.full(self.X1Line.shape, True, dtype=bool)
-            self.mask2 = np.full(self.X2Line.shape, True, dtype=bool)
-            self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
-
-        else:
-            self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
-            self.X1Line_toshow = self.X1Line[self.mask1]
-            self.X2Line_toshow = self.X2Line[self.mask2]
-            self.grid1_toshow = self.grid1[self.mask2][:, self.mask1]
-            self.grid2_toshow = self.grid2[self.mask2][:, self.mask1]
-        self.mask = np.logical_and.outer(self.mask2, self.mask1)
-        self.X1_toshow, self.X2_toshow = np.meshgrid(
-            self.X1Line_toshow, self.X2Line_toshow
-        )
-        self.x1min = np.min(self.X1Line_toshow)
-        self.x1max = np.max(self.X1Line_toshow)
-        self.xmin = np.min(self.grid1_toshow)  # or min(X1) if one 1D?
-        self.xmax = np.max(self.grid1_toshow)
-        self.ymin = np.min(self.grid2_toshow)
-        self.ymax = np.max(self.grid2_toshow)
+    # def apply_zoom(self, zoom):
+    # Otherwise, I can imagine doing
+    # for anything in vtk:
+    #    vtk[anything] = vtk[anything][mask]
+    #    vtk.r = vtk.r[mask]
+    #    etc...
 
     def get_uniform_cartesian_grid(self):
         resolution = 400
@@ -523,11 +508,11 @@ class GridInfo:
                 self.X2_fromuni = theta_coords
 
                 # Clip the radius so it never exceeds the maximum and minimum native grid radius
-                r_min = np.min(self.X1Line_toshow)
-                r_max = np.max(self.X1Line_toshow)
+                r_min = np.min(self.X1Line)
+                r_max = np.max(self.X1Line)
                 self.X1_fromuni = np.clip(r_coords, r_min, r_max)
 
                 # same for theta
-                theta_min = np.min(self.X2Line_toshow)
-                theta_max = np.max(self.X2Line_toshow)
+                theta_min = np.min(self.X2Line)
+                theta_max = np.max(self.X2Line)
                 self.X2_fromuni = np.clip(theta_coords, theta_min, theta_max)

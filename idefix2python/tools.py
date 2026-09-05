@@ -45,16 +45,6 @@ def divide_discardingNullDenominator(a, b):
     return np.divide(a, b, out=np.full(a.shape, np.nan), where=np.abs(b) > 1e-10)
 
 
-def applyOperation_discardingNone(op, array):
-    mask = (array != np.nan) & (array != 0)
-    output = np.full(array.shape, np.nan)
-    valid_data = array[mask].astype(float)
-    output[mask] = op(valid_data)
-
-    return output
-    # return op(array, out=np.full(array.shape, None), where=array != None)
-
-
 def movie(pattern_png, movie_path, fps):
     import ffmpeg
 

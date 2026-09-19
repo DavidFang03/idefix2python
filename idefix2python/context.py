@@ -43,11 +43,27 @@ def _get_args():
     )
 
     parser.add_argument(
-        "-om", action="store_true", help="only movie?", dest="onlyMovie"
+        "-om",
+        "--only-movie",
+        action="store_true",
+        help="only movie?",
+        dest="onlyMovie",
     )
 
     parser.add_argument(
-        "-oa", action="store_true", help="only analysis?", dest="onlyAnalysis"
+        "-nm",
+        "--no-movie",
+        action="store_true",
+        help="no movie?",
+        dest="noMovie",
+    )
+
+    parser.add_argument(
+        "-oa",
+        "--only-analysis",
+        action="store_true",
+        help="only analysis?",
+        dest="onlyAnalysis",
     )
 
     parser.add_argument(

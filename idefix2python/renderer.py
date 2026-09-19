@@ -111,7 +111,11 @@ class SliceRenderer:
         self.options = options
         self.doMovie = True
 
-        if self.userArgs.doOnlyFrames or self.options.get("no_movie"):
+        if (
+            self.userArgs.doOnlyFrames
+            or self.userArgs.noMovie
+            or self.options.get("no_movie")
+        ):
             self.doMovie = False
         if self.userArgs.onlyMovie:
             self.doMovie = True

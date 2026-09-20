@@ -500,10 +500,14 @@ class GridInfo:
 
     def get_uniform_cartesian_grid(self, xmin, xmax, ymin, ymax):
         # for streamplot, we need a uniformly spaced cartesian grid
-        resolution = self.shape_cartesian[0]
+        resolution_x, resolution_y = self.shape_cartesian
 
-        x_uniLine = xmin + np.arange(resolution) * ((xmax - xmin) / (resolution - 1))
-        y_uniLine = ymin + np.arange(resolution) * ((ymax - ymin) / (resolution - 1))
+        x_uniLine = xmin + np.arange(resolution_x) * (
+            (xmax - xmin) / (resolution_x - 1)
+        )
+        y_uniLine = ymin + np.arange(resolution_y) * (
+            (ymax - ymin) / (resolution_y - 1)
+        )
         Xuni, Yuni = np.meshgrid(x_uniLine, y_uniLine)
 
         match self.context.geometry:

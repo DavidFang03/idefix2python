@@ -437,7 +437,6 @@ class GridInfo:
         self.dimensions = context.dimensions
         self.grid_name_1, self.grid_name_2 = self.get_cartesian_grid_labels()
         self.axis_name_1, self.axis_name_2 = self.get_native_grid_labels()
-        self.shape = None
         if self.context.outputTypes_info["vtk"].status:
             active_dirs = self.context.active_directions
             vtk = self.context.outputTypes_info["vtk"].vtk
@@ -464,6 +463,9 @@ class GridInfo:
             self.grid1, self.grid2 = tools.convertLines_toXZgrid(
                 *Lines, self.context.geometry
             )
+            self.shape_native = self.X1.shape
+            self.shape_cartesian = self.grid1.shape
+
             self.xmin, self.xmax = self.grid1.min(), self.grid1.max()
             self.ymin, self.ymax = self.grid2.min(), self.grid2.max()
 
@@ -496,39 +498,34 @@ class GridInfo:
     #    vtk.r = vtk.r[mask]
     #    etc...
 
-    def get_uniform_cartesian_grid(self):
-        resolution = 400
-
+    def get_uniform_cartesian_grid(self, xmin, xmax, ymin, ymax):
         # for streamplot, we need a uniformly spaced cartesian grid
-        xmin, xmax = self.xmin, self.xmax
-        ymin, ymax = self.ymin, self.ymax
+        resolution = self.shape_cartesian[0]
 
-        self.x_uniLine = xmin + np.arange(resolution) * (
-            (xmax - xmin) / (resolution - 1)
-        )
-        self.y_uniLine = ymin + np.arange(resolution) * (
-            (ymax - ymin) / (resolution - 1)
-        )
-        Xuni, Yuni = np.meshgrid(self.x_uniLine, self.y_uniLine)
+        x_uniLine = xmin + np.arange(resolution) * ((xmax - xmin) / (resolution - 1))
+        y_uniLine = ymin + np.arange(resolution) * ((ymax - ymin) / (resolution - 1))
+        Xuni, Yuni = np.meshgrid(x_uniLine, y_uniLine)
 
         match self.context.geometry:
             case "cartesian":
-                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+                X1_fromuni, X2_fromuni = Xuni, Yuni
             case "cylindric":
-                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+                X1_fromuni, X2_fromuni = Xuni, Yuni
             case "spherical":
                 r_coords = np.sqrt(Xuni**2 + Yuni**2)
                 theta_coords = np.arctan2(Xuni, Yuni)
 
-                self.X1_fromuni = r_coords
-                self.X2_fromuni = theta_coords
+                X1_fromuni = r_coords
+                X2_fromuni = theta_coords
 
                 # Clip the radius so it never exceeds the maximum and minimum native grid radius
                 r_min = np.min(self.X1Line)
                 r_max = np.max(self.X1Line)
-                self.X1_fromuni = np.clip(r_coords, r_min, r_max)
+                X1_fromuni = np.clip(r_coords, r_min, r_max)
 
                 # same for theta
                 theta_min = np.min(self.X2Line)
                 theta_max = np.max(self.X2Line)
-                self.X2_fromuni = np.clip(theta_coords, theta_min, theta_max)
+                X2_fromuni = np.clip(theta_coords, theta_min, theta_max)
+
+        return x_uniLine, y_uniLine, X1_fromuni, X2_fromuni

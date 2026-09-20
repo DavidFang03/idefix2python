@@ -127,17 +127,6 @@ class PhysicsProcessor:
                 commonvtk.data[qtyInfo.key] = qtyInfo.compute(commonvtk)
                 # do not squeeze
 
-            # TODO safeguard for computed shape. Turns out to be not very straightforward.
-            # computed_shape = np.shape(datavtk.data[qtyInfo.key])
-            # if isinstance(qtyInfo, MapMovie2D) or isinstance(qtyInfo, LineMovie1D):
-            #     expected_shape = self.gridInfo.shape
-            # elif isinstance(qtyInfo, PartQuantity):
-            #     expected_shape = np.shape(partvtk.data["uid"])
-            # elif isinstance(qtyInfo, SpaceTimeHeatmap)
-            # else:
-            #     expected_shape = None
-            ## Local quantities
-
         return commonvtk
 
     def gather_1Cquantities(

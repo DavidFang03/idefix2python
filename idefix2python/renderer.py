@@ -121,8 +121,6 @@ class SliceRenderer:
             self.doMovie = True
 
         self.gridInfo = self.context.gridInfo
-        if self.gridInfo.active:
-            self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
 
         if not self.context.pdfmode:
             plt.style.use("dark_background")  # doesn't work
@@ -379,14 +377,24 @@ class SliceRenderer:
         Uy_interp = RegularGridInterpolator(
             (X1Line, X2Line), uy.T, method=method, bounds_error=False, fill_value=np.nan
         )
-        pts = np.stack((self.gridInfo.X1_fromuni, self.gridInfo.X2_fromuni), axis=-1)
+
+        xmin = qtyInfo.xmin if qtyInfo.xmin is not None else self.gridInfo.xmin
+        xmax = qtyInfo.xmax if qtyInfo.xmax is not None else self.gridInfo.xmax
+        ymin = qtyInfo.ymin if qtyInfo.ymin is not None else self.gridInfo.ymin
+        ymax = qtyInfo.ymax if qtyInfo.ymax is not None else self.gridInfo.ymax
+
+        x_uniLine, y_uniLine, X1_fromuni, X2_fromuni = (
+            self.gridInfo.get_uniform_cartesian_grid(xmin, xmax, ymin, ymax)
+        )
+
+        pts = np.stack((X1_fromuni, X2_fromuni), axis=-1)
         Ux_vals = Ux_interp(pts)
         Uy_vals = Uy_interp(pts)
 
         ax = figure.axes[*qtyInfo.plot_coords].ax
         stream = ax.streamplot(
-            self.gridInfo.x_uniLine,
-            self.gridInfo.y_uniLine,
+            x_uniLine,
+            y_uniLine,
             Ux_vals,
             Uy_vals,
             **qtyInfo.streamline_kwargs,
@@ -399,7 +407,7 @@ class SliceRenderer:
         import matplotlib.colors as mcolors
 
         if self.context.geometry == "spherical":
-            Xuni, Yuni = np.meshgrid(self.gridInfo.x_uniLine, self.gridInfo.y_uniLine)
+            Xuni, Yuni = np.meshgrid(x_uniLine, y_uniLine)
 
             r_grid = np.sqrt(Xuni**2 + Yuni**2)
             theta_grid = np.arctan2(Xuni, Yuni)
@@ -421,8 +429,8 @@ class SliceRenderer:
             # Paint over the background using the uniform grid lines
             bg_cmap = mcolors.ListedColormap([ax.get_facecolor()])
             ax.pcolormesh(
-                self.gridInfo.x_uniLine,
-                self.gridInfo.y_uniLine,
+                x_uniLine,
+                y_uniLine,
                 dummy,
                 cmap=bg_cmap,
                 zorder=5,
@@ -458,7 +466,7 @@ class SliceRenderer:
 
         Ax_container = figure.axes[*qty1DInfo.plot_coords]
 
-        (line,) = Ax_container.ax.plot(
+        Ax_container.ax.plot(
             self.gridInfo.X1Line,
             commonvtk.data[qty1DInfo.key],
             **qty1DInfo.style_kwargs,

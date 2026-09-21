@@ -437,7 +437,6 @@ class GridInfo:
         self.dimensions = context.dimensions
         self.grid_name_1, self.grid_name_2 = self.get_cartesian_grid_labels()
         self.axis_name_1, self.axis_name_2 = self.get_native_grid_labels()
-        self.shape = None
         if self.context.outputTypes_info["vtk"].status:
             active_dirs = self.context.active_directions
             vtk = self.context.outputTypes_info["vtk"].vtk
@@ -459,11 +458,22 @@ class GridInfo:
                 self.X2LineL = LinesL[active_dirs[1]]
             self.dX2 = np.diff(self.X2LineL)
 
+            # min/max values are values at cells center and are not boundaries. Use inf/sup instead
+            self.x1inf = self.X1LineL.min()
+            self.x1sup = self.X1LineL.max()
+            self.x2inf = self.X2LineL.min()
+            self.x2sup = self.X2LineL.max()
+
             # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
             self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
             self.grid1, self.grid2 = tools.convertLines_toXZgrid(
                 *Lines, self.context.geometry
             )
+            self.shape_native = self.X1.shape  # warning: reverse order.
+            self.shape_cartesian = self.grid1.shape  # warning: reverse order.
+
+            self.xmin, self.xmax = self.grid1.min(), self.grid1.max()
+            self.ymin, self.ymax = self.grid2.min(), self.grid2.max()
 
         else:
             self.active = False
@@ -487,63 +497,53 @@ class GridInfo:
                 names[i] = DIMENSION_NAMES[self.context.geometry][dir]
         return names
 
-    def apply_zoom(self, zoom):
-        if zoom is None:
-            self.X1Line_toshow, self.X2Line_toshow = self.X1Line, self.X2Line
-            self.mask1 = np.full(self.X1Line.shape, True, dtype=bool)
-            self.mask2 = np.full(self.X2Line.shape, True, dtype=bool)
-            self.grid1_toshow, self.grid2_toshow = self.grid1, self.grid2
+    # def apply_zoom(self, zoom):
+    # Otherwise, I can imagine doing
+    # for anything in vtk:
+    #    vtk[anything] = vtk[anything][mask]
+    #    vtk.r = vtk.r[mask]
+    #    etc...
 
-        else:
-            self.mask1, self.mask2 = zoom(self.X1Line, self.X2Line)
-            self.X1Line_toshow = self.X1Line[self.mask1]
-            self.X2Line_toshow = self.X2Line[self.mask2]
-            self.grid1_toshow = self.grid1[self.mask2][:, self.mask1]
-            self.grid2_toshow = self.grid2[self.mask2][:, self.mask1]
-        self.mask = np.logical_and.outer(self.mask2, self.mask1)
-        self.X1_toshow, self.X2_toshow = np.meshgrid(
-            self.X1Line_toshow, self.X2Line_toshow
+    def get_uniform_cartesian_grid(self, xmin, xmax, ymin, ymax):
+        """
+        For streamplot(), we need a uniformly spaced cartesian grid
+        """
+
+        # the resolution for streamlines us
+        resolution_y, resolution_x = self.shape_cartesian
+
+        # dirty way to take zoom into account
+        resolution_x = int(resolution_x * ((xmax - xmin) / (self.xmax - self.xmin)) - 1)
+        resolution_y = int(resolution_y * ((ymax - ymin) / (self.ymax - self.ymin)) - 1)
+
+        x_uniLine = xmin + np.arange(resolution_x) * (
+            (xmax - xmin) / (resolution_x - 1)
         )
-        self.x1min = np.min(self.X1Line_toshow)
-        self.x1max = np.max(self.X1Line_toshow)
-        self.xmin = np.min(self.grid1_toshow)  # or min(X1) if one 1D?
-        self.xmax = np.max(self.grid1_toshow)
-        self.ymin = np.min(self.grid2_toshow)
-        self.ymax = np.max(self.grid2_toshow)
-
-    def get_uniform_cartesian_grid(self):
-        resolution = 400
-
-        # for streamplot, we need a uniformly spaced cartesian grid
-        xmin, xmax = self.xmin, self.xmax
-        ymin, ymax = self.ymin, self.ymax
-
-        self.x_uniLine = xmin + np.arange(resolution) * (
-            (xmax - xmin) / (resolution - 1)
+        y_uniLine = ymin + np.arange(resolution_y) * (
+            (ymax - ymin) / (resolution_y - 1)
         )
-        self.y_uniLine = ymin + np.arange(resolution) * (
-            (ymax - ymin) / (resolution - 1)
-        )
-        Xuni, Yuni = np.meshgrid(self.x_uniLine, self.y_uniLine)
+        Xuni, Yuni = np.meshgrid(x_uniLine, y_uniLine)
 
         match self.context.geometry:
             case "cartesian":
-                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+                X1_fromuni, X2_fromuni = Xuni, Yuni
             case "cylindric":
-                self.X1_fromuni, self.X2_fromuni = Xuni, Yuni
+                X1_fromuni, X2_fromuni = Xuni, Yuni
             case "spherical":
                 r_coords = np.sqrt(Xuni**2 + Yuni**2)
                 theta_coords = np.arctan2(Xuni, Yuni)
 
-                self.X1_fromuni = r_coords
-                self.X2_fromuni = theta_coords
+                X1_fromuni = r_coords
+                X2_fromuni = theta_coords
 
                 # Clip the radius so it never exceeds the maximum and minimum native grid radius
-                r_min = np.min(self.X1Line_toshow)
-                r_max = np.max(self.X1Line_toshow)
-                self.X1_fromuni = np.clip(r_coords, r_min, r_max)
+                r_min = np.min(self.X1Line)
+                r_max = np.max(self.X1Line)
+                X1_fromuni = np.clip(r_coords, r_min, r_max)
 
                 # same for theta
-                theta_min = np.min(self.X2Line_toshow)
-                theta_max = np.max(self.X2Line_toshow)
-                self.X2_fromuni = np.clip(theta_coords, theta_min, theta_max)
+                theta_min = np.min(self.X2Line)
+                theta_max = np.max(self.X2Line)
+                X2_fromuni = np.clip(theta_coords, theta_min, theta_max)
+
+        return x_uniLine, y_uniLine, X1_fromuni, X2_fromuni

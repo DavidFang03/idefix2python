@@ -121,11 +121,6 @@ class SliceRenderer:
             self.doMovie = True
 
         self.gridInfo = self.context.gridInfo
-        if self.gridInfo.active:
-            self.gridInfo.apply_zoom(
-                options.get("zoom", None)
-            )  # initialize gridInfo.*_toshow
-            self.gridInfo.get_uniform_cartesian_grid()  # for streamplot
 
         if not self.context.pdfmode:
             plt.style.use("dark_background")  # doesn't work
@@ -359,10 +354,8 @@ class SliceRenderer:
     def _draw_streamlines(self, figure, qtyInfo, data):
         method = "linear"
 
-        mask1 = self.gridInfo.mask1
-        mask2 = self.gridInfo.mask2
-        u_x1 = data[qtyInfo.streamlines[0]][mask2][:, mask1]
-        u_x2 = data[qtyInfo.streamlines[1]][mask2][:, mask1]
+        u_x1 = data[qtyInfo.streamlines[0]]
+        u_x2 = data[qtyInfo.streamlines[1]]
 
         match self.context.geometry:
             case "cartesian":
@@ -372,11 +365,11 @@ class SliceRenderer:
             case "polar":
                 raise NotImplementedError("POLAR geometry not implemented yet")
             case "spherical":
-                Theta = self.gridInfo.X2_toshow
+                Theta = self.gridInfo.X2
                 ux = np.sin(Theta) * u_x1 + np.cos(Theta) * u_x2
                 uy = np.cos(Theta) * u_x1 - np.sin(Theta) * u_x2
 
-        X1Line, X2Line = self.gridInfo.X1Line_toshow, self.gridInfo.X2Line_toshow
+        X1Line, X2Line = self.gridInfo.X1Line, self.gridInfo.X2Line
 
         Ux_interp = RegularGridInterpolator(
             (X1Line, X2Line), ux.T, method=method, bounds_error=False, fill_value=np.nan
@@ -384,14 +377,24 @@ class SliceRenderer:
         Uy_interp = RegularGridInterpolator(
             (X1Line, X2Line), uy.T, method=method, bounds_error=False, fill_value=np.nan
         )
-        pts = np.stack((self.gridInfo.X1_fromuni, self.gridInfo.X2_fromuni), axis=-1)
+
+        xmin = qtyInfo.xmin if qtyInfo.xmin is not None else self.gridInfo.xmin
+        xmax = qtyInfo.xmax if qtyInfo.xmax is not None else self.gridInfo.xmax
+        ymin = qtyInfo.ymin if qtyInfo.ymin is not None else self.gridInfo.ymin
+        ymax = qtyInfo.ymax if qtyInfo.ymax is not None else self.gridInfo.ymax
+
+        x_uniLine, y_uniLine, X1_fromuni, X2_fromuni = (
+            self.gridInfo.get_uniform_cartesian_grid(xmin, xmax, ymin, ymax)
+        )
+
+        pts = np.stack((X1_fromuni, X2_fromuni), axis=-1)
         Ux_vals = Ux_interp(pts)
         Uy_vals = Uy_interp(pts)
 
         ax = figure.axes[*qtyInfo.plot_coords].ax
         stream = ax.streamplot(
-            self.gridInfo.x_uniLine,
-            self.gridInfo.y_uniLine,
+            x_uniLine,
+            y_uniLine,
             Ux_vals,
             Uy_vals,
             **qtyInfo.streamline_kwargs,
@@ -404,30 +407,43 @@ class SliceRenderer:
         import matplotlib.colors as mcolors
 
         if self.context.geometry == "spherical":
-            Xuni, Yuni = np.meshgrid(self.gridInfo.x_uniLine, self.gridInfo.y_uniLine)
+            x_maskline, y_maskline = (
+                np.linspace(0, 2.5, 200),
+                np.linspace(-2.5, 2.5, 200),
+            )
+            Xuni, Yuni = np.meshgrid(x_maskline, y_maskline)
 
             r_grid = np.sqrt(Xuni**2 + Yuni**2)
             theta_grid = np.arctan2(Xuni, Yuni)
 
-            r_min = self.gridInfo.X1Line_toshow.min()
-            r_max = self.gridInfo.X1Line_toshow.max()
-            theta_min = self.gridInfo.X2Line_toshow.min()
-            theta_max = self.gridInfo.X2Line_toshow.max()
+            r_inf = self.gridInfo.x1inf
+            r_sup = self.gridInfo.x1sup
+            theta_inf = self.gridInfo.x2inf
+            theta_sup = self.gridInfo.x2sup
 
             outside = (
-                (r_grid < r_min)
-                | (r_grid > r_max)
-                | (theta_grid < theta_min)
-                | (theta_grid > theta_max)
+                (r_grid > r_sup) | (theta_grid < theta_inf) | (theta_grid > theta_sup)
             )
+            bgcolor = ax.get_facecolor()
+
+            # I rather plot a circle for the inner boundary otherwise it masks a bit too much.
+            innercircle = plt.Circle(
+                (0, 0),
+                r_inf,
+                edgecolor=bgcolor,
+                facecolor=bgcolor,
+                fill=True,
+                zorder=5,
+            )
+            ax.add_artist(innercircle)
 
             dummy = np.where(outside, 1.0, np.nan)
 
             # Paint over the background using the uniform grid lines
-            bg_cmap = mcolors.ListedColormap([ax.get_facecolor()])
+            bg_cmap = mcolors.ListedColormap([bgcolor])
             ax.pcolormesh(
-                self.gridInfo.x_uniLine,
-                self.gridInfo.y_uniLine,
+                x_maskline,
+                y_maskline,
                 dummy,
                 cmap=bg_cmap,
                 zorder=5,
@@ -463,7 +479,7 @@ class SliceRenderer:
 
         Ax_container = figure.axes[*qty1DInfo.plot_coords]
 
-        (line,) = Ax_container.ax.plot(
+        Ax_container.ax.plot(
             self.gridInfo.X1Line,
             commonvtk.data[qty1DInfo.key],
             **qty1DInfo.style_kwargs,
@@ -633,16 +649,16 @@ class SliceRenderer:
         """
 
         if isinstance(qtyInfo, MapMovie2D):
-            grid1 = self.gridInfo.grid1_toshow
-            grid2 = self.gridInfo.grid2_toshow
-            data_mesh = data[qtyInfo.key][self.gridInfo.mask2][:, self.gridInfo.mask1]
+            grid1 = self.gridInfo.grid1
+            grid2 = self.gridInfo.grid2
+            data_mesh = data[qtyInfo.key]
 
         elif isinstance(qtyInfo, SpaceTimeHeatmap):
             grid1, grid2 = np.meshgrid(
                 np.asarray(self.processor.years),
                 np.asarray(self.gridInfo.X1Line),
             )
-            data_mesh = np.transpose(qtyInfo.values)[self.gridInfo.mask1]
+            data_mesh = np.transpose(qtyInfo.values)
         vmin, vmax = qtyInfo.bounds
         if vmin is None or self.userArgs.noBounds:
             vmin = np.nanmin(data_mesh)

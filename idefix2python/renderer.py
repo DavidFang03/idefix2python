@@ -407,30 +407,43 @@ class SliceRenderer:
         import matplotlib.colors as mcolors
 
         if self.context.geometry == "spherical":
-            Xuni, Yuni = np.meshgrid(x_uniLine, y_uniLine)
+            x_maskline, y_maskline = (
+                np.linspace(0, 2.5, 200),
+                np.linspace(-2.5, 2.5, 200),
+            )
+            Xuni, Yuni = np.meshgrid(x_maskline, y_maskline)
 
             r_grid = np.sqrt(Xuni**2 + Yuni**2)
             theta_grid = np.arctan2(Xuni, Yuni)
 
-            r_min = self.gridInfo.X1Line.min()
-            r_max = self.gridInfo.X1Line.max()
-            theta_min = self.gridInfo.X2Line.min()
-            theta_max = self.gridInfo.X2Line.max()
+            r_inf = self.gridInfo.x1inf
+            r_sup = self.gridInfo.x1sup
+            theta_inf = self.gridInfo.x2inf
+            theta_sup = self.gridInfo.x2sup
 
             outside = (
-                (r_grid < r_min)
-                | (r_grid > r_max)
-                | (theta_grid < theta_min)
-                | (theta_grid > theta_max)
+                (r_grid > r_sup) | (theta_grid < theta_inf) | (theta_grid > theta_sup)
             )
+            bgcolor = ax.get_facecolor()
+
+            # I rather plot a circle for the inner boundary otherwise it masks a bit too much.
+            innercircle = plt.Circle(
+                (0, 0),
+                r_inf,
+                edgecolor=bgcolor,
+                facecolor=bgcolor,
+                fill=True,
+                zorder=5,
+            )
+            ax.add_artist(innercircle)
 
             dummy = np.where(outside, 1.0, np.nan)
 
             # Paint over the background using the uniform grid lines
-            bg_cmap = mcolors.ListedColormap([ax.get_facecolor()])
+            bg_cmap = mcolors.ListedColormap([bgcolor])
             ax.pcolormesh(
-                x_uniLine,
-                y_uniLine,
+                x_maskline,
+                y_maskline,
                 dummy,
                 cmap=bg_cmap,
                 zorder=5,

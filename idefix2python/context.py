@@ -458,13 +458,19 @@ class GridInfo:
                 self.X2LineL = LinesL[active_dirs[1]]
             self.dX2 = np.diff(self.X2LineL)
 
+            # min/max values are values at cells center and are not boundaries. Use inf/sup instead
+            self.x1inf = self.X1LineL.min()
+            self.x1sup = self.X1LineL.max()
+            self.x2inf = self.X2LineL.min()
+            self.x2sup = self.X2LineL.max()
+
             # Regardless of the geometry, we need the cartesian grid (X,Z) for pcolormesh
             self.X1, self.X2 = np.meshgrid(self.X1Line, self.X2Line)
             self.grid1, self.grid2 = tools.convertLines_toXZgrid(
                 *Lines, self.context.geometry
             )
-            self.shape_native = self.X1.shape
-            self.shape_cartesian = self.grid1.shape
+            self.shape_native = self.X1.shape  # warning: reverse order.
+            self.shape_cartesian = self.grid1.shape  # warning: reverse order.
 
             self.xmin, self.xmax = self.grid1.min(), self.grid1.max()
             self.ymin, self.ymax = self.grid2.min(), self.grid2.max()
@@ -499,8 +505,16 @@ class GridInfo:
     #    etc...
 
     def get_uniform_cartesian_grid(self, xmin, xmax, ymin, ymax):
-        # for streamplot, we need a uniformly spaced cartesian grid
-        resolution_x, resolution_y = self.shape_cartesian
+        """
+        For streamplot(), we need a uniformly spaced cartesian grid
+        """
+
+        # the resolution for streamlines us
+        resolution_y, resolution_x = self.shape_cartesian
+
+        # dirty way to take zoom into account
+        resolution_x = int(resolution_x * ((xmax - xmin) / (self.xmax - self.xmin)) - 1)
+        resolution_y = int(resolution_y * ((ymax - ymin) / (self.ymax - self.ymin)) - 1)
 
         x_uniLine = xmin + np.arange(resolution_x) * (
             (xmax - xmin) / (resolution_x - 1)

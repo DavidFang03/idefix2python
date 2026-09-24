@@ -408,8 +408,8 @@ class SliceRenderer:
 
         if self.context.geometry == "spherical":
             x_maskline, y_maskline = (
-                np.linspace(0, 2.5, 200),
-                np.linspace(-2.5, 2.5, 200),
+                np.linspace(self.gridInfo.xmin, self.gridInfo.xmax, 200),
+                np.linspace(self.gridInfo.ymin, self.gridInfo.ymax, 200),
             )
             Xuni, Yuni = np.meshgrid(x_maskline, y_maskline)
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 projectPath = Path(__file__).parent / "data_examples"
 task = "1D_test"
-# By default the vtks are expected to be in {projetPath}/{task}/outputs/vtks/
+# By default the vtks are expected to be in {projetPath}/{task}/outputs/
 
 quantities = [
     LineMovie1D(

@@ -215,7 +215,7 @@ class RunContext:
             * pdf_mode (bool): pdf mode for clean plots. No movie will be produced, with light mode and no time indicator on timelines. If -f is not specified, last frame will be showed.
 
     Note:
-        The expected location for the .vtk files is `projectPath/outputs/runName/vtks`.
+        The expected location for the .vtk files is `projectPath/outputs/runName/`.
         By default, the rendered frame will be located in `projectPath/frames/runName`.
     """
 
@@ -242,7 +242,7 @@ class RunContext:
             self.config = tools.process_configs(configPath)
 
         self.dataFolder = Path(
-            kwargs.get("dataFolder", self.projectPath / "outputs" / runName / "vtks")
+            kwargs.get("dataFolder", self.projectPath / "outputs" / runName)
         )
         self.partFolder = Path(kwargs.get("partFolder", self.dataFolder))
 
